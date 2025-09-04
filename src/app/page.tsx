@@ -177,9 +177,7 @@ export default function Home() {
 
   return (
     <SidebarProvider>
-        <div className="flex h-screen">
-          <Sidebar>
-            {/* This is the server list rail */}
+        <div className="flex h-screen bg-background/70">
             <Servers 
                 servers={servers}
                 loading={serversLoading} 
@@ -187,14 +185,13 @@ export default function Home() {
                 selectedServer={selectedServer}
                 onSelectServer={setSelectedServer}
             />
-          </Sidebar>
           
           <div className="flex flex-1">
-             <div className="w-64 flex-shrink-0 bg-secondary/30">
+             <div className="w-64 flex-shrink-0 bg-secondary/30 flex flex-col">
                  {selectedServer ? (
                     <ServerSidebar server={selectedServer} />
                  ) : (
-                    <Sidebar>
+                    <>
                         <SidebarHeader>
                         {/* Maybe a search bar or something can go here */}
                         </SidebarHeader>
@@ -216,20 +213,20 @@ export default function Home() {
                             loading={chatsLoading}
                         />
                         </SidebarContent>
-                        <SidebarFooter>
-                        <div className="flex items-center justify-between">
-                            <UserNav user={user} logout={logout}/>
-                            <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
-                                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
+                        <SidebarFooter className="bg-background/50">
+                            <div className="flex items-center justify-between">
+                                <UserNav user={user} logout={logout}/>
+                                <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
+                                    <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
+                                </div>
                             </div>
-                        </div>
                         </SidebarFooter>
-                    </Sidebar>
+                    </>
                  )}
              </div>
 
-            <main className="flex-1 flex flex-col">
+            <main className="flex-1 flex flex-col bg-background/50">
               {selectedChat && !selectedServer && user ? (
                 <Chat
                   chat={selectedChat}
