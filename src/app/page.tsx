@@ -17,6 +17,7 @@ import { useChats } from '@/hooks/use-chats';
 import { useServers } from '@/hooks/use-servers';
 import { useServer } from '@/hooks/use-server';
 import { useChannels } from '@/hooks/use-channels';
+import { useChannelMessages } from '@/hooks/use-channel-messages';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
 import { doc, deleteDoc } from 'firebase/firestore';
@@ -43,6 +44,13 @@ export default function Home() {
   const { createChannel, updateChannel, deleteChannel } = useChannels(selectedServer?.id);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [initialLoad, setInitialLoad] = useState(true);
+  const { 
+    messages: channelMessages, 
+    sendMessage: sendChannelMessage,
+    editMessage: editChannelMessage,
+    deleteMessage: deleteChannelMessage,
+  } = useChannelMessages(selectedServer?.id, selectedChannel?.id);
+
 
   const { toast } = useToast();
 
@@ -72,18 +80,13 @@ export default function Home() {
   }, [chats, selectedChat, chatsLoading, selectedServer]);
 
   useEffect(() => {
-    if (serversLoading || !initialLoad) return;
-    
-    if (selectedServer && !servers.find(s => s.id === selectedServer.id)) {
-        handleSelectServer(null);
-        return;
-    }
+    if (serversLoading) return;
     
     if (initialLoad && !selectedServer && !selectedChat && servers.length > 0) {
       handleSelectServer(servers[0]);
       setInitialLoad(false);
     }
-  }, [servers, serversLoading, selectedServer, selectedChat, initialLoad]);
+  }, [servers, serversLoading, selectedServer, selectedChat, initialLoad, handleSelectServer]);
 
 
   const handleSendMessage = async (text: string) => {
@@ -163,7 +166,7 @@ export default function Home() {
         const newServer = await createServer(name);
         if (newServer) {
             setServers(prev => [...prev, newServer]);
-            setSelectedServer(newServer);
+            handleSelectServer(newServer);
             toast({ title: "Server Created!", description: `The server "${name}" has been created.`});
         }
     } catch (e: any) {
@@ -171,14 +174,14 @@ export default function Home() {
     }
   }
 
-  const handleSelectServer = (server: Server | null) => {
+  function handleSelectServer(server: Server | null) {
     setSelectedServer(server);
     setSelectedChat(null);
     if (server && server.channels && server.channels.length > 0) {
-      const generalChannel = server.channels.find(c => c.name === '!general');
-      setSelectedChannel(generalChannel || server.channels[0]);
+        const generalChannel = server.channels.find(c => c.name === '!general') || server.channels[0];
+        setSelectedChannel(generalChannel);
     } else {
-      setSelectedChannel(null);
+        setSelectedChannel(null);
     }
   }
 
@@ -186,7 +189,7 @@ export default function Home() {
     try {
       await deleteServer(serverId);
       toast({ title: "Server Deleted" });
-      setSelectedServer(null);
+      handleSelectServer(null);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error Deleting Server', description: e.message });
     }
@@ -318,8 +321,17 @@ export default function Home() {
           </div>
           
           <main className="flex-1 flex flex-col bg-background/50 min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
-              {server && selectedChannel ? (
-              <ChannelChat channel={selectedChannel} server={server} />
+              {server && selectedChannel && authUser ? (
+              <ChannelChat 
+                channel={selectedChannel} 
+                server={server} 
+                currentUser={authUser}
+                members={members}
+                messages={channelMessages}
+                onSendMessage={sendChannelMessage}
+                onEditMessage={editChannelMessage}
+                onDeleteMessage={deleteChannelMessage}
+              />
               ) : server ? (
               <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
                   <div className="text-center">
