@@ -222,7 +222,7 @@ export default function Home() {
                 onSelectServer={handleSelectServer}
             />
           
-          <div className="flex flex-1 min-w-0">
+          <div className="flex-1 flex min-w-0">
              <div className="w-64 flex-shrink-0 bg-secondary/30 flex flex-col">
                 <div className="flex-1 overflow-y-auto">
                  {server ? (
@@ -270,7 +270,7 @@ export default function Home() {
                 </SidebarFooter>
              </div>
 
-            <main className="flex-1 flex flex-col bg-background/50 min-w-0">
+            <main className="w-[1000px] flex flex-col bg-background/50">
               {server && selectedChannel ? (
                 <ChannelChat channel={selectedChannel} server={server} />
               ) : server ? (
