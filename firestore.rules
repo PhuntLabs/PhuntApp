@@ -2,64 +2,74 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Users can only be created if the user is creating their own user document.
-    // They can only update their own document.
-    // Anyone can read user profiles.
+    
+    // User Profiles:
+    // read: Any logged-in user can read any profile.
+    // create: A logged-in user can create a user document. This is for signup.
+    // update: A user can only update their own profile.
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow create: if request.resource.data.uid == request.auth.uid;
-      allow update: if request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update, delete: if request.auth.uid == userId;
     }
-
-    // Chats can be read by their members.
-    // Chats can only be created if the creator is one of the members.
-    // Chats can only be deleted by their members.
+    
+    // Direct Messages (Chats):
+    // read, delete: User must be a member of the chat.
+    // create: Logged-in users can create new chats.
+    // update: Only for last message timestamp, must be a member.
     match /chats/{chatId} {
-        allow read, delete: if request.auth.uid in resource.data.members;
-        allow create: if request.auth.uid in request.resource.data.members;
-
-        // Messages can be created by members of the chat.
-        // Messages can only be edited/deleted by the sender.
-        match /messages/{messageId} {
-            allow read, create: if request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
-            allow update, delete: if request.auth.uid == resource.data.sender;
-        }
-    }
-    
-    // Friend requests can be created by any authenticated user.
-    // They can only be updated or read by the recipient.
-    match /friendRequests/{requestId} {
-      allow create: if request.auth.uid == request.resource.data.from.id;
-      allow read, update: if request.auth.uid == resource.data.to;
-    }
-    
-    // Servers can be read by any authenticated user.
-    // Servers can be created by any authenticated user.
-    // Servers can only be deleted by the owner.
-    // Server updates are allowed for the owner, or if a user is adding themselves to the members list.
-    match /servers/{serverId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth.uid == request.resource.data.ownerId;
-      allow update: if request.auth.uid == resource.data.ownerId || 
-                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
-                        request.resource.data.members.size() == resource.data.members.size() + 1 &&
-                        request.auth.uid in request.resource.data.members);
-      allow delete: if request.auth.uid == resource.data.ownerId;
-
-      // Channels can be read by any authenticated user.
-      // Channels can be created, updated, or deleted by the server owner.
-      match /channels/{channelId} {
-        allow list, read: if request.auth != null;
-        allow create, update, delete: if request.auth.uid == get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId;
-
-        // Channel messages can be created by server members.
-        // They can be updated or deleted only by the sender.
-        match /messages/{messageId} {
-          allow create: if request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
-          allow update, delete: if request.auth.uid == resource.data.sender;
-        }
+      allow read, delete: if request.auth.uid in resource.data.members;
+      allow create: if request.auth != null;
+      allow update: if request.auth.uid in resource.data.members;
+      
+      // Messages within a chat:
+      // read, create: User must be a member of the parent chat.
+      // update, delete: Only the message sender can modify it.
+      match /messages/{messageId} {
+        allow read: if get(/databases/$(database)/documents/chats/$(chatId)).data.members.hasAny([request.auth.uid]);
+        allow create: if request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
+        allow update, delete: if request.auth.uid == resource.data.sender;
       }
+    }
+    
+    // Servers:
+    // read: Any authenticated user can read server info.
+    // update: A user can join a server (add themselves to members) or the owner can update.
+    match /servers/{serverId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth.uid == request.resource.data.ownerId;
+        allow update: if request.auth.uid == resource.data.ownerId 
+                      || (request.resource.data.diff(resource.data).affectedKeys()
+                          .hasOnly(['members']) 
+                          && request.resource.data.members.size() == resource.data.members.size() + 1
+                          && request.auth.uid in request.resource.data.members);
+
+        // Channels within a server:
+        // read: Any logged-in user can see channels.
+        // create, update, delete: Only the server owner can manage channels.
+        match /channels/{channelId} {
+            allow read, list: if request.auth != null;
+            allow create, update, delete: if get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId == request.auth.uid;
+            
+            // Messages within a channel:
+            // create: User must be a member of the parent server.
+            // update, delete: Only the message sender can modify it.
+            match /messages/{messageId} {
+                allow read: if request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+                allow create: if request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+                allow update, delete: if request.auth.uid == resource.data.sender;
+            }
+        }
+    }
+
+    // Friend Requests:
+    // read: Only the recipient can read it.
+    // create: An authenticated user can create one.
+    // update: The recipient can update the status (accept/decline).
+    match /friendRequests/{requestId} {
+        allow read: if request.auth.uid == resource.data.to;
+        allow create: if request.auth.uid == request.resource.data.from.id;
+        allow update: if request.auth.uid == resource.data.to;
     }
   }
 }
