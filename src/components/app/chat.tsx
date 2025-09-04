@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,6 +12,7 @@ import { Send, Trash2, Pencil, Bot } from 'lucide-react';
 import { UserNav } from './user-nav';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
+import { format } from 'date-fns';
 
 interface ChatProps {
   chat: PopulatedChat;
@@ -26,6 +27,16 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   const [newMessage, setNewMessage] = useState('');
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTo({
+        top: scrollAreaRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [messages]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,73 +88,72 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
         </UserNav>
       </div>
       <div className="flex flex-1 flex-col h-full bg-muted/20">
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-1">
+        <ScrollArea className="flex-1" ref={scrollAreaRef as any}>
+          <div className="p-4 space-y-4">
             {messages.map((message, index) => {
               const sender = chat.members.find(m => m.id === message.sender) as UserProfile;
               const isCurrentUser = message.sender === currentUser?.uid;
               const isEditing = editingMessageId === message.id;
 
               const prevMessage = messages[index - 1];
-              const showAvatar = !prevMessage || prevMessage.sender !== message.sender;
+              const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender;
 
               return (
                 <div
                   key={message.id}
                   className={cn(
-                    "group relative flex items-start gap-3 hover:bg-foreground/5 p-2 rounded-md",
-                    showAvatar ? "mt-4" : "mt-0.5",
-                    isEditing ? "bg-foreground/10" : ""
+                    "group relative flex items-start gap-3 hover:bg-foreground/5 py-0.5 px-2 rounded-md",
+                    isFirstInGroup ? "mt-3" : "mt-0"
                   )}
                 >
-                  {showAvatar ? (
-                     <UserNav user={sender} as="trigger">
-                      <Avatar className="size-10 cursor-pointer mt-1">
-                         <AvatarImage src={sender?.photoURL || undefined} />
-                        <AvatarFallback>{sender?.displayName?.[0]}</AvatarFallback>
-                      </Avatar>
-                    </UserNav>
-                  ) : (
-                    <div className="w-10 flex-shrink-0" />
-                  )}
-                  
-                  <div className="flex-1">
-                    {showAvatar && (
-                       <div className="flex items-baseline gap-2">
-                          <UserNav user={sender} as="trigger">
-                             <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
-                          </UserNav>
-                         <span className="text-xs text-muted-foreground">
-                           {new Date((message.timestamp as any)?.toDate()).toLocaleTimeString()}
-                         </span>
-                      </div>
+                  <div className="flex-1 flex gap-3 items-start">
+                    {isFirstInGroup ? (
+                      <UserNav user={sender} as="trigger">
+                        <Avatar className="size-10 cursor-pointer mt-1">
+                          <AvatarImage src={sender?.photoURL || undefined} />
+                          <AvatarFallback>{sender?.displayName?.[0]}</AvatarFallback>
+                        </Avatar>
+                      </UserNav>
+                    ) : (
+                      <div className="w-10 flex-shrink-0" />
                     )}
 
-                    {isEditing ? (
-                      <div className="flex-1 py-1">
-                        <Input 
-                          value={editingText}
-                          onChange={(e) => setEditingText(e.target.value)}
-                          className="text-sm p-2 h-auto"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSaveEdit(message.id);
-                            }
-                            if (e.key === 'Escape') handleCancelEdit();
-                          }}
-                        />
-                         <div className="text-xs text-muted-foreground mt-1">
-                          escape to cancel, enter to save
-                          <Button variant="link" size="sm" className="p-0 h-auto ml-2" onClick={() => handleSaveEdit(message.id)}>Save</Button>
-                          <Button variant="link" size="sm" className="p-0 h-auto ml-2" onClick={handleCancelEdit}>Cancel</Button>
+                    <div className="flex-1 pt-1">
+                      {isFirstInGroup && (
+                        <div className="flex items-baseline gap-2">
+                           <UserNav user={sender} as="trigger">
+                              <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
+                           </UserNav>
+                          <span className="text-xs text-muted-foreground">
+                            {message.timestamp ? format((message.timestamp as any).toDate(), 'PPpp') : 'sending...'}
+                          </span>
                         </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-foreground/90">{message.text}
-                        {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
-                      </p>
-                    )}
+                      )}
+
+                      {isEditing ? (
+                        <div className="flex-1 py-1">
+                          <Input 
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            className="text-sm p-2 h-auto"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleSaveEdit(message.id);
+                              }
+                              if (e.key === 'Escape') handleCancelEdit();
+                            }}
+                          />
+                           <div className="text-xs text-muted-foreground mt-1">
+                            escape to cancel, enter to save
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-foreground/90">{message.text}
+                          {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   {isCurrentUser && !isEditing && (

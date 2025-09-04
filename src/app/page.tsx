@@ -14,16 +14,18 @@ import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, deleteDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
 import { BOT_ID, BOT_USERNAME } from '@/ai/bots/config';
+import { Mic, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function Home() {
   const { user, authUser, loading, logout } = useAuth();
   const router = useRouter();
-  const { chats, loading: chatsLoading, addChat } = useChats();
+  const { chats, loading: chatsLoading, addChat, removeChat } = useChats();
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
   const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests();
@@ -84,13 +86,14 @@ export default function Home() {
 
   const handleCreateChatWithBot = async () => {
     if (!user) return;
+
     try {
         await handleSendFriendRequest(BOT_USERNAME);
+        toast({ title: "Friend Request Sent", description: `A request was sent to ${BOT_USERNAME}. It will accept automatically.`});
+
     } catch (e: any) {
-        if (e.message.includes('already sent a request')) {
-             // If request is already sent, maybe we just need to accept it.
-            // Or maybe the chat already exists.
-            toast({ title: "Already friends", description: "You already have a chat with echo-bot."})
+        if (e.message.includes('already friends')) {
+             toast({ title: "You are already friends!", description: `You can already chat with ${BOT_USERNAME}.`})
         } else {
             toast({ variant: 'destructive', title: 'Error', description: e.message });
         }
@@ -100,8 +103,10 @@ export default function Home() {
   const handleAcceptFriendRequest = async (requestId: string, fromUser: { id: string, displayName: string }) => {
      if (!authUser) return;
     try {
-        await acceptFriendRequest(requestId, fromUser);
-        toast({ title: 'Friend Added!', description: `You and ${fromUser.displayName} are now friends.` });
+        const batch = writeBatch(db);
+
+        // Update request status
+        batch.update(doc(db, 'friendRequests', requestId), { status: 'accepted' });
 
         // Check if chat already exists
         const q = query(collection(db, 'chats'), where('members', 'array-contains', authUser.uid));
@@ -110,13 +115,16 @@ export default function Home() {
 
         if (!existingChat) {
             // Create a new chat
-            const chatRef = await addDoc(collection(db, 'chats'), {
+            const newChatRef = doc(collection(db, 'chats'));
+            batch.set(newChatRef, {
                 members: [authUser.uid, fromUser.id],
                 createdAt: serverTimestamp(),
                 lastMessageTimestamp: serverTimestamp()
             });
-            // The useChats hook will automatically pick up the new chat
         }
+        
+        await batch.commit();
+        toast({ title: 'Friend Added!', description: `You and ${fromUser.displayName} are now friends.` });
 
     } catch(e: any) {
         toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -135,7 +143,7 @@ export default function Home() {
   const handleDeleteChat = async (chatId: string) => {
     try {
         await deleteDoc(doc(db, 'chats', chatId));
-        // The useChats hook will automatically remove the chat from the state
+        removeChat(chatId); // Optimistically update the UI
         if (selectedChat?.id === chatId) {
             setSelectedChat(null);
         }
@@ -180,7 +188,13 @@ export default function Home() {
           <Servers />
         </SidebarContent>
         <SidebarFooter>
-          <UserNav user={user} logout={logout}/>
+          <div className="flex items-center justify-between">
+              <UserNav user={user} logout={logout}/>
+              <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
+                  <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
+              </div>
+          </div>
         </SidebarFooter>
       </Sidebar>
       {selectedChat && user ? (
@@ -194,7 +208,10 @@ export default function Home() {
         />
       ) : (
         <div className="flex flex-1 items-center justify-center h-screen bg-muted/20">
-          <p>Select a chat to start messaging.</p>
+          <div className="text-center">
+            <h2 className="text-xl font-medium text-foreground">No Chat Selected</h2>
+            <p className="text-muted-foreground">Select a conversation from the sidebar or add a friend to start chatting.</p>
+          </div>
         </div>
       )}
     </SidebarProvider>

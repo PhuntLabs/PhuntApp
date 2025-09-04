@@ -35,7 +35,7 @@ async function populateChat(chatDoc: ChatDocument): Promise<PopulatedChat> {
             };
         }
         // Fallback for missing user profiles
-        return { id: memberId, uid: memberId, displayName: 'Unknown User', photoURL: null, isBot: false };
+        return { id: memberId, uid: memberId, displayName: 'Unknown User', photoURL: null, isBot: memberId === 'echo_bot' };
     });
 
     const members = await Promise.all(memberPromises as Promise<UserProfile>[]);

@@ -83,13 +83,14 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
   }
 
   const TriggerComponent = as === 'button' ? (
-     <button className="flex items-center gap-2 p-2 hover:bg-sidebar-accent rounded-md cursor-pointer transition-colors w-full text-left">
+     <button className="flex items-center gap-2 p-1 hover:bg-sidebar-accent rounded-md cursor-pointer transition-colors w-full text-left">
         <Avatar className="size-8">
             <AvatarImage src={user.photoURL || undefined} />
             <AvatarFallback>{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
         </Avatar>
-        <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+        <div className="flex flex-col -space-y-1 group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-semibold truncate">{user.displayName || user.email}</span>
+            <span className="text-xs text-muted-foreground">Online</span>
         </div>
     </button>
   ) : (
@@ -115,8 +116,8 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
       <PopoverContent className="w-80 mb-2 h-auto" side="top" align="start">
       <TooltipProvider>
         <div className="relative h-24 bg-accent rounded-t-lg -mx-4 -mt-4">
-            {bannerURL && (
-                <Image src={bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
+            {user.bannerURL && (
+                <Image src={user.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
             )}
              <div className="absolute top-16 left-4">
                 <Avatar className="size-20 border-4 border-popover rounded-full">
