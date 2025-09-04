@@ -92,7 +92,9 @@ export default function Home() {
                 lastMessageTimestamp: serverTimestamp()
             });
             const newChatDoc = await getDoc(newChatRef);
-            addChat({id: newChatDoc.id, ...newChatDoc.data()} as PopulatedChat);
+            const newChatData = {id: newChatDoc.id, ...newChatDoc.data()} as PopulatedChat
+            addChat(newChatData);
+            setSelectedChat(newChatData);
         }
 
     } catch(e: any) {
@@ -121,7 +123,7 @@ export default function Home() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <UserNav user={user} logout={logout}/>
+           {/* Maybe a search bar or something can go here */}
         </SidebarHeader>
         <SidebarContent>
            {incomingRequests.length > 0 && (
@@ -140,7 +142,7 @@ export default function Home() {
           <Servers />
         </SidebarContent>
         <SidebarFooter>
-          {/* Settings can go here */}
+          <UserNav user={user} logout={logout}/>
         </SidebarFooter>
       </Sidebar>
       {selectedChat && user ? (

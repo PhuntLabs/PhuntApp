@@ -51,6 +51,8 @@ const ensureBotUser = async () => {
     }, { merge: true });
 };
 
+// Immediately create the bot user when the server starts up.
+ensureBotUser();
 
 const autoAcceptFriendRequest = async (userId: string) => {
     const q = query(
@@ -100,9 +102,6 @@ const echoBotFlow = ai.defineFlow(
     if (message.sender === BOT_ID) {
       return;
     }
-
-    // Ensure the bot user exists
-    await ensureBotUser();
     
     // Auto-accept any pending friend requests from the sender
     await autoAcceptFriendRequest(message.sender);

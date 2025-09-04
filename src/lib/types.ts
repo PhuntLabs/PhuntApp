@@ -4,6 +4,7 @@ export interface UserProfile {
   id: string;
   displayName: string;
   photoURL: string | null;
+  isBot?: boolean;
 }
 
 export interface ChatDocument {

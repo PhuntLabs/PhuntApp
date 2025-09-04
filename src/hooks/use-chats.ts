@@ -22,10 +22,11 @@ async function populateChat(chatDoc: ChatDocument): Promise<PopulatedChat> {
                 id: userDoc.id,
                 displayName: userData.displayName || 'Unnamed User',
                 photoURL: userData.photoURL || null,
+                isBot: userData.isBot || false,
             };
         }
         // Fallback for missing user profiles
-        return { id: memberId, displayName: 'Unknown User', photoURL: null };
+        return { id: memberId, displayName: 'Unknown User', photoURL: null, isBot: false };
     });
 
     const members = await Promise.all(memberPromises);
@@ -42,8 +43,20 @@ export function useChats() {
   const [chats, setChats] = useState<PopulatedChat[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const addChat = useCallback((newChat: PopulatedChat) => {
-    setChats((prevChats) => [newChat, ...prevChats]);
+  const addChat = useCallback(async (newChat: ChatDocument) => {
+    const populated = await populateChat(newChat);
+    setChats((prevChats) => {
+        // Avoid adding duplicates
+        if (prevChats.some(chat => chat.id === populated.id)) {
+            return prevChats;
+        }
+        const sortedChats = [populated, ...prevChats].sort((a, b) => {
+            const timeA = (a as any).lastMessageTimestamp?.toMillis() || (a as any).createdAt?.toMillis() || 0;
+            const timeB = (b as any).lastMessageTimestamp?.toMillis() || (b as any).createdAt?.toMillis() || 0;
+            return timeB - timeA;
+        });
+        return sortedChats;
+    });
   }, []);
 
   useEffect(() => {
