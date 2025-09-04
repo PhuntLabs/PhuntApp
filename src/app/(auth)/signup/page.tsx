@@ -24,7 +24,9 @@ export default function SignupPage() {
     e.preventDefault();
     try {
       const userCredential = await signup(email, password, username);
-      await createWelcomeChat({ userId: userCredential.user.uid, username });
+      if (userCredential.user.displayName) {
+        await createWelcomeChat({ userId: userCredential.user.uid, username: userCredential.user.displayName });
+      }
       router.push('/');
     } catch (error: any) {
       toast({

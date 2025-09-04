@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users can read public profiles, but only write to their own document.
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId;
+    }
+
+    // Users can only read/write chats they are a member of.
+    match /chats/{chatId} {
+      allow read, create: if request.auth.uid in resource.data.members;
+      allow update: if request.auth.uid in resource.data.members;
+
+      // Messages can be read by chat members, and only created/deleted/edited by the sender.
+      match /messages/{messageId} {
+        allow read, create: if request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
+        allow update, delete: if request.auth.uid == resource.data.sender;
+      }
+    }
+
+    // Friend requests can be created by the sender, and updated by the receiver.
+    // Both can read the request.
+    match /friendRequests/{requestId} {
+      allow read: if request.auth.uid == resource.data.from.id || request.auth.uid == resource.data.to;
+      allow create: if request.auth.uid == request.resource.data.from.id;
+      allow update: if request.auth.uid == resource.data.to;
+    }
+  }
+}

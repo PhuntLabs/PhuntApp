@@ -6,6 +6,8 @@ import {
   useEffect,
   useState,
   ReactNode,
+  Dispatch,
+  SetStateAction,
 } from 'react';
 import {
   onAuthStateChanged,
@@ -22,6 +24,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
+  setUser: Dispatch<SetStateAction<User | null>>;
   loading: boolean;
   signup: (email: string, pass: string, username: string) => Promise<UserCredential>;
   login: (email: string, pass: string) => Promise<any>;
@@ -49,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     await updateProfile(user, {
       displayName: username,
+      photoURL: `https://i.pravatar.cc/150?u=${user.uid}`
     });
     
     await setDoc(doc(db, 'users', user.uid), {
@@ -78,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = {
     user,
+    setUser,
     loading,
     signup,
     login,
