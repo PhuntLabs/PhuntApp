@@ -4,6 +4,8 @@ export interface UserProfile {
   id: string;
   displayName: string;
   photoURL: string | null;
+  bannerURL?: string | null;
+  bio?: string;
   isBot?: boolean;
 }
 

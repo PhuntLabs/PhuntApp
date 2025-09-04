@@ -19,7 +19,7 @@ import {
   UserCredential,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 
 
 interface AuthContextType {
@@ -39,8 +39,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
+      if (user) {
+        // Attach firestore data to user object
+        const userDocRef = doc(db, 'users', user.uid);
+        getDoc(userDocRef).then(userDoc => {
+            if(userDoc.exists()) {
+                const userData = userDoc.data();
+                const combinedUser = {...user, ...userData};
+                setUser(combinedUser);
+            } else {
+                setUser(user);
+            }
+             setLoading(false);
+        });
+      } else {
+        setUser(user);
+        setLoading(false);
+      }
     });
 
     return () => unsubscribe();
@@ -49,10 +64,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (email: string, pass: string, username: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     const { user } = userCredential;
+    
+    const photoURL = `https://i.pravatar.cc/150?u=${user.uid}`
 
     await updateProfile(user, {
       displayName: username,
-      photoURL: `https://i.pravatar.cc/150?u=${user.uid}`
+      photoURL,
     });
     
     await setDoc(doc(db, 'users', user.uid), {
@@ -60,14 +77,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       displayName: username,
       email: user.email,
       createdAt: serverTimestamp(),
-      photoURL: user.photoURL
+      photoURL: photoURL
     });
 
 
     // Manually reload the user object to get the updated profile
     await user.reload();
     // We need to update the state to reflect the new displayName
-    setUser({ ...user });
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    const userData = userDoc.data();
+    const combinedUser = {...user, ...userData};
+    setUser(combinedUser);
+
 
     return userCredential;
   };

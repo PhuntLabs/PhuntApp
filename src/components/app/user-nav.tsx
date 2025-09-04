@@ -2,6 +2,7 @@
 
 import { User } from 'firebase/auth';
 import { LogOut, Settings, Save } from 'lucide-react';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -14,14 +15,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '../ui/textarea';
 
 
 interface UserNavProps {
@@ -33,7 +35,19 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
   const { user, setUser } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
+  const [bannerURL, setBannerURL] = useState((user as any)?.bannerURL || '');
+  const [bio, setBio] = useState((user as any)?.bio || '');
+
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+        setDisplayName(user.displayName || '');
+        setPhotoURL(user.photoURL || '');
+        setBannerURL((user as any).bannerURL || '');
+        setBio((user as any).bio || '');
+    }
+  }, [user]);
   
   if (!user) return null;
 
@@ -45,10 +59,13 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
         
         // Update Firestore user document
         const userRef = doc(db, 'users', user.uid);
-        await updateDoc(userRef, { displayName, photoURL });
+        
+        // Use setDoc with merge to create doc if it doesn't exist
+        await setDoc(userRef, { displayName, photoURL, bannerURL, bio }, { merge: true });
 
         // Update local auth state
-        setUser({...user, displayName, photoURL });
+        const updatedUser = { ...user, displayName, photoURL, bannerURL, bio };
+        setUser(updatedUser);
 
         toast({
             title: 'Profile Updated',
@@ -78,7 +95,9 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md p-0">
         <div className="relative h-24 bg-primary/10">
-            {/* Placeholder for banner image */}
+            {bannerURL && (
+                <Image src={bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} />
+            )}
         </div>
         <div className="p-6">
             <Avatar className="size-20 absolute top-12 left-6 border-4 border-card">
@@ -86,8 +105,10 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
               <AvatarFallback className="text-2xl">{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="pt-10">
-                <DialogTitle className="text-2xl">{user.displayName}</DialogTitle>
+                <DialogTitle className="text-2xl">{displayName}</DialogTitle>
                 <p className="text-sm text-muted-foreground">{user.email}</p>
+                <p className="text-sm text-muted-foreground mt-2">{bio}</p>
+
             </div>
             <Separator className="my-4" />
             <div className="space-y-4">
@@ -98,6 +119,14 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                 <div className="space-y-2">
                     <Label htmlFor="photoURL">Profile Picture URL</Label>
                     <Input id="photoURL" value={photoURL} onChange={(e) => setPhotoURL(e.target.value)} placeholder="https://example.com/image.png"/>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="bannerURL">Banner URL</Label>
+                    <Input id="bannerURL" value={bannerURL} onChange={(e) => setBannerURL(e.target.value)} placeholder="https://example.com/banner.png"/>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us about yourself..."/>
                 </div>
             </div>
              <DialogFooter className="mt-6 gap-2">
