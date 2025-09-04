@@ -45,7 +45,9 @@ export function useFriendRequests() {
   }, [user]);
 
   const sendFriendRequest = useCallback(async (toUsername: string, fromUser: { id: string, displayName: string }) => {
-    if (!authUser) throw new Error("Authentication details are not loaded yet. Please try again in a moment.");
+    if (!authUser || !fromUser.id || !fromUser.displayName) {
+        throw new Error("Authentication details are not loaded yet. Please try again in a moment.");
+    }
     if (fromUser.displayName.toLowerCase() === toUsername.toLowerCase()) throw new Error("You cannot send a friend request to yourself.");
 
     // 1. Find user with the given username
