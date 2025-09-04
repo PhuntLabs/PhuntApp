@@ -19,6 +19,7 @@ import {
 import { useAuth } from './use-auth';
 import type { FriendRequest } from '@/lib/types';
 import { BOT_ID } from '@/ai/bots/config';
+import { processBotFriendRequest } from '@/ai/flows/echo-bot-flow';
 
 export function useFriendRequests() {
   const { user } = useAuth();
@@ -79,12 +80,22 @@ export function useFriendRequests() {
 
 
     // 3. Create the friend request
-    await addDoc(collection(db, 'friendRequests'), {
+    const newRequestRef = await addDoc(collection(db, 'friendRequests'), {
       from: fromUser,
       to: toUserId,
       status: 'pending',
       createdAt: serverTimestamp(),
     });
+
+    // 4. If the request is to the bot, trigger the auto-accept flow
+    if (toUserId === BOT_ID) {
+      // Don't await, let it run in the background
+      processBotFriendRequest({
+        requestId: newRequestRef.id,
+        fromId: fromUser.id,
+        toId: toUserId,
+      });
+    }
     
     return `Friend request sent to ${toUsername}!`;
 

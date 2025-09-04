@@ -77,7 +77,7 @@ const autoAcceptFriendRequest = async (userId: string) => {
         // Update request status
         batch.update(requestDoc.ref, { status: 'accepted' });
 
-        // Create a new chat if it doesn't exist
+        // Check if a chat already exists between the user and the bot
         const chatQuery = query(
             collection(db, 'chats'),
             where('members', 'array-contains', userId)
@@ -85,6 +85,7 @@ const autoAcceptFriendRequest = async (userId: string) => {
         const chatSnapshot = await getDocs(chatQuery);
         const existingChat = chatSnapshot.docs.find(d => d.data().members.includes(BOT_ID));
         
+        // If no chat exists, create a new one
         if (!existingChat) {
              const newChatRef = doc(collection(db, 'chats'));
              batch.set(newChatRef, {
@@ -92,10 +93,12 @@ const autoAcceptFriendRequest = async (userId: string) => {
                 createdAt: serverTimestamp(),
                 lastMessageTimestamp: serverTimestamp()
              });
+             console.log(`Auto-accepted friend request from ${userId} and created chat.`);
+        } else {
+            console.log(`Auto-accepted friend request from ${userId}. Chat already exists.`);
         }
         
         await batch.commit();
-        console.log(`Auto-accepted friend request from ${userId} and created chat.`);
     }
 };
 
@@ -111,7 +114,8 @@ const echoBotFlow = ai.defineFlow(
       return;
     }
     
-    // Auto-accept any pending friend requests from the sender
+    // Auto-accept any pending friend requests from the sender.
+    // This is a fallback in case the initial auto-accept on request creation fails.
     await autoAcceptFriendRequest(message.sender);
     
     const chatRef = doc(db, 'chats', chatId);
@@ -129,4 +133,26 @@ const echoBotFlow = ai.defineFlow(
       lastMessageTimestamp: serverTimestamp(),
     });
   }
+);
+
+
+const FriendRequestInputSchema = z.object({
+    requestId: z.string(),
+    fromId: z.string(),
+    toId: z.string(),
+});
+
+/**
+ * A flow that is triggered when a friend request is sent to the bot.
+ * It automatically accepts the request and creates a chat.
+ */
+export const processBotFriendRequest = ai.defineFlow(
+    {
+        name: 'processBotFriendRequest',
+        inputSchema: FriendRequestInputSchema,
+        outputSchema: z.void()
+    },
+    async ({ fromId }) => {
+        await autoAcceptFriendRequest(fromId);
+    }
 );
