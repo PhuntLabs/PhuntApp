@@ -72,16 +72,17 @@ export default function Home() {
 
   useEffect(() => {
     if (serversLoading) return;
-  
-    const lastSelectedWasDM = !selectedServer;
     
     // If a server is deleted, fall back to DMs
-    if (!lastSelectedWasDM && selectedServer && !servers.find(s => s.id === selectedServer.id)) {
+    if (selectedServer && !servers.find(s => s.id === selectedServer.id)) {
         setSelectedServer(null); 
-    } 
-    // If nothing is selected at all (e.g. first load), select the first server if it exists
-    else if (!selectedServer && servers.length > 0 && !selectedChat) {
-        setSelectedServer(servers[0]); 
+        setSelectedChannel(null);
+        return;
+    }
+    
+    // Auto-select the first server only on initial load if nothing else is selected
+    if (!selectedServer && !selectedChat && servers.length > 0) {
+      setSelectedServer(servers[0]);
     }
   }, [servers, serversLoading, selectedServer, selectedChat]);
 
@@ -176,8 +177,8 @@ export default function Home() {
   const handleSelectServer = (server: Server | null) => {
     setSelectedServer(server);
     setSelectedChat(null);
-    if (server) {
-      const generalChannel = server.channels?.find(c => c.name === '!general');
+    if (server && server.channels) {
+      const generalChannel = server.channels.find(c => c.name === '!general');
       setSelectedChannel(generalChannel || server.channels?.[0] || null);
     } else {
       setSelectedChannel(null);
@@ -273,7 +274,7 @@ export default function Home() {
         <div className="flex flex-1 min-w-0">
              <main 
                 className="flex flex-col bg-background/50 min-w-0" 
-                style={{ width: 'calc(100vw - 20rem - 15rem)'}}
+                style={{ width: 'calc(100vw - 5rem - 16rem - 15rem)'}}
              >
                 {server && selectedChannel ? (
                 <ChannelChat channel={selectedChannel} server={server} />
