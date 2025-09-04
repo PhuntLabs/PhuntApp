@@ -44,7 +44,7 @@ export function Servers({ servers, loading, onCreateServer }: ServersProps) {
                     <SidebarMenuButton tooltip={server.name}>
                         <Avatar className="size-8 rounded-md relative">
                           <AvatarImage src={server.photoURL || undefined} />
-                          <AvatarFallback className="rounded-md bg-secondary text-secondary-foreground">
+                          <AvatarFallback className="rounded-md bg-secondary text-secondary-foreground font-bold">
                             {server.name.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
