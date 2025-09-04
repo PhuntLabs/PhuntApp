@@ -45,7 +45,7 @@ export function useFriendRequests() {
   }, [user]);
 
   const sendFriendRequest = useCallback(async (toUsername: string, fromUser: { id: string, displayName: string }) => {
-    if (!user) throw new Error("You must be logged in to send a friend request.");
+    if (!authUser) throw new Error("Authentication details are not loaded yet. Please try again in a moment.");
     if (fromUser.displayName.toLowerCase() === toUsername.toLowerCase()) throw new Error("You cannot send a friend request to yourself.");
 
     // 1. Find user with the given username
@@ -59,6 +59,9 @@ export function useFriendRequests() {
     
     const toUserDoc = querySnapshot.docs[0];
     const toUserId = toUserDoc.id;
+
+    if (fromUser.id === toUserId) throw new Error("You cannot send a friend request to yourself.");
+
 
     // 2. Check if they are already friends (i.e., a chat exists)
     const sortedMembers = [fromUser.id, toUserId].sort();
@@ -105,7 +108,7 @@ export function useFriendRequests() {
     
     return `Friend request sent to ${toUsername}!`;
 
-  }, [user]);
+  }, [authUser]);
 
   const acceptFriendRequest = useCallback(async (requestId: string, fromUser: { id: string, displayName: string }) => {
     if (!authUser) throw new Error("You must be logged in.");

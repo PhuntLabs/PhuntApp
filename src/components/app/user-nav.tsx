@@ -1,7 +1,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code, Bot, Settings, Pencil } from 'lucide-react';
+import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -21,6 +21,7 @@ import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import type { UserProfile } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useFriendRequests } from '@/hooks/use-friend-requests';
 
 interface UserNavProps {
     user: UserProfile; 
@@ -30,7 +31,8 @@ interface UserNavProps {
 }
 
 export function UserNav({ user, logout, as = 'button', children }: UserNavProps) {
-  const { authUser, updateUserProfile } = useAuth();
+  const { authUser, user: currentUser, updateUserProfile } = useAuth();
+  const { sendFriendRequest } = useFriendRequests();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
   const [bannerURL, setBannerURL] = useState(user?.bannerURL || '');
@@ -70,6 +72,19 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
         });
     }
   }
+  
+  const handleAddFriend = async () => {
+    if (!currentUser || !user.displayName) return;
+    try {
+      const result = await sendFriendRequest(user.displayName, {
+        id: currentUser.uid,
+        displayName: currentUser.displayName || 'Anonymous'
+      });
+      toast({ title: 'Success', description: result });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error', description: e.message });
+    }
+  };
 
   const handleCancel = () => {
     // Reset fields to current user state
@@ -157,13 +172,17 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
         <div className="pt-14">
            {!isEditing ? (
              <>
-                {isCurrentUser && (
-                    <div className="absolute top-4 right-4 flex justify-end gap-1">
+                <div className="absolute top-4 right-4 flex justify-end gap-1">
+                    {isCurrentUser ? (
                         <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                             <Pencil className="mr-2 h-3.5 w-3.5"/> Edit Profile
                         </Button>
-                    </div>
-                )}
+                    ) : (
+                         <Button variant="outline" size="sm" onClick={handleAddFriend}>
+                            <UserPlus className="mr-2 h-3.5 w-3.5"/> Add Friend
+                        </Button>
+                    )}
+                </div>
                 <h3 className="text-xl font-bold">{displayName}</h3>
                 <p className={cn("text-sm text-muted-foreground -mt-1", !user.email && 'italic')}>{user.email || 'No email provided'}</p>
                 <Separator className="my-2" />
