@@ -48,7 +48,9 @@ export function useFriendRequests() {
     if (!authUser || !fromUser.id || !fromUser.displayName) {
         throw new Error("Authentication details are not loaded yet. Please try again in a moment.");
     }
-    if (fromUser.displayName.toLowerCase() === toUsername.toLowerCase()) throw new Error("You cannot send a friend request to yourself.");
+    if (fromUser.displayName.toLowerCase() === toUsername.toLowerCase()) {
+        throw new Error("You cannot send a friend request to yourself.");
+    }
 
     // 1. Find user with the given username
     const usersRef = collection(db, 'users');
@@ -62,43 +64,21 @@ export function useFriendRequests() {
     const toUserDoc = querySnapshot.docs[0];
     const toUserId = toUserDoc.id;
 
-    if (fromUser.id === toUserId) throw new Error("You cannot send a friend request to yourself.");
-
-
-    // 2. Check if they are already friends (i.e., a chat exists)
-    const sortedMembers = [fromUser.id, toUserId].sort();
-    const chatQuery = query(
-        collection(db, 'chats'),
-        where('members', '==', sortedMembers)
-    );
-    const chatSnapshot = await getDocs(chatQuery);
-    if (!chatSnapshot.empty) {
-        throw new Error(`You are already friends with ${toUsername}.`);
+    if (fromUser.id === toUserId) {
+        throw new Error("You cannot send a friend request to yourself.");
     }
 
-    // 3. Check for an existing pending request (either way)
-    const requestQuery = query(
-        collection(db, 'friendRequests'),
-        where('members', '==', sortedMembers),
-        where('status', '==', 'pending')
-    );
-    const requestSnapshot = await getDocs(requestQuery);
-    if (!requestSnapshot.empty) {
-        throw new Error(`A friend request between you and ${toUsername} is already pending.`);
-    }
-
-
-    // 4. Create the friend request
+    // 2. Create the friend request. The security rules will handle prevention of duplicates.
     const newRequestRef = await addDoc(collection(db, 'friendRequests'), {
       from: fromUser,
       to: toUserId,
       status: 'pending',
       createdAt: serverTimestamp(),
       // Add a compound members field for easier querying of existing requests
-      members: sortedMembers
+      members: [fromUser.id, toUserId].sort()
     });
 
-    // 5. If the request is to the bot, trigger the auto-accept flow
+    // 3. If the request is to the bot, trigger the auto-accept flow
     if (toUserId === BOT_ID) {
       // Don't await, let it run in the background
       processBotFriendRequest({
@@ -121,32 +101,16 @@ export function useFriendRequests() {
     const requestRef = doc(db, 'friendRequests', requestId);
     batch.update(requestRef, { status: 'accepted' });
 
-    // 2. Check if a chat already exists
+    // 2. Create a new chat. Security rules should prevent creation if one exists.
     const sortedMembers = [authUser.uid, fromUser.id].sort();
-    const chatQuery = query(
-        collection(db, 'chats'),
-        where('members', '==', sortedMembers)
-    );
+    const newChatRef = doc(collection(db, 'chats'));
+    batch.set(newChatRef, {
+        members: sortedMembers,
+        createdAt: serverTimestamp(),
+        lastMessageTimestamp: serverTimestamp()
+    });
     
-    let chatSnapshot;
-    try {
-        chatSnapshot = await getDocs(chatQuery);
-    } catch (e: any) {
-        console.error("Error checking for existing chat:", e);
-        throw new Error(`Permission denied when checking for existing chat. Original error: ${e.message}`);
-    }
-
-    // 3. If no chat exists, create a new one
-    if (chatSnapshot.empty) {
-        const newChatRef = doc(collection(db, 'chats'));
-        batch.set(newChatRef, {
-            members: sortedMembers,
-            createdAt: serverTimestamp(),
-            lastMessageTimestamp: serverTimestamp()
-        });
-    }
-    
-    // 4. Commit all database changes
+    // 3. Commit all database changes
     try {
         await batch.commit();
     } catch(e: any) {
