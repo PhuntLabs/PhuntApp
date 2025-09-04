@@ -15,12 +15,13 @@ import { useState, useEffect } from 'react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, updateDoc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface UserNavProps {
     user: User | null; // This should be the authUser
@@ -112,10 +113,26 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
             {bannerURL && (
                 <Image src={bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
             )}
-            <Avatar className="size-20 absolute top-10 left-4 border-4 border-popover">
-              <AvatarImage src={userProfile.photoURL || undefined} />
-              <AvatarFallback className="text-2xl">{userProfile.displayName?.[0].toUpperCase() || userProfile.email?.[0].toUpperCase()}</AvatarFallback>
-            </Avatar>
+            <div className="absolute top-10 left-4">
+                <Avatar className="size-20 border-4 border-popover">
+                  <AvatarImage src={userProfile.photoURL || undefined} />
+                  <AvatarFallback className="text-2xl">{userProfile.displayName?.[0].toUpperCase() || userProfile.email?.[0].toUpperCase()}</AvatarFallback>
+                </Avatar>
+                {userProfile.badges?.includes('developer') && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="absolute bottom-1 right-1 bg-popover rounded-full p-0.5">
+                                <Badge variant="secondary" className="flex items-center justify-center size-5 p-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                                    <Code className="size-3" />
+                                </Badge>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Developer</p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+            </div>
         </div>
         <div className="pt-12">
            {!isEditing ? (
@@ -123,15 +140,7 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                 <div className="flex justify-end">
                     <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>Edit Profile</Button>
                 </div>
-                <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold">{displayName}</h3>
-                    {userProfile.badges?.includes('developer') && (
-                        <Badge variant="secondary" className="flex items-center gap-1 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
-                            <Code className="size-3.5" />
-                            Developer
-                        </Badge>
-                    )}
-                </div>
+                <h3 className="text-xl font-bold">{displayName}</h3>
                 <p className="text-sm text-muted-foreground -mt-1">{userProfile.email}</p>
                 <Separator className="my-2" />
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{bio || 'No bio yet.'}</p>
@@ -144,7 +153,7 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                 </div>
              </>
            ) : (
-             <div className="space-y-2 h-auto max-h-[calc(100vh-30rem)] overflow-y-auto pr-2">
+             <div className="space-y-2 h-auto max-h-[calc(100vh-25rem)] overflow-y-auto pr-2">
                 <div className="space-y-1">
                     <Label htmlFor="displayName">Display Name</Label>
                     <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
@@ -159,7 +168,7 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                 </div>
                  <div className="space-y-1">
                     <Label htmlFor="bio">Bio</Label>
-                    <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us about yourself..." rows={3}/>
+                    <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us about yourself..." rows={4}/>
                 </div>
                  <div className="flex justify-end gap-2 mt-4">
                     <Button variant="ghost" onClick={handleCancel}>Cancel</Button>
