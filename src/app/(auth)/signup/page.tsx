@@ -9,8 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createWelcomeChat } from '@/ai/flows/welcome-chat-flow';
-
 
 export default function SignupPage() {
   const [username, setUsername] = useState('');
@@ -23,10 +21,7 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const userCredential = await signup(email, password, username);
-      if (userCredential.user.displayName) {
-        await createWelcomeChat({ userId: userCredential.user.uid, username: userCredential.user.displayName });
-      }
+      await signup(email, password, username);
       router.push('/');
     } catch (error: any) {
       toast({
