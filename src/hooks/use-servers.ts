@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   writeBatch,
   doc,
+  getDoc,
 } from 'firebase/firestore';
 import type { Server } from '@/lib/types';
 import { useAuth } from './use-auth';
@@ -52,22 +53,21 @@ export function useServers() {
     return () => unsubscribe();
   }, [authUser]);
 
-  const createServer = useCallback(async (name: string) => {
+  const createServer = useCallback(async (name: string): Promise<Server | null> => {
     if (!authUser) throw new Error("You must be logged in to create a server.");
 
-    // 1. Create the server document first to get a valid ID.
-    const serverRef = await addDoc(collection(db, 'servers'), {
+    // 1. Create the server document
+    const serverPayload = {
       name,
       ownerId: authUser.uid,
       members: [authUser.uid],
       createdAt: serverTimestamp(),
       photoURL: `https://picsum.photos/seed/${Math.random()}/200`
-    });
+    };
+    const serverRef = await addDoc(collection(db, 'servers'), serverPayload);
 
-    // 2. Now that we have the ID, create a batch for channels.
+    // 2. Create the default channels in a batch
     const batch = writeBatch(db);
-    
-    // Create the default channels
     const channelsRef = collection(db, 'servers', serverRef.id, 'channels');
     
     const generalChannelRef = doc(channelsRef);
@@ -84,10 +84,17 @@ export function useServers() {
       createdAt: serverTimestamp(),
     });
 
-    // 3. Commit the batch.
     await batch.commit();
+    
+    // 3. Return the newly created server document
+    const newServerDoc = await getDoc(serverRef);
+    if (newServerDoc.exists()) {
+        return { id: newServerDoc.id, ...newServerDoc.data() } as Server;
+    }
+
+    return null;
 
   }, [authUser]);
 
-  return { servers, loading, createServer };
+  return { servers, setServers, loading, createServer };
 }

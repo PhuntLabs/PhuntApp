@@ -11,9 +11,11 @@ interface ServersProps {
     servers: Server[];
     loading: boolean;
     onCreateServer: (name: string) => Promise<void>;
+    selectedServer: Server | null;
+    onSelectServer: (server: Server) => void;
 }
 
-export function Servers({ servers, loading, onCreateServer }: ServersProps) {
+export function Servers({ servers, loading, onCreateServer, selectedServer, onSelectServer }: ServersProps) {
     if (loading) {
         return (
             <SidebarGroup>
@@ -41,7 +43,11 @@ export function Servers({ servers, loading, onCreateServer }: ServersProps) {
             <SidebarMenu>
               {servers.map((server) => (
                 <SidebarMenuItem key={server.id}>
-                    <SidebarMenuButton tooltip={server.name}>
+                    <SidebarMenuButton 
+                        tooltip={server.name}
+                        isActive={selectedServer?.id === server.id}
+                        onClick={() => onSelectServer(server)}
+                    >
                         <Avatar className="size-8 rounded-md relative">
                           <AvatarImage src={server.photoURL || undefined} />
                           <AvatarFallback className="rounded-md bg-secondary text-secondary-foreground font-bold">

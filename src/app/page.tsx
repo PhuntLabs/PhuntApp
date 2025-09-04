@@ -9,7 +9,7 @@ import { UserNav } from '@/components/app/user-nav';
 import { Chat } from '@/components/app/chat';
 import { DirectMessages } from '@/components/app/direct-messages';
 import { Servers } from '@/components/app/servers';
-import type { PopulatedChat } from '@/lib/types';
+import type { PopulatedChat, Server } from '@/lib/types';
 import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useServers } from '@/hooks/use-servers';
@@ -30,7 +30,8 @@ export default function Home() {
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
   const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests();
-  const { servers, loading: serversLoading, createServer } = useServers();
+  const { servers, setServers, loading: serversLoading, createServer } = useServers();
+  const [selectedServer, setSelectedServer] = useState<Server | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -59,6 +60,16 @@ export default function Home() {
         setSelectedChat(null);
     }
   }, [chats, selectedChat, chatsLoading]);
+
+  // When servers load, select the first one by default
+  useEffect(() => {
+    if (!serversLoading && servers.length > 0 && !selectedServer) {
+        setSelectedServer(servers[0]);
+    }
+    if (selectedServer && !servers.find(s => s.id === selectedServer.id)) {
+        setSelectedServer(servers.length > 0 ? servers[0] : null);
+    }
+  }, [servers, serversLoading, selectedServer]);
 
 
   const handleSendMessage = async (text: string) => {
@@ -137,8 +148,12 @@ export default function Home() {
 
   const handleCreateServer = async (name: string) => {
     try {
-        await createServer(name);
-        toast({ title: "Server Created!", description: `The server "${name}" has been created.`});
+        const newServer = await createServer(name);
+        if (newServer) {
+            setServers(prev => [...prev, newServer]);
+            setSelectedServer(newServer);
+            toast({ title: "Server Created!", description: `The server "${name}" has been created.`});
+        }
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Error Creating Server', description: e.message });
     }
@@ -176,7 +191,13 @@ export default function Home() {
             onDeleteChat={handleDeleteChat}
             loading={chatsLoading}
           />
-          <Servers servers={servers} loading={serversLoading} onCreateServer={handleCreateServer} />
+          <Servers 
+            servers={servers}
+            loading={serversLoading} 
+            onCreateServer={handleCreateServer} 
+            selectedServer={selectedServer}
+            onSelectServer={setSelectedServer}
+          />
         </SidebarContent>
         <SidebarFooter>
           <div className="flex items-center justify-between">
@@ -200,8 +221,8 @@ export default function Home() {
       ) : (
         <div className="flex flex-1 items-center justify-center h-screen bg-muted/20">
           <div className="text-center">
-            <h2 className="text-xl font-medium text-foreground">No Chat Selected</h2>
-            <p className="text-muted-foreground">Select a conversation from the sidebar or add a friend to start chatting.</p>
+            <h2 className="text-xl font-medium text-foreground">{selectedServer ? `Welcome to ${selectedServer.name}` : 'No Chat Selected'}</h2>
+            <p className="text-muted-foreground">{selectedServer ? 'Select a channel to start talking.' : 'Select a conversation from the sidebar or add a friend to start chatting.'}</p>
           </div>
         </div>
       )}
