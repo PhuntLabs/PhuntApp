@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import type { Server, UserProfile } from '@/lib/types';
 import { useAuth } from './use-auth';
 
@@ -23,19 +24,20 @@ export function useServer(serverId: string | undefined) {
     setLoading(true);
     const serverRef = doc(db, 'servers', serverId);
 
-    const unsubscribe = onSnapshot(serverRef, async (doc) => {
-      if (doc.exists()) {
-        const serverData = { id: doc.id, ...doc.data() } as Server;
+    const unsubscribe = onSnapshot(serverRef, async (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const serverData = { id: docSnapshot.id, ...docSnapshot.data() } as Server;
         setServer(serverData);
         
         // Fetch members
         if (serverData.members) {
             const memberPromises = serverData.members.map(async (memberId) => {
-                const userDoc = await getDocs(query(collection(db, 'users'), where('uid', '==', memberId)));
-                if (!userDoc.empty) {
-                     const userDocData = userDoc.docs[0].data();
+                const userRef = doc(db, 'users', memberId);
+                const userDoc = await getDoc(userRef);
+                if (userDoc.exists()) {
+                     const userDocData = userDoc.data();
                      return {
-                        id: userDoc.docs[0].id,
+                        id: userDoc.id,
                         ...userDocData
                      } as UserProfile
                 }

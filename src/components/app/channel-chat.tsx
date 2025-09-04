@@ -1,3 +1,4 @@
+
 'use client';
 import type { Channel, Server } from '@/lib/types';
 import { Hash } from 'lucide-react';
