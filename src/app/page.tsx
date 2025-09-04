@@ -9,15 +9,16 @@ import { UserNav } from '@/components/app/user-nav';
 import { Chat } from '@/components/app/chat';
 import { DirectMessages } from '@/components/app/direct-messages';
 import { Servers } from '@/components/app/servers';
-import type { PopulatedChat } from '@/lib/types';
+import type { PopulatedChat, ChatDocument } from '@/lib/types';
 import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, getDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, getDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
+import { BOT_ID } from '@/ai/bots/config';
 
 export default function Home() {
   const { user, authUser, loading, logout } = useAuth();
@@ -54,7 +55,7 @@ export default function Home() {
     const sentMessage = await sendMessage(text, authUser.uid);
 
     // If talking to echo-bot, trigger the flow
-    const echoBot = selectedChat.members.find(m => m.id === 'echo_bot');
+    const echoBot = selectedChat.members.find(m => m.id === BOT_ID);
     if (echoBot && sentMessage) {
         await processEcho({ chatId: selectedChat.id, message: { id: sentMessage.id, text, sender: authUser.uid }});
     }
@@ -92,9 +93,10 @@ export default function Home() {
                 lastMessageTimestamp: serverTimestamp()
             });
             const newChatDoc = await getDoc(newChatRef);
-            const newChatData = {id: newChatDoc.id, ...newChatDoc.data()} as PopulatedChat
-            addChat(newChatData);
-            setSelectedChat(newChatData);
+            if (newChatDoc.exists()){
+                const newChatData = {id: newChatDoc.id, ...newChatDoc.data()} as ChatDocument;
+                addChat(newChatData);
+            }
         }
 
     } catch(e: any) {
@@ -110,6 +112,42 @@ export default function Home() {
         toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
   }
+  
+  const handleCreateChatWithBot = async () => {
+    if (!authUser) return;
+    try {
+      // Check if chat already exists
+      const q = query(collection(db, 'chats'), where('members', 'array-contains', authUser.uid));
+      const querySnapshot = await getDocs(q);
+      const existingChat = querySnapshot.docs.find(doc => doc.data().members.includes(BOT_ID));
+      
+      if (existingChat) {
+        toast({ title: 'Chat Already Exists', description: "You're already chatting with echo-bot." });
+        const populated = chats.find(c => c.id === existingChat.id);
+        if (populated) setSelectedChat(populated);
+        return;
+      }
+
+      // Create a new chat
+      const newChatRef = await addDoc(collection(db, 'chats'), {
+        members: [authUser.uid, BOT_ID],
+        createdAt: serverTimestamp(),
+        lastMessageTimestamp: serverTimestamp()
+      });
+      const newChatDoc = await getDoc(newChatRef);
+
+      if (newChatDoc.exists()) {
+        const newChatData = {id: newChatDoc.id, ...newChatDoc.data()} as ChatDocument;
+        const populatedChat = await addChat(newChatData); // addChat now returns the populated chat
+        setSelectedChat(populatedChat);
+        toast({ title: 'Bot Added', description: 'Started a chat with echo-bot.' });
+      }
+
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error', description: e.message });
+    }
+  }
+
 
   if (loading || !authUser || !user || chatsLoading) {
     return (
@@ -138,6 +176,7 @@ export default function Home() {
             selectedChat={selectedChat}
             onSelectChat={setSelectedChat}
             onAddUser={handleSendFriendRequest}
+            onAddBot={handleCreateChatWithBot}
           />
           <Servers />
         </SidebarContent>

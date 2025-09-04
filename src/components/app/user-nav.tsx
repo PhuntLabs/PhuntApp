@@ -1,7 +1,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code } from 'lucide-react';
+import { LogOut, Save, Code, Bot } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -21,7 +21,7 @@ import { updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 interface UserNavProps {
     user: User | null; // This should be the authUser
@@ -108,33 +108,48 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
             </div>
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 mb-2" side="top" align="start">
+      <PopoverContent className="w-80 mb-2 h-auto" side="top" align="start">
+      <TooltipProvider>
         <div className="relative h-20 bg-accent rounded-t-lg -mx-4 -mt-4">
             {bannerURL && (
                 <Image src={bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
             )}
-            <div className="absolute top-10 left-4">
+             <div className="absolute top-[5.5rem] left-4">
                 <Avatar className="size-20 border-4 border-popover">
                   <AvatarImage src={userProfile.photoURL || undefined} />
                   <AvatarFallback className="text-2xl">{userProfile.displayName?.[0].toUpperCase() || userProfile.email?.[0].toUpperCase()}</AvatarFallback>
                 </Avatar>
-                {userProfile.badges?.includes('developer') && (
+                
+                <div className="absolute bottom-1 right-1 bg-popover rounded-full p-0.5 flex items-center gap-1">
+                 {userProfile.badges?.includes('developer') && (
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div className="absolute bottom-1 right-1 bg-popover rounded-full p-0.5">
-                                <Badge variant="secondary" className="flex items-center justify-center size-5 p-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
-                                    <Code className="size-3" />
-                                </Badge>
-                            </div>
+                             <Badge variant="secondary" className="flex items-center justify-center size-5 p-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                                <Code className="size-3" />
+                            </Badge>
                         </TooltipTrigger>
                         <TooltipContent>
                             <p>Developer</p>
                         </TooltipContent>
                     </Tooltip>
                 )}
+                 {userProfile.isBot && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                             <Badge variant="secondary" className="flex items-center justify-center size-5 p-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                                <Bot className="size-3" />
+                            </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Bot</p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+                </div>
+
             </div>
         </div>
-        <div className="pt-12">
+        <div className="pt-14">
            {!isEditing ? (
              <>
                 <div className="flex justify-end">
@@ -153,7 +168,7 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                 </div>
              </>
            ) : (
-             <div className="space-y-2 h-auto max-h-[calc(100vh-25rem)] overflow-y-auto pr-2">
+             <div className="space-y-2 h-auto max-h-[calc(100vh-30rem)] overflow-y-auto pr-2">
                 <div className="space-y-1">
                     <Label htmlFor="displayName">Display Name</Label>
                     <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
@@ -180,6 +195,7 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
              </div>
            )}
         </div>
+        </TooltipProvider>
       </PopoverContent>
     </Popover>
   );

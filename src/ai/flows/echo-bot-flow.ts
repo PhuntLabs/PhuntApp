@@ -20,6 +20,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { z } from 'zod';
+import { BOT_ID, BOT_USERNAME, BOT_PHOTO_URL } from '@/ai/bots/config';
 
 const EchoBotInputSchema = z.object({
   chatId: z.string().describe('The ID of the chat.'),
@@ -35,11 +36,6 @@ export type EchoBotInput = z.infer<typeof EchoBotInputSchema>;
 export async function processEcho(input: EchoBotInput): Promise<void> {
   return echoBotFlow(input);
 }
-
-const BOT_ID = 'echo_bot';
-const BOT_USERNAME = 'echo-bot';
-const BOT_PHOTO_URL = 'https://picsum.photos/seed/echobot/100';
-
 
 const ensureBotUser = async () => {
     await setDoc(doc(db, 'users', BOT_ID), {

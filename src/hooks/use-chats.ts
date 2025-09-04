@@ -20,13 +20,14 @@ async function populateChat(chatDoc: ChatDocument): Promise<PopulatedChat> {
             const userData = userDoc.data();
             return {
                 id: userDoc.id,
+                uid: userDoc.id,
                 displayName: userData.displayName || 'Unnamed User',
                 photoURL: userData.photoURL || null,
                 isBot: userData.isBot || false,
             };
         }
         // Fallback for missing user profiles
-        return { id: memberId, displayName: 'Unknown User', photoURL: null, isBot: false };
+        return { id: memberId, uid: memberId, displayName: 'Unknown User', photoURL: null, isBot: false };
     });
 
     const members = await Promise.all(memberPromises);
@@ -43,7 +44,7 @@ export function useChats() {
   const [chats, setChats] = useState<PopulatedChat[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const addChat = useCallback(async (newChat: ChatDocument) => {
+  const addChat = useCallback(async (newChat: ChatDocument): Promise<PopulatedChat> => {
     const populated = await populateChat(newChat);
     setChats((prevChats) => {
         // Avoid adding duplicates
@@ -57,6 +58,7 @@ export function useChats() {
         });
         return sortedChats;
     });
+    return populated;
   }, []);
 
   useEffect(() => {
