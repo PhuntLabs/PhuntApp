@@ -62,19 +62,21 @@ export default function Home() {
     }
   }, [chats, selectedChat, chatsLoading]);
 
-  // When servers load, select the first one by default
+  // When servers load, select the first one by default if none is selected
   useEffect(() => {
     if (!serversLoading && servers.length > 0 && !selectedServer) {
-        // Sort servers by creation time before selecting
         const sortedServers = [...servers].sort((a, b) => {
             const timeA = (a.createdAt as any)?.toMillis() || 0;
             const timeB = (b.createdAt as any)?.toMillis() || 0;
             return timeA - timeB; // oldest first
         });
-        setSelectedServer(sortedServers[0]);
+        // This line is commented out to prevent auto-selecting a server on load.
+        // User starts at Direct Messages.
+        // setSelectedServer(sortedServers[0]); 
     }
+    // If a server is selected but no longer exists (e.g., deleted), reset selection
     if (selectedServer && !servers.find(s => s.id === selectedServer.id)) {
-        setSelectedServer(servers.length > 0 ? servers[0] : null);
+        setSelectedServer(null); // Default back to Direct Messages
     }
   }, [servers, serversLoading, selectedServer]);
 
@@ -188,6 +190,7 @@ export default function Home() {
           
           <div className="flex flex-1">
              <div className="w-64 flex-shrink-0 bg-secondary/30 flex flex-col">
+                <div className="flex-1 overflow-y-auto">
                  {selectedServer ? (
                     <ServerSidebar server={selectedServer} />
                  ) : (
@@ -195,7 +198,7 @@ export default function Home() {
                         <SidebarHeader>
                         {/* Maybe a search bar or something can go here */}
                         </SidebarHeader>
-                        <SidebarContent>
+                        <SidebarContent className="py-2">
                         {incomingRequests.length > 0 && (
                             <PendingRequests
                                 requests={incomingRequests}
@@ -213,21 +216,29 @@ export default function Home() {
                             loading={chatsLoading}
                         />
                         </SidebarContent>
-                        <SidebarFooter className="bg-background/50">
-                            <div className="flex items-center justify-between">
-                                <UserNav user={user} logout={logout}/>
-                                <div className="flex items-center gap-1">
-                                    <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
-                                    <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
-                                </div>
-                            </div>
-                        </SidebarFooter>
                     </>
                  )}
+                 </div>
+                 <SidebarFooter className="bg-background/50 p-2">
+                    <div className="flex items-center justify-between">
+                        <UserNav user={user} logout={logout}/>
+                        <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
+                            <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
+                        </div>
+                    </div>
+                </SidebarFooter>
              </div>
 
             <main className="flex-1 flex flex-col bg-background/50">
-              {selectedChat && !selectedServer && user ? (
+              {selectedServer ? (
+                 <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
+                  <div className="text-center">
+                    <h2 className="text-xl font-medium text-foreground">{`Welcome to ${selectedServer.name}`}</h2>
+                    <p className="text-muted-foreground">Select a channel to start talking.</p>
+                  </div>
+                </div>
+              ) : selectedChat && user ? (
                 <Chat
                   chat={selectedChat}
                   messages={messages}
@@ -239,8 +250,8 @@ export default function Home() {
               ) : (
                 <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
                   <div className="text-center">
-                    <h2 className="text-xl font-medium text-foreground">{selectedServer ? `Welcome to ${selectedServer.name}` : 'No Chat Selected'}</h2>
-                    <p className="text-muted-foreground">{selectedServer ? 'Select a channel to start talking.' : 'Select a conversation from the sidebar or add a friend to start chatting.'}</p>
+                    <h2 className="text-xl font-medium text-foreground">No Chat Selected</h2>
+                    <p className="text-muted-foreground">Select a conversation from the sidebar or add a friend to start chatting.</p>
                   </div>
                 </div>
               )}
