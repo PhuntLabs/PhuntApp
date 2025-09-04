@@ -7,12 +7,14 @@ import { useEffect, useState } from 'react';
 
 import { UserNav } from '@/components/app/user-nav';
 import { Chat } from '@/components/app/chat';
+import { ChannelChat } from '@/components/app/channel-chat';
 import { DirectMessages } from '@/components/app/direct-messages';
 import { Servers } from '@/components/app/servers';
-import type { PopulatedChat, Server } from '@/lib/types';
+import type { PopulatedChat, Server, Channel } from '@/lib/types';
 import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useServers } from '@/hooks/use-servers';
+import { useServer } from '@/hooks/use-server';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
 import { doc, deleteDoc } from 'firebase/firestore';
@@ -23,6 +25,8 @@ import { BOT_ID, BOT_USERNAME } from '@/ai/bots/config';
 import { Mic, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServerSidebar } from '@/components/app/server-sidebar';
+import { MemberList } from '@/components/app/member-list';
+
 
 export default function Home() {
   const { user, authUser, loading, logout } = useAuth();
@@ -33,6 +37,9 @@ export default function Home() {
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests();
   const { servers, setServers, loading: serversLoading, createServer } = useServers();
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
+  const { server, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
+  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -49,7 +56,7 @@ export default function Home() {
     }
     
     // If there is no selected chat or the selected chat is no longer in the list
-    if ((!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0) {
+    if ((!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0 && !selectedServer) {
       // Find the most recent chat to select
       const mostRecentChat = chats.reduce((prev, current) => {
         const prevTime = (prev.lastMessageTimestamp as any)?.toMillis() || (prev.createdAt as any)?.toMillis() || 0;
@@ -57,10 +64,10 @@ export default function Home() {
         return (prevTime > currentTime) ? prev : current;
       });
       setSelectedChat(mostRecentChat);
-    } else if (chats.length === 0) {
+    } else if (chats.length === 0 && !selectedServer) {
         setSelectedChat(null);
     }
-  }, [chats, selectedChat, chatsLoading]);
+  }, [chats, selectedChat, chatsLoading, selectedServer]);
 
   // When servers load, select the first one by default if none is selected
   useEffect(() => {
@@ -168,6 +175,32 @@ export default function Home() {
     }
   }
 
+  const handleSelectServer = (server: Server | null) => {
+    setSelectedServer(server);
+    // When switching servers, clear the selected chat and channel
+    setSelectedChat(null);
+    setSelectedChannel(null);
+  }
+
+  const handleDeleteServer = async (serverId: string) => {
+    try {
+      await deleteServer(serverId);
+      toast({ title: "Server Deleted" });
+      setSelectedServer(null); // Go back to DMs
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error Deleting Server', description: e.message });
+    }
+  }
+
+  const handleUpdateServer = async (serverId: string, name: string, photoURL: string) => {
+    try {
+      await updateServer(serverId, { name, photoURL });
+      toast({ title: "Server Updated" });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error Updating Server', description: e.message });
+    }
+  }
+
 
   if (loading || !authUser || !user) {
     return (
@@ -185,18 +218,24 @@ export default function Home() {
                 loading={serversLoading} 
                 onCreateServer={handleCreateServer} 
                 selectedServer={selectedServer}
-                onSelectServer={setSelectedServer}
+                onSelectServer={handleSelectServer}
             />
           
           <div className="flex flex-1">
              <div className="w-64 flex-shrink-0 bg-secondary/30 flex flex-col">
                 <div className="flex-1 overflow-y-auto">
-                 {selectedServer ? (
-                    <ServerSidebar server={selectedServer} />
+                 {server ? (
+                    <ServerSidebar 
+                        server={server}
+                        selectedChannel={selectedChannel}
+                        onSelectChannel={setSelectedChannel}
+                        onUpdateServer={handleUpdateServer}
+                        onDeleteServer={handleDeleteServer}
+                    />
                  ) : (
                     <>
-                        <SidebarHeader>
-                        {/* Maybe a search bar or something can go here */}
+                        <SidebarHeader className="p-4 border-b">
+                            <h2 className="font-semibold text-lg">Direct Messages</h2>
                         </SidebarHeader>
                         <SidebarContent className="py-2">
                         {incomingRequests.length > 0 && (
@@ -231,10 +270,12 @@ export default function Home() {
              </div>
 
             <main className="flex-1 flex flex-col bg-background/50">
-              {selectedServer ? (
+              {server && selectedChannel ? (
+                <ChannelChat channel={selectedChannel} server={server} />
+              ) : server ? (
                  <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
                   <div className="text-center">
-                    <h2 className="text-xl font-medium text-foreground">{`Welcome to ${selectedServer.name}`}</h2>
+                    <h2 className="text-xl font-medium text-foreground">{`Welcome to ${server.name}`}</h2>
                     <p className="text-muted-foreground">Select a channel to start talking.</p>
                   </div>
                 </div>
@@ -256,6 +297,9 @@ export default function Home() {
                 </div>
               )}
             </main>
+            {server && members.length > 0 && (
+                 <MemberList members={members} loading={serverDetailsLoading} />
+            )}
           </div>
       </div>
     </SidebarProvider>

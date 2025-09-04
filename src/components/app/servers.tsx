@@ -22,8 +22,9 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
         return (
             <div className="w-20 flex flex-col items-center py-3 gap-3 bg-background/50">
                 <div className="size-12 rounded-full bg-muted animate-pulse" />
-                <div className="size-12 rounded-2xl bg-muted animate-pulse" />
-                <div className="size-12 rounded-2xl bg-muted animate-pulse" />
+                 <Separator className="w-8 bg-border/50" />
+                <div className="size-12 rounded-3xl bg-muted animate-pulse" />
+                <div className="size-12 rounded-3xl bg-muted animate-pulse" />
             </div>
         );
     }
@@ -46,7 +47,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                 !selectedServer ? 'rounded-2xl bg-primary' : 'group-hover:rounded-2xl group-hover:bg-primary'
                             )}>
                                 <AvatarFallback className="bg-transparent text-primary-foreground text-2xl font-bold">
-                                    <svg width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M12 11.1c-1.1 0-2.1.4-2.8 1.2c-.7.7-1.2 1.7-1.2 2.8c0 .4.1.7.2 1.1c.1.4.3.7.5.9c.2.2.5.5.9.7c.4.2.8.3 1.2.3c1.1 0 2.1-.4 2.8-1.2c.7-.7 1.2-1.7 1.2-2.8c0-.4-.1-.8-.2-1.2c-.1-.4-.3-.7-.5-.9c-.2-.2-.5-.5-.9-.7c-.4-.2-.8-.3-1.2-.3m-6 4.1c0-.4.1-.7.2-1.1c.1-.4.3-.7.5-.9c.2-.2.5-.5.9-.7c.4-.2.8-.3 1.2-.3c.4 0 .8.1 1.2.3c.4.2.7.4.9.7c.2.2.5.5.7.9c.2.4.3.7.3 1.1c0 1.1-.4 2.1-1.2 2.8c-.7.7-1.7 1.2-2.8 1.2c-1.1 0-2.1-.4-2.8-1.2C4.4 17.3 4 16.3 4 15.2m16 0c0-1.1-.4-2.1-1.2-2.8c-.7-.7-1.7-1.2-2.8-1.2c-.4 0-.8.1-1.2.3c-.4.2-.7.4-.9.7c-.2.2-.5.5-.7.9c-.2.4-.3.7-.3 1.1c0 .4.1.7.2 1.1c.1.4.3.7.5.9c.2.2.5.5.9.7c.4.2.8.3 1.2.3c1.1 0 2.1-.4 2.8-1.2c.8-.8 1.2-1.7 1.2-2.8M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2m0 2c1.1 0 2.1.4 2.8 1.2c.8.8 1.2 1.7 1.2 2.8c0 .4-.1.8-.2 1.2c-.1.4-.3.7-.5.9c-.2-.2-.5-.5-.9-.7c-.4-.2-.8-.3-1.2-.3c-1.1 0-2.1-.4-2.8-1.2C9.6 8.9 9.2 7.9 9.2 6.8c0-1.1.4-2.1 1.2-2.8C10.9 4.4 11.3 4 12 4Z"/></svg>
+                                    <svg width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M12 11.1c-1.1 0-2.1.4-2.8 1.2c-.7.7-1.2 1.7-1.2 2.8c0 .4.1.7.2 1.1c.1.4.3.7.5.9c.2.2.5.5.9.7c.4.2.8.3 1.2.3c1.1 0 2.1-.4 2.8-1.2c.7-.7 1.2-1.7 1.2-2.8c0-.4-.1-.8-.2-1.2c-.1-.4-.3-.7-.5-.9c-.2-.2-.5-.5-.9-.7c-.4-.2-.8-.3-1.2-.3m-6 4.1c0-.4.1-.7.2-1.1c.1-.4.3-.7.5-.9c.2-.2.5-.5.9-.7c.4-.2.8-.3 1.2-.3c.4 0 .8.1 1.2.3c.4.2.7.4.9.7c.2.2.5.5.7.9c.2.4.3.7.3 1.1c0 1.1-.4 2.1-1.2 2.8c-.7.7-1.7 1.2-2.8 1.2c-1.1 0-2.1-.4-2.8-1.2C4.4 17.3 4 16.3 4 15.2m16 0c0-1.1-.4-2.1-1.2-2.8c-.7-.7-1.7-1.2-2.8-1.2c-.4 0-.8.1-1.2.3c-.4.2-.7.4-.9.7c-.2.2-.5-.5-.7.9c-.2.4-.3.7-.3 1.1c0 .4.1.7.2 1.1c.1.4.3.7.5.9c.2.2.5.5.9.7c.4.2.8.3 1.2.3c1.1 0 2.1-.4 2.8-1.2c.8-.8 1.2-1.7 1.2-2.8M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2m0 2c1.1 0 2.1.4 2.8 1.2c.8.8 1.2 1.7 1.2 2.8c0 .4-.1.8-.2 1.2c-.1.4-.3.7-.5.9c-.2-.2-.5-.5-.9-.7c-.4-.2-.8-.3-1.2-.3c-1.1 0-2.1-.4-2.8-1.2C9.6 8.9 9.2 7.9 9.2 6.8c0-1.1.4-2.1 1.2-2.8C10.9 4.4 11.3 4 12 4Z"/></svg>
                                 </AvatarFallback>
                             </Avatar>
                         </button>

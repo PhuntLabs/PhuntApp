@@ -12,7 +12,6 @@ import {
   writeBatch,
   doc,
   getDoc,
-  updateDoc,
 } from 'firebase/firestore';
 import type { Server } from '@/lib/types';
 import { useAuth } from './use-auth';
@@ -56,7 +55,7 @@ export function useServers() {
       ownerId: authUser.uid,
       members: [authUser.uid],
       createdAt: serverTimestamp(),
-      photoURL: null // Will be updated in step 2
+      photoURL: null 
     };
     const serverRef = await addDoc(collection(db, 'servers'), serverPayload);
     
@@ -90,8 +89,7 @@ export function useServers() {
     const newServerDoc = await getDoc(serverRef);
     if (newServerDoc.exists()) {
         const finalServerData = newServerDoc.data();
-        finalServerData.photoURL = photoURL; // Make sure the returned object has the photoURL
-        return { id: newServerDoc.id, ...finalServerData } as Server;
+        return { id: newServerDoc.id, ...finalServerData, photoURL } as Server;
     }
 
     return null;
