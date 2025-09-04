@@ -9,12 +9,12 @@ import { UserNav } from '@/components/app/user-nav';
 import { Chat } from '@/components/app/chat';
 import { DirectMessages } from '@/components/app/direct-messages';
 import { Servers } from '@/components/app/servers';
-import type { PopulatedChat, ChatDocument, UserProfile } from '@/lib/types';
+import type { PopulatedChat, ChatDocument } from '@/lib/types';
 import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, getDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, getDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
@@ -23,7 +23,7 @@ import { BOT_ID } from '@/ai/bots/config';
 export default function Home() {
   const { user, authUser, loading, logout } = useAuth();
   const router = useRouter();
-  const { chats, loading: chatsLoading, addChat } = useChats();
+  const { chats, loading: chatsLoading, addChat, removeChat } = useChats();
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
   const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests();
@@ -47,6 +47,8 @@ export default function Home() {
         return (prevTime > currentTime) ? prev : current;
       });
       setSelectedChat(mostRecentChat);
+    } else if (chats.length === 0) {
+        setSelectedChat(null);
     }
   }, [chats, selectedChat, chatsLoading]);
 
@@ -150,6 +152,19 @@ export default function Home() {
     }
   }
 
+  const handleDeleteChat = async (chatId: string) => {
+    try {
+        await deleteDoc(doc(db, 'chats', chatId));
+        removeChat(chatId);
+        if (selectedChat?.id === chatId) {
+            setSelectedChat(null);
+        }
+        toast({title: 'Chat Removed'});
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Error', description: e.message });
+    }
+  }
+
 
   if (loading || !authUser || !user) {
     return (
@@ -179,6 +194,7 @@ export default function Home() {
             onSelectChat={setSelectedChat}
             onAddUser={handleSendFriendRequest}
             onAddBot={handleCreateChatWithBot}
+            onDeleteChat={handleDeleteChat}
             loading={chatsLoading}
           />
           <Servers />

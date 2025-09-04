@@ -1,7 +1,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code, Bot } from 'lucide-react';
+import { LogOut, Save, Code, Bot, Settings } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -22,49 +22,44 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import type { UserProfile } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface UserNavProps {
-    user: User | null; // This should be the authUser
-    logout: () => void;
+    user: UserProfile; 
+    logout?: () => void;
+    as?: 'button' | 'trigger';
+    children?: React.ReactNode;
 }
 
-export function UserNav({ user: authUser, logout }: UserNavProps) {
-  const { user: userProfile, setUser: setUserProfile, authUser: firebaseAuthUser } = useAuth();
-  const [displayName, setDisplayName] = useState(userProfile?.displayName || '');
-  const [photoURL, setPhotoURL] = useState(userProfile?.photoURL || '');
-  const [bannerURL, setBannerURL] = useState(userProfile?.bannerURL || '');
-  const [bio, setBio] = useState(userProfile?.bio || '');
+export function UserNav({ user, logout, as = 'button', children }: UserNavProps) {
+  const { authUser, setUser: setUserProfile, updateUserProfile } = useAuth();
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
+  const [bannerURL, setBannerURL] = useState(user?.bannerURL || '');
+  const [bio, setBio] = useState(user?.bio || '');
   const [isEditing, setIsEditing] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-
   const { toast } = useToast();
 
+  const isCurrentUser = authUser?.uid === user.uid;
+
   useEffect(() => {
-    // When the popover opens or userProfile changes, sync state
-    if (userProfile) {
-        setDisplayName(userProfile.displayName || '');
-        setPhotoURL(userProfile.photoURL || '');
-        setBannerURL(userProfile.bannerURL || '');
-        setBio(userProfile.bio || '');
+    // When the popover opens or user changes, sync state
+    if (user) {
+        setDisplayName(user.displayName || '');
+        setPhotoURL(user.photoURL || '');
+        setBannerURL(user.bannerURL || '');
+        setBio(user.bio || '');
     }
-  }, [isPopoverOpen, userProfile]);
+  }, [isPopoverOpen, user]);
   
-  if (!userProfile || !firebaseAuthUser) return null;
+  if (!user) return null;
 
   const handleProfileUpdate = async () => {
-    if (!firebaseAuthUser) return;
+    if (!isCurrentUser || !authUser) return;
     try {
-        // Update Firebase Auth profile
-        await updateProfile(firebaseAuthUser, { displayName, photoURL });
-        
-        // Update Firestore document
-        const userRef = doc(db, 'users', firebaseAuthUser.uid);
-        const updatedData = { displayName, photoURL, bannerURL, bio };
-        await setDoc(userRef, updatedData, { merge: true });
-
-        // Update local state
-        setUserProfile((prevProfile) => prevProfile ? { ...prevProfile, ...updatedData } : null);
-
+        await updateUserProfile({ displayName, photoURL, bannerURL, bio });
         toast({
             title: 'Profile Updated',
             description: 'Your changes have been saved successfully.',
@@ -81,14 +76,28 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
 
   const handleCancel = () => {
     // Reset fields to current user state
-    if (userProfile) {
-        setDisplayName(userProfile.displayName || '');
-        setPhotoURL(userProfile.photoURL || '');
-        setBannerURL(userProfile.bannerURL || '');
-        setBio(userProfile.bio || '');
+    if (user) {
+        setDisplayName(user.displayName || '');
+        setPhotoURL(user.photoURL || '');
+        setBannerURL(user.bannerURL || '');
+        setBio(user.bio || '');
     }
     setIsEditing(false);
   }
+
+  const TriggerComponent = as === 'button' ? (
+     <button className="flex items-center gap-2 p-2 hover:bg-sidebar-accent rounded-md cursor-pointer transition-colors w-full text-left">
+        <Avatar className="size-8">
+            <AvatarImage src={user.photoURL || undefined} />
+            <AvatarFallback>{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+            <span className="text-sm font-semibold truncate">{user.displayName || user.email}</span>
+        </div>
+    </button>
+  ) : (
+    <div>{children}</div>
+  )
 
   return (
     <Popover open={isPopoverOpen} onOpenChange={(open) => {
@@ -98,30 +107,22 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
       }
     }}>
       <PopoverTrigger asChild>
-        <button className="flex items-center gap-2 p-2 hover:bg-sidebar-accent rounded-md cursor-pointer transition-colors w-full text-left">
-            <Avatar className="size-8">
-              <AvatarImage src={userProfile.photoURL || undefined} />
-              <AvatarFallback>{userProfile.displayName?.[0].toUpperCase() || userProfile.email?.[0].toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                <span className="text-sm font-semibold truncate">{userProfile.displayName || userProfile.email}</span>
-            </div>
-        </button>
+        {TriggerComponent}
       </PopoverTrigger>
       <PopoverContent className="w-80 mb-2 h-auto" side="top" align="start">
       <TooltipProvider>
-        <div className="relative h-20 bg-accent rounded-t-lg -mx-4 -mt-4">
+        <div className="relative h-24 bg-accent rounded-t-lg -mx-4 -mt-4">
             {bannerURL && (
                 <Image src={bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
             )}
-             <div className="absolute top-[5.5rem] left-4">
-                <Avatar className="size-20 border-4 border-popover">
-                  <AvatarImage src={userProfile.photoURL || undefined} />
-                  <AvatarFallback className="text-2xl">{userProfile.displayName?.[0].toUpperCase() || userProfile.email?.[0].toUpperCase()}</AvatarFallback>
+             <div className="absolute top-16 left-4">
+                <Avatar className="size-20 border-4 border-popover rounded-full">
+                  <AvatarImage src={user.photoURL || undefined} />
+                  <AvatarFallback className="text-2xl">{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
                 </Avatar>
                 
                 <div className="absolute bottom-1 right-1 bg-popover rounded-full p-0.5 flex items-center gap-1">
-                 {userProfile.badges?.includes('developer') && (
+                 {user.badges?.includes('developer') && (
                     <Tooltip>
                         <TooltipTrigger asChild>
                              <Badge variant="secondary" className="flex items-center justify-center size-5 p-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
@@ -133,7 +134,7 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                         </TooltipContent>
                     </Tooltip>
                 )}
-                 {userProfile.isBot && (
+                 {user.isBot && (
                     <Tooltip>
                         <TooltipTrigger asChild>
                              <Badge variant="secondary" className="flex items-center justify-center size-5 p-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
@@ -152,23 +153,30 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
         <div className="pt-14">
            {!isEditing ? (
              <>
-                <div className="flex justify-end">
-                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>Edit Profile</Button>
-                </div>
+                {isCurrentUser && (
+                    <div className="flex justify-end gap-1">
+                        <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>Edit Profile</Button>
+                    </div>
+                )}
                 <h3 className="text-xl font-bold">{displayName}</h3>
-                <p className="text-sm text-muted-foreground -mt-1">{userProfile.email}</p>
+                <p className={cn("text-sm text-muted-foreground -mt-1", !user.email && 'italic')}>{user.email || 'No email provided'}</p>
                 <Separator className="my-2" />
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{bio || 'No bio yet.'}</p>
-                <Separator className="my-4" />
-                <div className="flex flex-col gap-1">
-                    <Button variant="ghost" onClick={() => logout()} className="justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                    </Button>
-                </div>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{bio || 'No bio yet.'}</p>
+                
+                {isCurrentUser && (
+                    <>
+                    <Separator className="my-4" />
+                    <div className="flex flex-col gap-1">
+                        <Button variant="ghost" onClick={() => logout && logout()} className="justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10">
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </Button>
+                    </div>
+                    </>
+                )}
              </>
            ) : (
-             <div className="space-y-2 h-auto max-h-[calc(100vh-30rem)] overflow-y-auto pr-2">
+             <div className="space-y-2 h-auto max-h-[calc(100vh-28rem)] overflow-y-auto pr-2">
                 <div className="space-y-1">
                     <Label htmlFor="displayName">Display Name</Label>
                     <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />

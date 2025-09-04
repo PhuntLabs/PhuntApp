@@ -8,6 +8,7 @@ import {
   ReactNode,
   Dispatch,
   SetStateAction,
+  useCallback,
 } from 'react';
 import {
   onAuthStateChanged,
@@ -28,9 +29,10 @@ interface AuthContextType {
   authUser: User | null;
   setUser: Dispatch<SetStateAction<UserProfile | null>>;
   loading: boolean;
-  signup: (email: string, pass: string, username: string) => Promise<UserCredential>;
+  signup: (email: string, pass:string, username: string) => Promise<UserCredential>;
   login: (email: string, pass: string) => Promise<any>;
   logout: () => Promise<void>;
+  updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,6 +89,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => unsubscribe();
   }, []);
+  
+  const updateUserProfile = useCallback(async (data: Partial<UserProfile>) => {
+    if (!authUser) throw new Error("Not authenticated");
+    
+    const { displayName, photoURL, ...firestoreData } = data;
+
+    // Update Firebase Auth profile if display name or photo URL changed
+    if (displayName || photoURL) {
+      await updateProfile(authUser, { displayName, photoURL });
+    }
+
+    // Update Firestore document
+    const userRef = doc(db, 'users', authUser.uid);
+    await setDoc(userRef, firestoreData, { merge: true });
+
+    // Update local state
+    setUser((prevProfile) => prevProfile ? { ...prevProfile, ...data } : null);
+
+  }, [authUser]);
 
   const signup = async (email: string, pass: string, username: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
@@ -136,6 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signup,
     login,
     logout,
+    updateUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

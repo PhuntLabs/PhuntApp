@@ -3,11 +3,22 @@
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSkeleton } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, CheckCircle, Bot } from 'lucide-react';
+import { PlusCircle, CheckCircle, Bot, X } from 'lucide-react';
 import type { PopulatedChat } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '../ui/badge';
 import { AddUserDialog } from './add-user-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface DirectMessagesProps {
   directMessages: PopulatedChat[];
@@ -15,10 +26,11 @@ interface DirectMessagesProps {
   onSelectChat: (chat: PopulatedChat) => void;
   onAddUser: (username: string) => void;
   onAddBot: () => void;
+  onDeleteChat: (chatId: string) => void;
   loading: boolean;
 }
 
-export function DirectMessages({ directMessages, selectedChat, onSelectChat, onAddUser, onAddBot, loading }: DirectMessagesProps) {
+export function DirectMessages({ directMessages, selectedChat, onSelectChat, onAddUser, onAddBot, onDeleteChat, loading }: DirectMessagesProps) {
   const { user } = useAuth();
   
   if (loading) {
@@ -53,7 +65,7 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
           const isBotChat = otherMember?.isBot;
 
           return (
-            <SidebarMenuItem key={chat.id}>
+            <SidebarMenuItem key={chat.id} className="group/item">
               <SidebarMenuButton
                 tooltip={chatName}
                 isActive={selectedChat?.id === chat.id}
@@ -64,7 +76,7 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
                   <AvatarFallback>{chatName[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex items-center gap-1">
-                  <span>{chatName}</span>
+                  <span className="truncate">{chatName}</span>
                    {chat.isOfficial && (
                       <Badge variant="outline" className="h-4 px-1 flex items-center gap-0.5 border-green-500 text-green-500">
                         <CheckCircle className="size-2" /> OFFICIAL
@@ -77,6 +89,28 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
                   )}
                 </div>
               </SidebarMenuButton>
+
+               <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-5 w-5 absolute right-1 top-1.5 opacity-0 group-hover/item:opacity-100 text-muted-foreground hover:text-foreground">
+                        <X className="h-3 w-3"/>
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Leave '{chatName}'?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to remove this conversation? This action cannot be undone.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDeleteChat(chat.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Leave
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+                </AlertDialog>
             </SidebarMenuItem>
           )
         })}

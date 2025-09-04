@@ -7,9 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import type { PopulatedChat, Message } from '@/lib/types';
-import { Send, CheckCircle, Trash2, Pencil, X, Check } from 'lucide-react';
+import type { PopulatedChat, Message, UserProfile } from '@/lib/types';
+import { Send, CheckCircle, Trash2, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { UserNav } from './user-nav';
 
 interface ChatProps {
   chat: PopulatedChat;
@@ -56,24 +57,40 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
     <SidebarInset>
       <div className="p-4 flex items-center gap-2 border-b">
         <SidebarTrigger />
-        <Avatar className="size-8">
-          <AvatarImage src={chatAvatar || undefined} />
-          <AvatarFallback>{chatName[0]}</AvatarFallback>
-        </Avatar>
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl font-semibold">{chatName}</h1>
-          {chat.isOfficial && (
-            <Badge variant="outline" className="flex items-center gap-1 border-green-500 text-green-500">
-              <CheckCircle className="size-3" /> OFFICIAL
-            </Badge>
-          )}
-        </div>
+        {otherMember ? (
+            <UserNav user={otherMember as UserProfile} as="trigger">
+                <div className="flex items-center gap-2 cursor-pointer">
+                     <Avatar className="size-8">
+                      <AvatarImage src={chatAvatar || undefined} />
+                      <AvatarFallback>{chatName[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-xl font-semibold">{chatName}</h1>
+                      {chat.isOfficial && (
+                        <Badge variant="outline" className="flex items-center gap-1 border-green-500 text-green-500">
+                          <CheckCircle className="size-3" /> OFFICIAL
+                        </Badge>
+                      )}
+                    </div>
+                </div>
+            </UserNav>
+        ) : (
+             <div className="flex items-center gap-2">
+                 <Avatar className="size-8">
+                  <AvatarImage src={chatAvatar || undefined} />
+                  <AvatarFallback>{chatName[0]}</AvatarFallback>
+                </Avatar>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-semibold">{chatName}</h1>
+                </div>
+            </div>
+        )}
       </div>
       <div className="flex flex-1 flex-col h-full bg-muted/20">
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
             {messages.map((message) => {
-              const sender = chat.members.find(m => m.id === message.sender);
+              const sender = chat.members.find(m => m.id === message.sender) as UserProfile;
               const isCurrentUser = message.sender === currentUser?.uid;
               const isEditing = editingMessageId === message.id;
 
@@ -82,14 +99,18 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                   key={message.id}
                   className="group relative flex items-start gap-3"
                 >
-                  <Avatar className="size-10">
-                     <AvatarImage src={sender?.photoURL || undefined} />
-                    <AvatarFallback>{sender?.displayName?.[0]}</AvatarFallback>
-                  </Avatar>
+                    <UserNav user={sender} as="trigger">
+                      <Avatar className="size-10 cursor-pointer">
+                         <AvatarImage src={sender?.photoURL || undefined} />
+                        <AvatarFallback>{sender?.displayName?.[0]}</AvatarFallback>
+                      </Avatar>
+                    </UserNav>
                   
                   <div className="flex-1">
-                    <div className="flex items-baseline gap-2">
-                       <p className="font-semibold">{sender?.displayName}</p>
+                     <div className="flex items-baseline gap-2">
+                        <UserNav user={sender} as="trigger">
+                           <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
+                        </UserNav>
                        <span className="text-xs text-muted-foreground">
                          {new Date((message.timestamp as any)?.toDate()).toLocaleTimeString()}
                        </span>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { db, auth } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, getDoc, doc } from 'firebase/firestore';
 import type { PopulatedChat, ChatDocument, UserProfile } from '@/lib/types';
 import { useAuth } from './use-auth';
@@ -17,24 +17,32 @@ async function populateChat(chatDoc: ChatDocument): Promise<PopulatedChat> {
     const memberPromises = chatDoc.members.map(async (memberId) => {
         const userDoc = await getDoc(doc(db, 'users', memberId));
         if (userDoc.exists()) {
-            const userData = userDoc.data();
+            const userData = userDoc.data() as Omit<UserProfile, 'id'>;
+            // Add developer badge for specific users
+            const developerEmails = ['raidensch0@gmail.com'];
+            const developerUsernames = ['testacc', 'aura farmer'];
+             if (
+                (userData.email && developerEmails.includes(userData.email)) ||
+                (userData.displayName && developerUsernames.includes(userData.displayName))
+            ) {
+                if (!userData.badges) userData.badges = [];
+                if (!userData.badges.includes('developer')) userData.badges.push('developer');
+            }
+
             return {
                 id: userDoc.id,
-                uid: userDoc.id,
-                displayName: userData.displayName || 'Unnamed User',
-                photoURL: userData.photoURL || null,
-                isBot: userData.isBot || false,
+                ...userData
             };
         }
         // Fallback for missing user profiles
         return { id: memberId, uid: memberId, displayName: 'Unknown User', photoURL: null, isBot: false };
     });
 
-    const members = await Promise.all(memberPromises);
+    const members = await Promise.all(memberPromises as Promise<UserProfile>[]);
     
     return {
         ...chatDoc,
-        members: members as UserProfile[],
+        members: members,
     };
 }
 
@@ -63,6 +71,10 @@ export function useChats() {
     return populated;
   }, []);
 
+  const removeChat = useCallback((chatId: string) => {
+      setChats(prev => prev.filter(c => c.id !== chatId));
+  }, []);
+
   useEffect(() => {
     if (!authUser) {
         setChats([]);
@@ -89,10 +101,13 @@ export function useChats() {
 
       setChats(populatedChats);
       setLoading(false);
+    }, (error) => {
+        console.error("Error fetching chats:", error);
+        setLoading(false);
     });
 
     return () => unsubscribe();
   }, [authUser]);
 
-  return { chats, loading, addChat };
+  return { chats, loading, addChat, removeChat };
 }
