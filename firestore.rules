@@ -1,38 +1,53 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users can read their own profile, and any user can read any other user's profile
-    // This is needed to populate user information in chats.
-    // Users can only write to their own profile.
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.uid == userId;
-    }
-
-    // A user can read a chat if they are a member of it.
-    // A user can create a chat if they are a member of it.
-    // A user can update/delete a chat if they are a member of it.
-    match /chats/{chatId} {
-      allow read, update, delete: if request.auth.uid in resource.data.members;
-      allow create: if request.auth.uid in request.resource.data.members;
-
-      // Messages can be read by any member of the chat.
-      // Messages can be created by any member of the chat.
-      // Messages can only be updated/deleted by the person who sent them.
-      match /messages/{messageId} {
-        allow read, create: if get(/databases/$(database)/documents/chats/$(chatId)).data.members[0] == request.auth.uid || get(/databases/$(database)/documents/chats/$(chatId)).data.members[1] == request.auth.uid;
-        allow update, delete: if request.auth.uid == resource.data.sender;
-      }
+    // Helper function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
     }
     
-    // Friend requests can be created by any authenticated user.
-    // They can be read only by the sender or receiver.
-    // They can only be updated by the receiver.
+    // Helper function to get incoming resource data
+    function getAfter() {
+      return request.resource.data;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Chats collection (Direct Messages)
+    match /chats/{chatId} {
+      allow read, delete: if isAuthenticated() && request.auth.uid in resource.data.members;
+      allow create: if isAuthenticated() && request.auth.uid in getAfter().members;
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read, create: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
+        allow update, delete: if isAuthenticated() && getAfter().sender == request.auth.uid;
+      }
+    }
+
+    // Friend Requests collection
     match /friendRequests/{requestId} {
-        allow create: if request.auth != null;
-        allow read, update: if request.auth.uid == resource.data.to || request.auth.uid == resource.data.from.id;
+        allow read, update: if isAuthenticated() && request.auth.uid in resource.data.members || request.auth.uid == resource.data.to;
+        allow create: if isAuthenticated() && request.auth.uid == getAfter().from.id;
+    }
+    
+    // Servers collection
+    match /servers/{serverId} {
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.members;
+      allow create: if isAuthenticated() && request.auth.uid == getAfter().ownerId && request.auth.uid in getAfter().members;
+      
+      // Channels subcollection
+      match /channels/{channelId} {
+        allow read, create: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+      }
     }
   }
 }
