@@ -11,7 +11,7 @@ import { Chat } from '@/components/app/chat';
 import { ChannelChat } from '@/components/app/channel-chat';
 import { DirectMessages } from '@/components/app/direct-messages';
 import { Servers } from '@/components/app/servers';
-import type { PopulatedChat, Server, Channel } from '@/lib/types';
+import type { PopulatedChat, Server, Channel, ChannelType } from '@/lib/types';
 import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useServers } from '@/hooks/use-servers';
@@ -40,7 +40,7 @@ export default function Home() {
   const { servers, setServers, loading: serversLoading, createServer } = useServers();
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
   const { server, setServer, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
-  const { createChannel, updateChannel, deleteChannel } = useChannels(selectedServer?.id);
+  const { createChannel, updateChannel, updateChannelOrder, deleteChannel } = useChannels(selectedServer?.id);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [initialLoad, setInitialLoad] = useState(true);
 
@@ -215,11 +215,11 @@ export default function Home() {
     }
   }
   
-  const handleUpdateChannel = async (channelId: string, name: string) => {
+  const handleUpdateChannel = async (channelId: string, data: { name?: string, type?: ChannelType}) => {
     try {
-      await updateChannel(channelId, name);
+      await updateChannel(channelId, data);
       if (server && server.channels) {
-          const updatedChannels = server.channels.map(c => c.id === channelId ? {...c, name} : c);
+          const updatedChannels = server.channels.map(c => c.id === channelId ? {...c, ...data} : c);
           setServer({...server, channels: updatedChannels });
       }
       toast({ title: "Channel Updated" });
@@ -271,12 +271,14 @@ export default function Home() {
                 {server ? (
                 <ServerSidebar 
                     server={server}
+                    setServer={setServer}
                     selectedChannel={selectedChannel}
                     onSelectChannel={setSelectedChannel}
                     onUpdateServer={handleUpdateServer}
                     onDeleteServer={handleDeleteServer}
                     onCreateChannel={handleCreateChannel}
                     onUpdateChannel={handleUpdateChannel}
+                    onUpdateChannelOrder={updateChannelOrder}
                     onDeleteChannel={handleDeleteChannel}
                 />
                 ) : (

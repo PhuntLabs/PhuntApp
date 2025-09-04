@@ -47,7 +47,7 @@ export function useServer(serverId: string | undefined) {
         }
         
         // Fetch channels
-        const channelsQuery = query(collection(db, 'servers', serverId, 'channels'), orderBy('createdAt', 'asc'));
+        const channelsQuery = query(collection(db, 'servers', serverId, 'channels'), orderBy('position', 'asc'));
         const channelsSnapshot = await getDocs(channelsQuery);
         const channelDocs = channelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Channel));
         serverData.channels = channelDocs;

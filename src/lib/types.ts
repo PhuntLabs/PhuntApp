@@ -58,9 +58,13 @@ export interface Server {
     channels?: Channel[];
 }
 
+export type ChannelType = 'text' | 'announcement' | 'rules' | 'forum';
+
 export interface Channel {
     id: string;
     name: string;
     serverId: string;
     createdAt?: FieldValue;
+    position: number;
+    type: ChannelType;
 }

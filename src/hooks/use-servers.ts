@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -74,6 +75,8 @@ export function useServers() {
       name: '!general',
       serverId: serverRef.id,
       createdAt: serverTimestamp(),
+      position: 0,
+      type: 'text'
     });
 
     const rulesChannelRef = doc(channelsRef);
@@ -81,6 +84,8 @@ export function useServers() {
       name: '!rules',
       serverId: serverRef.id,
       createdAt: serverTimestamp(),
+      position: 1,
+      type: 'rules'
     });
 
     await batch.commit();
