@@ -25,12 +25,11 @@ interface DirectMessagesProps {
   selectedChat: PopulatedChat | null;
   onSelectChat: (chat: PopulatedChat) => void;
   onAddUser: (username: string) => void;
-  onAddBot: () => void;
   onDeleteChat: (chatId: string) => void;
   loading: boolean;
 }
 
-export function DirectMessages({ directMessages, selectedChat, onSelectChat, onAddUser, onAddBot, onDeleteChat, loading }: DirectMessagesProps) {
+export function DirectMessages({ directMessages, selectedChat, onSelectChat, onAddUser, onDeleteChat, loading }: DirectMessagesProps) {
   const { user } = useAuth();
   
   if (loading) {
@@ -51,7 +50,7 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
     <SidebarGroup>
       <SidebarGroupLabel className="flex items-center justify-between">
         Direct Messages
-        <AddUserDialog onAddUser={onAddUser} onAddBot={onAddBot}>
+        <AddUserDialog onAddUser={onAddUser}>
           <Button variant="ghost" size="icon" className="h-6 w-6">
             <PlusCircle className="h-4 w-4" />
           </Button>

@@ -3,18 +3,18 @@
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 import { UserNav } from '@/components/app/user-nav';
 import { Chat } from '@/components/app/chat';
 import { DirectMessages } from '@/components/app/direct-messages';
 import { Servers } from '@/components/app/servers';
-import type { PopulatedChat, ChatDocument } from '@/lib/types';
+import type { PopulatedChat } from '@/lib/types';
 import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, getDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
@@ -23,13 +23,11 @@ import { BOT_ID } from '@/ai/bots/config';
 export default function Home() {
   const { user, authUser, loading, logout } = useAuth();
   const router = useRouter();
-  const { chats, loading: chatsLoading, addChat, removeChat } = useChats();
+  const { chats, loading: chatsLoading, removeChat } = useChats();
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
   const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests();
   const { toast } = useToast();
-  const isCreatingBotChat = useRef(false);
-
 
   useEffect(() => {
     if (!loading && !authUser) {
@@ -39,16 +37,6 @@ export default function Home() {
   
   useEffect(() => {
     if (chatsLoading) return;
-    
-    // If a bot chat was just created, select it
-    if (isCreatingBotChat.current && chats.length > 0) {
-        const botChat = chats.find(c => c.members.some(m => m.id === BOT_ID));
-        if (botChat) {
-            setSelectedChat(botChat);
-            isCreatingBotChat.current = false;
-            return;
-        }
-    }
     
     // If there is no selected chat or the selected chat is no longer in the list
     if ((!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0) {
@@ -122,43 +110,11 @@ export default function Home() {
         toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
   }
-  
-  const handleCreateChatWithBot = async () => {
-    if (!authUser) return;
-    try {
-      // Check if chat already exists
-      const q = query(collection(db, 'chats'), where('members', 'array-contains', authUser.uid));
-      const querySnapshot = await getDocs(q);
-      const existingChat = querySnapshot.docs.find(doc => doc.data().members.includes(BOT_ID));
-      
-      if (existingChat) {
-        const populated = chats.find(c => c.id === existingChat.id);
-        if (populated) setSelectedChat(populated);
-        toast({ title: 'Chat Already Exists', description: "You're already chatting with echo-bot." });
-        return;
-      }
-      
-      isCreatingBotChat.current = true;
-
-      // Create a new chat
-      await addDoc(collection(db, 'chats'), {
-        members: [authUser.uid, BOT_ID],
-        createdAt: serverTimestamp(),
-        lastMessageTimestamp: serverTimestamp()
-      });
-      
-      toast({ title: 'Bot Added', description: 'Started a chat with echo-bot.' });
-
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
-      isCreatingBotChat.current = false;
-    }
-  }
 
   const handleDeleteChat = async (chatId: string) => {
     try {
         await deleteDoc(doc(db, 'chats', chatId));
-        removeChat(chatId);
+        // The useChats hook will automatically remove the chat from the state
         if (selectedChat?.id === chatId) {
             setSelectedChat(null);
         }
@@ -196,7 +152,6 @@ export default function Home() {
             selectedChat={selectedChat}
             onSelectChat={setSelectedChat}
             onAddUser={handleSendFriendRequest}
-            onAddBot={handleCreateChatWithBot}
             onDeleteChat={handleDeleteChat}
             loading={chatsLoading}
           />

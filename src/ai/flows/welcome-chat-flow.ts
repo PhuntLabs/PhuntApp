@@ -9,6 +9,7 @@ import { ai } from '@/ai/genkit';
 import { db } from '@/lib/firebase';
 import { addDoc, collection, doc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
+import { BOT_ID, BOT_PHOTO_URL, BOT_USERNAME } from '../bots/config';
 
 const WelcomeChatInputSchema = z.object({
   userId: z.string().describe('The ID of the new user.'),
@@ -28,30 +29,28 @@ const createWelcomeChatFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ userId, username }) => {
-    const botId = 'whisperchat_bot';
-    
     // Ensure bot user exists
-    await setDoc(doc(db, 'users', botId), {
-        uid: botId,
-        displayName: 'WhisperChat',
-        email: 'bot@whisper.chat',
+    await setDoc(doc(db, 'users', BOT_ID), {
+        uid: BOT_ID,
+        displayName: BOT_USERNAME,
+        email: 'echo@whisper.chat',
         isBot: true,
-        photoURL: 'https://picsum.photos/seed/bot/100'
+        photoURL: BOT_PHOTO_URL
     }, { merge: true });
 
     // Create a new chat document
     const chatRef = await addDoc(collection(db, 'chats'), {
-      members: [userId, botId],
+      members: [userId, BOT_ID],
       isOfficial: true,
-      name: 'WhisperChat',
-      photoURL: 'https://picsum.photos/seed/bot/100',
+      name: BOT_USERNAME,
+      photoURL: BOT_PHOTO_URL,
       createdAt: serverTimestamp(),
     });
 
     // Add the welcome message
     await addDoc(collection(db, 'chats', chatRef.id, 'messages'), {
-      sender: botId,
-      text: `Hello ${username}, welcome to WhisperChat! This is a place to connect and share. Feel free to look around and start a conversation.`,
+      sender: BOT_ID,
+      text: `Hello ${username}, welcome to WhisperChat! This is the echo-bot. Send me a message and I'll repeat it back to you.`,
       timestamp: serverTimestamp(),
     });
     
