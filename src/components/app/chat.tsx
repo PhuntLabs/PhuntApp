@@ -8,9 +8,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { PopulatedChat, Message, UserProfile } from '@/lib/types';
-import { Send, CheckCircle, Trash2, Pencil } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Send, CheckCircle, Trash2, Pencil, Bot } from 'lucide-react';
 import { UserNav } from './user-nav';
+import { cn } from '@/lib/utils';
+import { Badge } from '../ui/badge';
 
 interface ChatProps {
   chat: PopulatedChat;
@@ -51,79 +52,84 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
 
   const otherMember = chat.members.find(m => m.id !== currentUser.uid);
   const chatName = otherMember?.displayName || chat.name || 'Chat';
-  const chatAvatar = otherMember?.photoURL || chat.photoURL;
+  const chatAvatar = otherMember?.photoURL;
+  const isBotChat = otherMember?.isBot;
 
   return (
     <SidebarInset>
       <div className="p-4 flex items-center gap-2 border-b">
         <SidebarTrigger />
-        {otherMember ? (
-            <UserNav user={otherMember as UserProfile} as="trigger">
-                <div className="flex items-center gap-2 cursor-pointer">
-                     <Avatar className="size-8">
-                      <AvatarImage src={chatAvatar || undefined} />
-                      <AvatarFallback>{chatName[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex items-center gap-2">
-                      <h1 className="text-xl font-semibold">{chatName}</h1>
-                      {chat.isOfficial && (
-                        <Badge variant="outline" className="flex items-center gap-1 border-green-500 text-green-500">
-                          <CheckCircle className="size-3" /> OFFICIAL
-                        </Badge>
-                      )}
-                    </div>
-                </div>
-            </UserNav>
-        ) : (
-             <div className="flex items-center gap-2">
+         <UserNav user={otherMember as UserProfile} as="trigger">
+            <div className="flex items-center gap-2 cursor-pointer">
                  <Avatar className="size-8">
                   <AvatarImage src={chatAvatar || undefined} />
-                  <AvatarFallback>{chatName[0]}</AvatarFallback>
+                  <AvatarFallback>{chatName?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl font-semibold">{chatName}</h1>
+                  {isBotChat && (
+                      <Badge variant="secondary" className="h-5 px-1.5 flex items-center gap-1 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                        <Bot className="size-3" /> BOT
+                      </Badge>
+                  )}
                 </div>
             </div>
-        )}
+        </UserNav>
       </div>
       <div className="flex flex-1 flex-col h-full bg-muted/20">
         <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
-            {messages.map((message) => {
+          <div className="space-y-1">
+            {messages.map((message, index) => {
               const sender = chat.members.find(m => m.id === message.sender) as UserProfile;
               const isCurrentUser = message.sender === currentUser?.uid;
               const isEditing = editingMessageId === message.id;
 
+              const prevMessage = messages[index - 1];
+              const showAvatar = !prevMessage || prevMessage.sender !== message.sender;
+
               return (
                 <div
                   key={message.id}
-                  className="group relative flex items-start gap-3"
+                  className={cn(
+                    "group relative flex items-start gap-3 hover:bg-foreground/5",
+                    showAvatar ? "mt-4" : "mt-0.5",
+                    isEditing ? "bg-foreground/10" : ""
+                  )}
                 >
-                    <UserNav user={sender} as="trigger">
-                      <Avatar className="size-10 cursor-pointer">
+                  {showAvatar ? (
+                     <UserNav user={sender} as="trigger">
+                      <Avatar className="size-10 cursor-pointer mt-1">
                          <AvatarImage src={sender?.photoURL || undefined} />
                         <AvatarFallback>{sender?.displayName?.[0]}</AvatarFallback>
                       </Avatar>
                     </UserNav>
+                  ) : (
+                    <div className="w-10 flex-shrink-0" />
+                  )}
                   
                   <div className="flex-1">
-                     <div className="flex items-baseline gap-2">
-                        <UserNav user={sender} as="trigger">
-                           <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
-                        </UserNav>
-                       <span className="text-xs text-muted-foreground">
-                         {new Date((message.timestamp as any)?.toDate()).toLocaleTimeString()}
-                       </span>
-                    </div>
+                    {showAvatar && (
+                       <div className="flex items-baseline gap-2">
+                          <UserNav user={sender} as="trigger">
+                             <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
+                          </UserNav>
+                         <span className="text-xs text-muted-foreground">
+                           {new Date((message.timestamp as any)?.toDate()).toLocaleTimeString()}
+                         </span>
+                      </div>
+                    )}
 
                     {isEditing ? (
-                      <div className="flex-1">
+                      <div className="flex-1 py-1">
                         <Input 
                           value={editingText}
                           onChange={(e) => setEditingText(e.target.value)}
                           className="text-sm p-2 h-auto"
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveEdit(message.id);
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSaveEdit(message.id);
+                            }
                             if (e.key === 'Escape') handleCancelEdit();
                           }}
                         />
@@ -141,7 +147,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                   </div>
 
                   {isCurrentUser && !isEditing && (
-                    <div className="absolute right-2 top-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md border p-0.5">
+                    <div className="absolute right-4 top-0 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md border p-0.5">
                       <Button variant="ghost" size="icon" className="size-6" onClick={() => handleEdit(message)}><Pencil className="size-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="size-6 text-red-500 hover:text-red-500" onClick={() => onDeleteMessage(message.id)}><Trash2 className="size-3.5" /></Button>
                     </div>
@@ -159,7 +165,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
+              placeholder={`Message @${chatName}`}
               className="flex-1"
               disabled={!!editingMessageId}
             />

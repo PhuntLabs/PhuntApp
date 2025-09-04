@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (
             (userData.email && developerEmails.includes(userData.email)) ||
             (userData.displayName &&
-              developerUsernames.includes(userData.displayName))
+              developerUsernames.includes(userData.displayName.toLowerCase()))
           ) {
             if (!userData.badges) {
               userData.badges = [];
@@ -110,9 +110,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { displayName, photoURL, ...firestoreData } = data;
 
       // Update Firebase Auth profile if display name or photo URL changed
-      if (displayName || photoURL) {
-        await updateProfile(authUser, { displayName, photoURL });
+      const profileUpdates: { displayName?: string; photoURL?: string } = {};
+      if (displayName) profileUpdates.displayName = displayName;
+      if (photoURL) profileUpdates.photoURL = photoURL;
+      
+      if (Object.keys(profileUpdates).length > 0) {
+        await updateProfile(authUser, profileUpdates);
       }
+
 
       // Update Firestore document
       const userRef = doc(db, 'users', authUser.uid);
@@ -127,6 +132,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signup = async (email: string, pass: string, username: string) => {
+    // Check if username is already taken
+    const usernameQuery = query(collection(db, 'users'), where('displayName_lowercase', '==', username.toLowerCase()));
+    const usernameSnapshot = await getDocs(usernameQuery);
+    if (!usernameSnapshot.empty) {
+        throw new Error("Username is already taken.");
+    }
+
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
@@ -143,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const userPayload: Omit<UserProfile, 'id'> = {
       displayName: username,
+      displayName_lowercase: username.toLowerCase(),
       email: firebaseUser.email,
       createdAt: serverTimestamp(),
       photoURL: photoURL,

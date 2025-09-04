@@ -23,7 +23,7 @@ async function populateChat(chatDoc: ChatDocument): Promise<PopulatedChat> {
             const developerUsernames = ['testacc', 'aura farmer'];
              if (
                 (userData.email && developerEmails.includes(userData.email)) ||
-                (userData.displayName && developerUsernames.includes(userData.displayName))
+                (userData.displayName && developerUsernames.includes(userData.displayName.toLowerCase()))
             ) {
                 if (!userData.badges) userData.badges = [];
                 if (!userData.badges.includes('developer')) userData.badges.push('developer');
@@ -57,7 +57,8 @@ export function useChats() {
     setChats((prevChats) => {
         // Avoid adding duplicates
         if (prevChats.some(chat => chat.id === populated.id)) {
-            return prevChats;
+            // If chat already exists, update it
+            return prevChats.map(c => c.id === populated.id ? populated : c);
         }
         // Add new chat and re-sort
         const updatedChats = [...prevChats, populated];

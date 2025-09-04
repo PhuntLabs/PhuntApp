@@ -14,7 +14,7 @@ import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
@@ -64,7 +64,8 @@ export default function Home() {
     // If talking to echo-bot, trigger the flow
     const echoBot = selectedChat.members.find(m => m.id === BOT_ID);
     if (echoBot && sentMessage) {
-        await processEcho({ chatId: selectedChat.id, message: { id: sentMessage.id, text, sender: authUser.uid }});
+        // No await needed, let it run in the background
+        processEcho({ chatId: selectedChat.id, message: { id: sentMessage.id, text, sender: authUser.uid }});
     }
   };
   
@@ -86,7 +87,11 @@ export default function Home() {
     try {
         await handleSendFriendRequest(BOT_USERNAME);
     } catch (e: any) {
-        if (!e.message.includes('already sent a request')) {
+        if (e.message.includes('already sent a request')) {
+             // If request is already sent, maybe we just need to accept it.
+            // Or maybe the chat already exists.
+            toast({ title: "Already friends", description: "You already have a chat with echo-bot."})
+        } else {
             toast({ variant: 'destructive', title: 'Error', description: e.message });
         }
     }
@@ -110,10 +115,7 @@ export default function Home() {
                 createdAt: serverTimestamp(),
                 lastMessageTimestamp: serverTimestamp()
             });
-
-            const newChat = await getDoc(chatRef);
-            await addChat({id: newChat.id, ...newChat.data()} as any);
-            setSelectedChat(await addChat({id: newChat.id, ...newChat.data()} as any));
+            // The useChats hook will automatically pick up the new chat
         }
 
     } catch(e: any) {

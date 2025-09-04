@@ -14,9 +14,11 @@ import {
   doc,
   deleteDoc,
   updateDoc,
+  getDoc,
 } from 'firebase/firestore';
 import { useAuth } from './use-auth';
 import type { FriendRequest } from '@/lib/types';
+import { BOT_ID } from '@/ai/bots/config';
 
 export function useFriendRequests() {
   const { user } = useAuth();
@@ -45,11 +47,11 @@ export function useFriendRequests() {
 
   const sendFriendRequest = useCallback(async (toUsername: string, fromUser: { id: string, displayName: string }) => {
     if (!user) throw new Error("You must be logged in to send a friend request.");
-    if (fromUser.displayName === toUsername) throw new Error("You cannot send a friend request to yourself.");
+    if (fromUser.displayName.toLowerCase() === toUsername.toLowerCase()) throw new Error("You cannot send a friend request to yourself.");
 
     // 1. Find user with the given username
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('displayName', '==', toUsername));
+    const q = query(usersRef, where('displayName_lowercase', '==', toUsername.toLowerCase()));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
@@ -61,18 +63,19 @@ export function useFriendRequests() {
 
     // 2. Check if a request already exists or if they are already friends
     const existingRequestQuery = query(collection(db, 'friendRequests'), 
-        where('from.id', '==', fromUser.id),
-        where('to', '==', toUserId)
+        where('from.id', 'in', [fromUser.id, toUserId]),
+        where('to', 'in', [fromUser.id, toUserId])
     );
     const existingRequestSnapshot = await getDocs(existingRequestQuery);
-    if (!existingRequestSnapshot.empty) throw new Error("You have already sent a request to this user.");
-
-    const reverseRequestQuery = query(collection(db, 'friendRequests'), 
-        where('from.id', '==', toUserId),
-        where('to', '==', fromUser.id)
-    );
-    const reverseRequestSnapshot = await getDocs(reverseRequestQuery);
-    if (!reverseRequestSnapshot.empty) throw new Error("This user has already sent you a request.");
+    if (!existingRequestSnapshot.empty) {
+        const existingRequest = existingRequestSnapshot.docs[0].data();
+        if (existingRequest.status === 'pending') {
+            throw new Error("A friend request between you and this user already exists.");
+        }
+        if (existingRequest.status === 'accepted') {
+            throw new Error("You are already friends with this user.");
+        }
+    }
 
 
     // 3. Create the friend request
@@ -91,26 +94,11 @@ export function useFriendRequests() {
     if (!user) throw new Error("You must be logged in.");
     
     const requestRef = doc(db, 'friendRequests', requestId);
-    const userRef = doc(db, 'users', user.uid);
-    const fromUserRef = doc(db, 'users', fromUser.id);
     
-    const batch = writeBatch(db);
-    
-    // Update the request status
-    batch.update(requestRef, { status: 'accepted' });
-    
-    // Add each user to the other's friends list (optional, but good for queries)
-    // Note: This friends array logic needs a more robust implementation for a real app,
-    // for example by checking for duplicates before adding.
-    const userDoc = await getDoc(userRef);
-    const userFriends = userDoc.data()?.friends || [];
-    batch.update(userRef, { friends: [...userFriends, fromUser.id] });
+    await updateDoc(requestRef, { status: 'accepted' });
 
-    const fromUserDoc = await getDoc(fromUserRef);
-    const fromUserFriends = fromUserDoc.data()?.friends || [];
-    batch.update(fromUserRef, { friends: [...fromUserFriends, user.uid] });
-
-    await batch.commit();
+    // The chat creation is now handled by the client that accepted the request
+    // This simplifies the logic and avoids potential race conditions with flows.
 
   }, [user]);
 

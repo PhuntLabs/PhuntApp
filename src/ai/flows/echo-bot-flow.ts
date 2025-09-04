@@ -11,6 +11,7 @@ import {
   addDoc,
   collection,
   doc,
+  getDoc,
   getDocs,
   query,
   serverTimestamp,
@@ -21,6 +22,28 @@ import {
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { BOT_ID } from '@/ai/bots/config';
+
+// This function runs once on server startup to ensure the bot user exists.
+async function ensureBotUser() {
+    const botUserRef = doc(db, 'users', BOT_ID);
+    const botUserDoc = await getDoc(botUserRef);
+    if (!botUserDoc.exists()) {
+        await setDoc(botUserRef, {
+            uid: BOT_ID,
+            displayName: 'echo-bot',
+            email: 'echo@whisper.chat',
+            isBot: true,
+            photoURL: 'https://picsum.photos/seed/echobot/100',
+            createdAt: serverTimestamp(),
+            badges: ['bot']
+        });
+        console.log("Echo-bot user created in Firestore.");
+    }
+}
+
+// Immediately invoke the function.
+ensureBotUser().catch(console.error);
+
 
 const EchoBotInputSchema = z.object({
   chatId: z.string().describe('The ID of the chat.'),
@@ -71,6 +94,7 @@ const autoAcceptFriendRequest = async (userId: string) => {
         }
         
         await batch.commit();
+        console.log(`Auto-accepted friend request from ${userId} and created chat.`);
     }
 };
 

@@ -70,6 +70,7 @@ export default function SignupPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
             />
           </div>
           <Button type="submit" className="w-full">

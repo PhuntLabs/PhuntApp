@@ -15,9 +15,6 @@ import { useState, useEffect } from 'react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
@@ -33,7 +30,7 @@ interface UserNavProps {
 }
 
 export function UserNav({ user, logout, as = 'button', children }: UserNavProps) {
-  const { authUser, setUser: setUserProfile, updateUserProfile } = useAuth();
+  const { authUser, updateUserProfile } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
   const [bannerURL, setBannerURL] = useState(user?.bannerURL || '');
@@ -46,7 +43,7 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
 
   useEffect(() => {
     // When the popover opens or user changes, sync state
-    if (user) {
+    if (isPopoverOpen && user) {
         setDisplayName(user.displayName || '');
         setPhotoURL(user.photoURL || '');
         setBannerURL(user.bannerURL || '');
@@ -96,7 +93,13 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
         </div>
     </button>
   ) : (
-    <div>{children}</div>
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    <div onClick={(e) => {
+        // This prevents the click from propagating to parent elements if it's a trigger
+        if (as === 'trigger') {
+            e.stopPropagation();
+        }
+    }}>{children}</div>
   )
 
   return (

@@ -5,6 +5,7 @@ export interface UserProfile {
   uid: string;
   email?: string | null;
   displayName: string;
+  displayName_lowercase?: string;
   photoURL: string | null;
   bannerURL?: string | null;
   bio?: string;
