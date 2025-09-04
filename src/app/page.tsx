@@ -12,9 +12,10 @@ import { Servers } from '@/components/app/servers';
 import type { PopulatedChat } from '@/lib/types';
 import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
+import { useServers } from '@/hooks/use-servers';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, deleteDoc, getDoc, writeBatch } from 'firebase/firestore';
+import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
@@ -29,6 +30,7 @@ export default function Home() {
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
   const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests();
+  const { servers, loading: serversLoading, createServer } = useServers();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -92,7 +94,7 @@ export default function Home() {
         toast({ title: "Friend Request Sent", description: `A request was sent to ${BOT_USERNAME}. It will accept automatically.`});
 
     } catch (e: any) {
-        if (e.message.includes('already friends')) {
+        if (e.message.includes('already friends') || e.message.includes('already pending')) {
              toast({ title: "You are already friends!", description: `You can already chat with ${BOT_USERNAME}.`})
         } else {
             toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -133,6 +135,15 @@ export default function Home() {
     }
   }
 
+  const handleCreateServer = async (name: string) => {
+    try {
+        await createServer(name);
+        toast({ title: "Server Created!", description: `The server "${name}" has been created.`});
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Error Creating Server', description: e.message });
+    }
+  }
+
 
   if (loading || !authUser || !user) {
     return (
@@ -165,7 +176,7 @@ export default function Home() {
             onDeleteChat={handleDeleteChat}
             loading={chatsLoading}
           />
-          <Servers />
+          <Servers servers={servers} loading={serversLoading} onCreateServer={handleCreateServer} />
         </SidebarContent>
         <SidebarFooter>
           <div className="flex items-center justify-between">

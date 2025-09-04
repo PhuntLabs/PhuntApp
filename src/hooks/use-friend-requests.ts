@@ -61,25 +61,25 @@ export function useFriendRequests() {
     const toUserId = toUserDoc.id;
 
     // 2. Check if they are already friends (i.e., a chat exists)
+    const sortedMembers = [fromUser.id, toUserId].sort();
     const chatQuery = query(
         collection(db, 'chats'),
-        where('members', '==', [fromUser.id, toUserId].sort())
+        where('members', '==', sortedMembers)
     );
     const chatSnapshot = await getDocs(chatQuery);
     if (!chatSnapshot.empty) {
         throw new Error(`You are already friends with ${toUsername}.`);
     }
 
-    // 3. Check for an existing pending request
+    // 3. Check for an existing pending request (either way)
     const requestQuery = query(
         collection(db, 'friendRequests'),
-        where('from.id', '==', fromUser.id),
-        where('to', '==', toUserId),
+        where('members', '==', sortedMembers),
         where('status', '==', 'pending')
     );
     const requestSnapshot = await getDocs(requestQuery);
     if (!requestSnapshot.empty) {
-        throw new Error(`A friend request to ${toUsername} is already pending.`);
+        throw new Error(`A friend request between you and ${toUsername} is already pending.`);
     }
 
 
@@ -90,7 +90,7 @@ export function useFriendRequests() {
       status: 'pending',
       createdAt: serverTimestamp(),
       // Add a compound members field for easier querying of existing requests
-      members: [fromUser.id, toUserId].sort() 
+      members: sortedMembers
     });
 
     // 5. If the request is to the bot, trigger the auto-accept flow
@@ -117,16 +117,18 @@ export function useFriendRequests() {
     batch.update(requestRef, { status: 'accepted' });
 
     // Check if chat already exists
-    const q = query(collection(db, 'chats'), where('members', 'array-contains', authUser.uid));
-    const querySnapshot = await getDocs(q);
-    const existingChat = querySnapshot.docs.find(d => d.data().members.includes(fromUser.id));
-
-    if (!existingChat) {
+    const sortedMembers = [authUser.uid, fromUser.id].sort();
+    const chatQuery = query(
+        collection(db, 'chats'),
+        where('members', '==', sortedMembers)
+    );
+    const chatSnapshot = await getDocs(chatQuery);
+    
+    if (chatSnapshot.empty) {
         // Create a new chat
         const newChatRef = doc(collection(db, 'chats'));
         batch.set(newChatRef, {
-            // Sort members to make querying consistent
-            members: [authUser.uid, fromUser.id].sort(),
+            members: sortedMembers,
             createdAt: serverTimestamp(),
             lastMessageTimestamp: serverTimestamp()
         });

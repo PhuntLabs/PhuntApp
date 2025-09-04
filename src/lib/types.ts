@@ -46,3 +46,19 @@ export interface FriendRequest {
     status: 'pending' | 'accepted' | 'declined';
     createdAt: Timestamp;
 }
+
+export interface Server {
+    id: string;
+    name: string;
+    ownerId: string;
+    members: string[];
+    photoURL?: string | null;
+    createdAt: FieldValue;
+}
+
+export interface Channel {
+    id: string;
+    name: string;
+    serverId: string;
+    createdAt: FieldValue;
+}
