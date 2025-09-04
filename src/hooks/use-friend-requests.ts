@@ -25,7 +25,7 @@ export function useFriendRequests() {
 
   // Listen for incoming friend requests
   useEffect(() => {
-    if (!user || !user.uid) { 
+    if (!user?.uid) { 
         setIncomingRequests([]);
         return;
     }

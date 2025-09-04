@@ -2,57 +2,69 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Users: Allow users to read/write their own profile. Public reads are okay.
-    match /users/{userId} {
-      allow read;
-      allow write: if request.auth.uid == userId;
-    }
-
-    // Direct Messages & Chats: Only members can interact.
-    match /chats/{chatId} {
-      allow read, delete: if request.auth.uid in resource.data.members;
-      
-      // Messages within a DM
-      match /messages/{messageId} {
-        allow read, create: if request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
-        allow update, delete: if request.auth.uid == resource.data.sender;
-      }
-    }
-
-    // Friend Requests:
-    match /friendRequests/{requestId} {
-      allow read, create: if request.auth.uid == request.resource.data.from.id || request.auth.uid == request.resource.data.to;
-      allow update: if request.auth.uid == resource.data.to; // Only the recipient can accept/decline
+  
+    // Helper Functions
+    function isAuth() {
+      return request.auth != null;
     }
     
-    // Servers & Channels:
-    match /servers/{serverId} {
-      // READ: Allow if the server is public OR the user is a member.
-      allow read: if resource.data.isPublic == true || request.auth.uid in resource.data.members;
-      
-      // CREATE: User must be authenticated to create a server.
-      allow create: if request.auth != null;
-      
-      // UPDATE: Allow owner to change details, or any user to join (add themselves).
-      allow update: if resource.data.ownerId == request.auth.uid ||
-                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
-                       request.resource.data.members.size() == resource.data.members.size() + 1 &&
-                       request.auth.uid in request.resource.data.members);
-                       
-      // DELETE: Only the owner can delete.
-      allow delete: if resource.data.ownerId == request.auth.uid;
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
 
-      // Channels within a server
-      match /channels/{channelId} {
-        allow read, create, update, delete: if get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId == request.auth.uid;
+    // USERS
+    match /users/{userId} {
+      allow read;
+      allow create: if isAuth() && isOwner(userId);
+      allow update: if isAuth() && isOwner(userId);
+      allow delete: if isAuth() && isOwner(userId);
+    }
+    
+    // CHATS (DMs)
+    match /chats/{chatId} {
+        allow read, delete: if isAuth() && request.auth.uid in resource.data.members;
+        allow create: if isAuth() && request.auth.uid in request.resource.data.members;
+        allow update: if isAuth() && request.auth.uid in resource.data.members;
         
-        // Messages within a channel
+        // MESSAGES (in DMs)
         match /messages/{messageId} {
-            // READ/CREATE: Allow if user is a member of the server.
-            allow read, create: if request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
-            // UPDATE/DELETE: Allow if user is the sender of the message.
-            allow update, delete: if request.auth.uid == resource.data.sender;
+             allow read, create: if isAuth() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
+             allow update, delete: if isAuth() && request.auth.uid == resource.data.sender;
+        }
+    }
+    
+    // FRIEND REQUESTS
+    match /friendRequests/{requestId} {
+        allow read, update: if isAuth() && (request.auth.uid == resource.data.to || request.auth.uid == resource.data.from.id);
+        allow create: if isAuth() && request.auth.uid == request.resource.data.from.id;
+    }
+
+    // SERVERS
+    match /servers/{serverId} {
+      allow read: if isAuth();
+
+      allow create: if isAuth() && isOwner(request.resource.data.ownerId);
+
+      allow update: if isAuth() && (
+        isOwner(resource.data.ownerId) ||
+        (request.resource.data.keys().hasOnly(['members']) && 
+         request.resource.data.members.size() == resource.data.members.size() + 1 &&
+         request.resource.data.members.hasAny(resource.data.members) &&
+         !resource.data.members.hasAny([request.auth.uid]))
+      );
+
+      allow delete: if isAuth() && isOwner(resource.data.ownerId);
+
+      // CHANNELS (in Servers)
+      match /channels/{channelId} {
+        allow read: if isAuth() && request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+        allow create, update, delete: if isAuth() && request.auth.uid == get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId;
+        
+        // MESSAGES (in Channels)
+        match /messages/{messageId} {
+           allow read: if isAuth() && request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+           allow create: if isAuth() && request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+           allow update, delete: if isAuth() && isOwner(resource.data.sender);
         }
       }
     }
