@@ -75,16 +75,16 @@ export default function Home() {
     
     // If a server is deleted, fall back to DMs
     if (selectedServer && !servers.find(s => s.id === selectedServer.id)) {
-        setSelectedServer(null); 
-        setSelectedChannel(null);
+        handleSelectServer(null);
         return;
     }
     
     // Auto-select the first server only on initial load if nothing else is selected
-    if (!selectedServer && !selectedChat && servers.length > 0) {
-      setSelectedServer(servers[0]);
+    if (selectedServer === null && selectedChat === null && servers.length > 0) {
+      handleSelectServer(servers[0]);
     }
-  }, [servers, serversLoading, selectedServer, selectedChat]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servers, serversLoading]);
 
 
   const handleSendMessage = async (text: string) => {
@@ -272,10 +272,7 @@ export default function Home() {
         </div>
         
         <div className="flex flex-1 min-w-0">
-             <main 
-                className="flex flex-col bg-background/50 min-w-0" 
-                style={{ width: 'calc(100vw - 5rem - 16rem - 15rem)'}}
-             >
+             <main className="flex-1 flex flex-col bg-background/50 min-w-0">
                 {server && selectedChannel ? (
                 <ChannelChat channel={selectedChannel} server={server} />
                 ) : server ? (
