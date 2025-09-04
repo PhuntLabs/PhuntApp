@@ -17,19 +17,20 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import type { Server, Channel, ChannelType } from '@/lib/types';
-import { Hash, ChevronDown, Settings, Trash, Plus, MoreVertical, Pencil, Megaphone, ScrollText, MessageSquare } from 'lucide-react';
+import { Hash, ChevronDown, Settings, Trash, Plus, MoreVertical, Pencil, Megaphone, ScrollText, MessageSquare, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { EditServerDialog } from './edit-server-dialog';
 import { AddChannelDialog } from './add-channel-dialog';
 import { EditChannelDialog } from './edit-channel-dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { InviteDialog } from './invite-dialog';
 
 interface ServerSidebarProps {
   server: Server;
   selectedChannel: Channel | null;
   onSelectChannel: (channel: Channel) => void;
-  onUpdateServer: (serverId: string, name: string, photoURL: string) => Promise<void>;
+  onUpdateServer: (serverId: string, data: Partial<Omit<Server, 'id'>>) => Promise<void>;
   onDeleteServer: (serverId: string) => Promise<void>;
   onCreateChannel: (name: string) => Promise<void>;
   onUpdateChannel: (channelId: string, data: { name?: string, type?: ChannelType }) => Promise<void>;
@@ -71,8 +72,15 @@ export function ServerSidebar({
                     </button>
                 </DropdownMenuTrigger>
                  <DropdownMenuContent className="w-56" align="start">
+                    <InviteDialog serverId={server.id}>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-indigo-400 focus:bg-indigo-500/20 focus:text-indigo-300">
+                             <UserPlus className="mr-2 h-4 w-4" />
+                            <span>Invite People</span>
+                        </DropdownMenuItem>
+                    </InviteDialog>
                     {isOwner && (
                         <>
+                            <DropdownMenuSeparator />
                              <EditServerDialog server={server} onUpdateServer={onUpdateServer} onDeleteServer={onDeleteServer}>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                     <Settings className="mr-2 h-4 w-4" />

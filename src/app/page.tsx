@@ -192,9 +192,9 @@ export default function Home() {
     }
   }
 
-  const handleUpdateServer = async (serverId: string, name: string, photoURL: string) => {
+  const handleUpdateServer = async (serverId: string, data: Partial<Omit<Server, 'id'>>) => {
     try {
-      await updateServer(serverId, { name, photoURL });
+      await updateServer(serverId, data);
       toast({ title: "Server Updated" });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error Updating Server', description: e.message });

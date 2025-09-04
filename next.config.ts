@@ -1,6 +1,19 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/join/:serverId',
+        destination: '/join/:serverId',
+      },
+       {
+        source: '/discovery',
+        destination: '/discovery',
+      },
+    ]
+  },
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,

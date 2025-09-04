@@ -56,6 +56,8 @@ export interface Server {
     photoURL?: string | null;
     createdAt: FieldValue;
     channels?: Channel[];
+    isPublic?: boolean;
+    description?: string;
 }
 
 export type ChannelType = 'text' | 'announcement' | 'rules' | 'forum';
