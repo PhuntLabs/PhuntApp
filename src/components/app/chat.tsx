@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { User } from 'firebase/auth';
-import Image from 'next/image';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { DirectMessage, Message } from '@/lib/types';
+import type { DirectMessage, Message } from '@/lib/types';
+import { Send } from 'lucide-react';
 
 interface ChatProps {
   chat: DirectMessage;
@@ -44,10 +44,10 @@ export function Chat({ chat, messages, onSendMessage, currentUser }: ChatProps) 
               <div
                 key={message.id}
                 className={`flex items-end gap-2 ${
-                  message.sender === 'You' ? 'justify-end' : 'justify-start'
+                  message.sender === currentUser?.uid ? 'justify-end' : 'justify-start'
                 }`}
               >
-                {message.sender !== 'You' && (
+                {message.sender !== currentUser?.uid && (
                   <Avatar className="size-8">
                      <AvatarImage src={chat.avatar} />
                     <AvatarFallback>{chat.name[0]}</AvatarFallback>
@@ -55,14 +55,14 @@ export function Chat({ chat, messages, onSendMessage, currentUser }: ChatProps) 
                 )}
                 <div
                   className={`max-w-xs lg:max-w-md p-3 rounded-2xl ${
-                    message.sender === 'You'
+                    message.sender === currentUser?.uid
                       ? 'bg-primary text-primary-foreground rounded-br-none'
                       : 'bg-card rounded-bl-none'
                   }`}
                 >
                   <p className="text-sm">{message.text}</p>
                 </div>
-                 {message.sender === 'You' && currentUser && (
+                 {message.sender === currentUser?.uid && currentUser && (
                   <Avatar className="size-8">
                     <AvatarImage src={currentUser.photoURL || undefined} />
                     <AvatarFallback>{currentUser.email?.[0].toUpperCase()}</AvatarFallback>
@@ -83,7 +83,9 @@ export function Chat({ chat, messages, onSendMessage, currentUser }: ChatProps) 
               placeholder="Type a message..."
               className="flex-1"
             />
-            <Button type="submit">Send</Button>
+            <Button type="submit" size="icon">
+              <Send />
+            </Button>
           </form>
         </div>
       </div>

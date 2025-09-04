@@ -1,3 +1,5 @@
+import { FieldValue } from "firebase/firestore";
+
 export interface DirectMessage {
   id: string;
   name: string;
@@ -9,4 +11,5 @@ export interface Message {
   id: string;
   sender: string;
   text: string;
+  timestamp: FieldValue;
 }

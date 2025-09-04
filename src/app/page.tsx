@@ -9,7 +9,8 @@ import { UserNav } from '@/components/app/user-nav';
 import { Chat } from '@/components/app/chat';
 import { DirectMessages } from '@/components/app/direct-messages';
 import { Servers } from '@/components/app/servers';
-import type { DirectMessage, Message } from '@/lib/types';
+import type { DirectMessage } from '@/lib/types';
+import { useChat } from '@/hooks/use-chat';
 
 // Sample data
 const directMessages: DirectMessage[] = [
@@ -18,18 +19,13 @@ const directMessages: DirectMessage[] = [
   { id: '3', name: 'Charlie', avatar: 'https://picsum.photos/seed/charlie/100', online: true },
 ];
 
-const initialMessages: Message[] = [
-    { id: 'm1', sender: 'Alice', text: 'Hey, how are you?' },
-    { id: 'm2', sender: 'You', text: 'I am good, thanks! How about you?' },
-    { id: 'm3', sender: 'Alice', text: 'Doing great! Working on the new chat app.' },
-];
-
 
 export default function Home() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
-  const [messages, setMessages] = useState(initialMessages);
   const [selectedChat, setSelectedChat] = useState(directMessages[0]);
+  const { messages, sendMessage } = useChat(selectedChat.id);
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -37,8 +33,9 @@ export default function Home() {
     }
   }, [user, loading, router]);
 
-  const handleSendMessage = (text: string) => {
-    setMessages([...messages, { id: `m${messages.length + 1}`, sender: 'You', text }]);
+  const handleSendMessage = async (text: string) => {
+    if (!user) return;
+    await sendMessage(text, user.uid);
   };
 
   if (loading || !user) {
