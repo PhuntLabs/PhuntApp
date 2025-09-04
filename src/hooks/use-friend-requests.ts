@@ -52,33 +52,45 @@ export function useFriendRequests() {
         throw new Error("You cannot send a friend request to yourself.");
     }
 
-    // 1. Find user with the given username
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('displayName_lowercase', '==', toUsername.toLowerCase()));
-    const querySnapshot = await getDocs(q);
+    let toUserId: string;
+    let toUserDoc: any;
 
-    if (querySnapshot.empty) {
-      throw new Error(`User with username "${toUsername}" not found.`);
+    // Step 1: Find user with the given username
+    try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('displayName_lowercase', '==', toUsername.toLowerCase()));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            throw new Error(`User with username "${toUsername}" not found.`);
+        }
+        
+        toUserDoc = querySnapshot.docs[0];
+        toUserId = toUserDoc.id;
+    } catch (e: any) {
+        throw new Error(`Failed to search for user "${toUsername}". The database permission rules might be preventing this. Original error: ${e.message}`);
     }
-    
-    const toUserDoc = querySnapshot.docs[0];
-    const toUserId = toUserDoc.id;
 
     if (fromUser.id === toUserId) {
         throw new Error("You cannot send a friend request to yourself.");
     }
 
-    // 2. Create the friend request. The security rules will handle prevention of duplicates.
-    const newRequestRef = await addDoc(collection(db, 'friendRequests'), {
-      from: fromUser,
-      to: toUserId,
-      status: 'pending',
-      createdAt: serverTimestamp(),
-      // Add a compound members field for easier querying of existing requests
-      members: [fromUser.id, toUserId].sort()
-    });
+    // Step 2: Create the friend request
+    let newRequestRef;
+    try {
+        newRequestRef = await addDoc(collection(db, 'friendRequests'), {
+            from: fromUser,
+            to: toUserId,
+            status: 'pending',
+            createdAt: serverTimestamp(),
+            members: [fromUser.id, toUserId].sort()
+        });
+    } catch(e: any) {
+        throw new Error(`Permission denied when trying to create the friend request document in the database. Please check Firestore security rules for the 'friendRequests' collection. Original error: ${e.message}`);
+    }
 
-    // 3. If the request is to the bot, trigger the auto-accept flow
+
+    // Step 3: If the request is to the bot, trigger the auto-accept flow
     if (toUserId === BOT_ID) {
       // Don't await, let it run in the background
       processBotFriendRequest({
@@ -103,12 +115,19 @@ export function useFriendRequests() {
 
     // 2. Create a new chat. Security rules should prevent creation if one exists.
     const sortedMembers = [authUser.uid, fromUser.id].sort();
-    const newChatRef = doc(collection(db, 'chats'));
-    batch.set(newChatRef, {
-        members: sortedMembers,
-        createdAt: serverTimestamp(),
-        lastMessageTimestamp: serverTimestamp()
-    });
+    
+    // Check if chat already exists
+    const chatQuery = query(collection(db, 'chats'), where('members', '==', sortedMembers));
+    const chatSnapshot = await getDocs(chatQuery);
+    
+    if (chatSnapshot.empty) {
+        const newChatRef = doc(collection(db, 'chats'));
+        batch.set(newChatRef, {
+            members: sortedMembers,
+            createdAt: serverTimestamp(),
+            lastMessageTimestamp: serverTimestamp()
+        });
+    }
     
     // 3. Commit all database changes
     try {
