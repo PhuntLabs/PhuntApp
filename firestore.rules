@@ -1,60 +1,43 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isUser(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // USERS
-    // Users can read public profiles
-    // Users can only create and update their own profile
+    // Users: Can read/write their own data, and read public profiles
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isUser(userId);
+      allow read: if request.auth != null; // Allow any authenticated user to read profiles
+      allow write: if request.auth.uid == userId;
     }
-    
-    // CHATS
-    // Users can read/write chats and messages they are a member of
+
+    // Chats: Can read/write if they are a member
     match /chats/{chatId} {
-      allow read, write: if isSignedIn() && resource.data.members.hasAny([request.auth.uid]);
+      allow read, write: if request.auth.uid in resource.data.members;
 
+      // Messages: Can read/write if they are a member of the parent chat
       match /messages/{messageId} {
-        allow read, write: if isSignedIn() && get(/databases/$(database)/documents/chats/$(chatId)).data.members.hasAny([request.auth.uid]);
+        allow read, write: if request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
       }
     }
-    
-    // FRIEND REQUESTS
-    // Users can create requests.
-    // Users can only update requests where they are the recipient ('to').
+
+    // Friend Requests: Can create, and can update/delete if they are the recipient
     match /friendRequests/{requestId} {
-       allow create: if isSignedIn();
-       allow update: if isSignedIn() && resource.data.to == request.auth.uid;
-       allow read, delete: if isSignedIn() && (resource.data.to == request.auth.uid || resource.data.from.id == request.auth.uid);
+        allow read: if request.auth.uid == resource.data.from.id || request.auth.uid == resource.data.to;
+        allow create: if request.auth.uid == request.resource.data.from.id;
+        allow update: if request.auth.uid == resource.data.to; // recipient can accept/decline
+        allow delete: if false; // Don't allow deletion, just update status
     }
 
-    // SERVERS & CHANNELS
+    // Servers: Can read if they are a member, create, and manage if they are the owner
     match /servers/{serverId} {
-      // Allow user to create a server if they are the owner
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      
-      // Allow members to read the server data
-      // Allow owners to update or delete their server
-      allow read: if isSignedIn() && get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
-      allow update, delete: if isSignedIn() && get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId == request.auth.uid;
+        allow read: if request.auth.uid in resource.data.members;
+        allow create: if request.auth.uid == request.resource.data.ownerId;
+        allow update: if request.auth.uid == resource.data.ownerId;
+        allow delete: if request.auth.uid == resource.data.ownerId;
 
-      match /channels/{channelId} {
-        // Allow server owners to create channels
-        allow create: if isSignedIn() && get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId == request.auth.uid;
-        // Allow server members to read channels
-        allow read: if isSignedIn() && get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
-      }
+        // Channels: Can read if they are a member of the server, owner can manage
+        match /channels/{channelId} {
+            allow read: if get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
+            allow create, update, delete: if request.auth.uid == get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId;
+        }
     }
   }
 }
