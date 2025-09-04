@@ -9,7 +9,7 @@ import { UserNav } from '@/components/app/user-nav';
 import { Chat } from '@/components/app/chat';
 import { DirectMessages } from '@/components/app/direct-messages';
 import { Servers } from '@/components/app/servers';
-import type { PopulatedChat, ChatDocument } from '@/lib/types';
+import type { PopulatedChat, ChatDocument, UserProfile } from '@/lib/types';
 import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
@@ -37,6 +37,7 @@ export default function Home() {
   }, [authUser, loading, router]);
   
   useEffect(() => {
+    if (chatsLoading) return;
     // If there is no selected chat or the selected chat is no longer in the list
     if ((!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0) {
       // Find the most recent chat to select
@@ -47,7 +48,7 @@ export default function Home() {
       });
       setSelectedChat(mostRecentChat);
     }
-  }, [chats, selectedChat]);
+  }, [chats, selectedChat, chatsLoading]);
 
 
   const handleSendMessage = async (text: string) => {
@@ -123,9 +124,9 @@ export default function Home() {
       const existingChat = querySnapshot.docs.find(doc => doc.data().members.includes(BOT_ID));
       
       if (existingChat) {
-        toast({ title: 'Chat Already Exists', description: "You're already chatting with echo-bot." });
         const populated = chats.find(c => c.id === existingChat.id);
         if (populated) setSelectedChat(populated);
+        toast({ title: 'Chat Already Exists', description: "You're already chatting with echo-bot." });
         return;
       }
 
@@ -150,7 +151,7 @@ export default function Home() {
   }
 
 
-  if (loading || !authUser || !user || chatsLoading) {
+  if (loading || !authUser || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <p>Loading...</p>
@@ -178,6 +179,7 @@ export default function Home() {
             onSelectChat={setSelectedChat}
             onAddUser={handleSendFriendRequest}
             onAddBot={handleCreateChatWithBot}
+            loading={chatsLoading}
           />
           <Servers />
         </SidebarContent>

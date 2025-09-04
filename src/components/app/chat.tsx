@@ -80,58 +80,50 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
               return (
                 <div
                   key={message.id}
-                  className={`group flex items-end gap-2 ${
-                    isCurrentUser ? 'justify-end' : 'justify-start'
-                  }`}
+                  className="group relative flex items-start gap-3"
                 >
-                  {!isCurrentUser && (
-                    <Avatar className="size-8">
-                       <AvatarImage src={sender?.photoURL || undefined} />
-                      <AvatarFallback>{sender?.displayName?.[0]}</AvatarFallback>
-                    </Avatar>
-                  )}
-                  {isCurrentUser && (
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="size-7" onClick={() => handleEdit(message)}><Pencil className="size-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="size-7 text-red-500 hover:text-red-500" onClick={() => onDeleteMessage(message.id)}><Trash2 className="size-3.5" /></Button>
+                  <Avatar className="size-10">
+                     <AvatarImage src={sender?.photoURL || undefined} />
+                    <AvatarFallback>{sender?.displayName?.[0]}</AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-baseline gap-2">
+                       <p className="font-semibold">{sender?.displayName}</p>
+                       <span className="text-xs text-muted-foreground">
+                         {new Date((message.timestamp as any)?.toDate()).toLocaleTimeString()}
+                       </span>
                     </div>
-                  )}
 
-                  {isEditing ? (
-                    <div className="flex-1 max-w-xs lg:max-w-md">
-                      <Input 
-                        value={editingText}
-                        onChange={(e) => setEditingText(e.target.value)}
-                        className="text-sm p-3 h-auto"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveEdit(message.id);
-                          if (e.key === 'Escape') handleCancelEdit();
-                        }}
-                      />
-                       <div className="text-xs text-muted-foreground mt-1">
-                        escape to cancel, enter to save
-                        <Button variant="link" size="sm" className="p-0 h-auto ml-2" onClick={() => handleSaveEdit(message.id)}>Save</Button>
-                        <Button variant="link" size="sm" className="p-0 h-auto ml-2" onClick={handleCancelEdit}>Cancel</Button>
+                    {isEditing ? (
+                      <div className="flex-1">
+                        <Input 
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          className="text-sm p-2 h-auto"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit(message.id);
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
+                        />
+                         <div className="text-xs text-muted-foreground mt-1">
+                          escape to cancel, enter to save
+                          <Button variant="link" size="sm" className="p-0 h-auto ml-2" onClick={() => handleSaveEdit(message.id)}>Save</Button>
+                          <Button variant="link" size="sm" className="p-0 h-auto ml-2" onClick={handleCancelEdit}>Cancel</Button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div
-                      className={`max-w-xs lg:max-w-md p-3 rounded-2xl ${
-                        isCurrentUser
-                          ? 'bg-primary text-primary-foreground rounded-br-none'
-                          : 'bg-card rounded-bl-none'
-                      }`}
-                    >
-                      <p className="text-sm">{message.text}</p>
-                      {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
-                    </div>
-                  )}
+                    ) : (
+                      <p className="text-sm text-foreground/90">{message.text}
+                        {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
+                      </p>
+                    )}
+                  </div>
 
-                   {isCurrentUser && !isEditing && (
-                    <Avatar className="size-8">
-                      <AvatarImage src={currentUser.photoURL || undefined} />
-                      <AvatarFallback>{currentUser.displayName?.[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
+                  {isCurrentUser && !isEditing && (
+                    <div className="absolute right-2 top-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md border p-0.5">
+                      <Button variant="ghost" size="icon" className="size-6" onClick={() => handleEdit(message)}><Pencil className="size-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="size-6 text-red-500 hover:text-red-500" onClick={() => onDeleteMessage(message.id)}><Trash2 className="size-3.5" /></Button>
+                    </div>
                   )}
                 </div>
               )

@@ -12,7 +12,7 @@ import {
   doc,
   updateDoc,
   deleteDoc,
-  DocumentReference,
+  getDoc,
 } from 'firebase/firestore';
 import type { Message } from '@/lib/types';
 
@@ -45,24 +45,21 @@ export function useChat(chatId: string | undefined) {
     async (text: string, sender: string): Promise<Message | null> => {
       if (!chatId) return null;
       
-      const messageDocRef = await addDoc(collection(db, 'chats', chatId, 'messages'), {
-        text,
-        sender,
-        timestamp: serverTimestamp(),
-        edited: false,
-      });
-
-      await updateDoc(doc(db, 'chats', chatId), {
-        lastMessageTimestamp: serverTimestamp(),
-      });
-      
-      return {
-        id: messageDocRef.id,
+      const messagePayload = {
         text,
         sender,
         timestamp: serverTimestamp(),
         edited: false,
       };
+
+      const messageDocRef = await addDoc(collection(db, 'chats', chatId, 'messages'), messagePayload);
+
+      await updateDoc(doc(db, 'chats', chatId), {
+        lastMessageTimestamp: serverTimestamp(),
+      });
+      
+      const messageDoc = await getDoc(messageDocRef);
+      return { id: messageDoc.id, ...messageDoc.data() } as Message;
     },
     [chatId]
   );

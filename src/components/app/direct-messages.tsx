@@ -1,6 +1,6 @@
 'use client';
 
-import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSkeleton } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, CheckCircle, Bot } from 'lucide-react';
@@ -15,10 +15,25 @@ interface DirectMessagesProps {
   onSelectChat: (chat: PopulatedChat) => void;
   onAddUser: (username: string) => void;
   onAddBot: () => void;
+  loading: boolean;
 }
 
-export function DirectMessages({ directMessages, selectedChat, onSelectChat, onAddUser, onAddBot }: DirectMessagesProps) {
+export function DirectMessages({ directMessages, selectedChat, onSelectChat, onAddUser, onAddBot, loading }: DirectMessagesProps) {
   const { user } = useAuth();
+  
+  if (loading) {
+    return (
+        <SidebarGroup>
+            <SidebarGroupLabel className="flex items-center justify-between">
+                Direct Messages
+            </SidebarGroupLabel>
+            <SidebarMenu>
+                <SidebarMenuSkeleton showIcon={true} />
+                <SidebarMenuSkeleton showIcon={true} />
+            </SidebarMenu>
+        </SidebarGroup>
+    );
+  }
   
   return (
     <SidebarGroup>
