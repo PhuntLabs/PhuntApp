@@ -71,16 +71,14 @@ export function useServer(serverId: string | undefined) {
   const updateServer = useCallback(async (serverIdToUpdate: string, data: Partial<Server>) => {
     if (!authUser) throw new Error('Not authenticated');
     const serverRef = doc(db, 'servers', serverIdToUpdate);
-    // You might want to add additional permission checks here
     await updateDoc(serverRef, data);
   }, [authUser]);
 
   const deleteServer = useCallback(async (serverIdToDelete: string) => {
     if (!authUser) throw new Error('Not authenticated');
     const serverRef = doc(db, 'servers', serverIdToDelete);
-    // You might want to add additional permission checks here (e.g., check if user is owner)
     await deleteDoc(serverRef);
   }, [authUser]);
 
-  return { server, members, loading, updateServer, deleteServer };
+  return { server, setServer, members, loading, updateServer, deleteServer };
 }

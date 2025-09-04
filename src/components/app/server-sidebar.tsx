@@ -1,13 +1,26 @@
 
 'use client';
 
-import { CardHeader, CardTitle } from '@/components/ui/card';
+import { CardTitle } from '@/components/ui/card';
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import type { Server, Channel } from '@/lib/types';
-import { Hash, ChevronDown, Settings, Trash, Plus } from 'lucide-react';
+import { Hash, ChevronDown, Settings, Trash, Plus, MoreVertical, Pencil } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { EditServerDialog } from './edit-server-dialog';
+import { AddChannelDialog } from './add-channel-dialog';
+import { EditChannelDialog } from './edit-channel-dialog';
 
 interface ServerSidebarProps {
   server: Server;
@@ -15,11 +28,22 @@ interface ServerSidebarProps {
   onSelectChannel: (channel: Channel) => void;
   onUpdateServer: (serverId: string, name: string, photoURL: string) => Promise<void>;
   onDeleteServer: (serverId: string) => Promise<void>;
+  onCreateChannel: (name: string) => Promise<void>;
+  onUpdateChannel: (channelId: string, name: string) => Promise<void>;
+  onDeleteChannel: (channelId: string) => Promise<void>;
 }
 
-export function ServerSidebar({ server, selectedChannel, onSelectChannel, onUpdateServer, onDeleteServer }: ServerSidebarProps) {
+export function ServerSidebar({ 
+    server, 
+    selectedChannel, 
+    onSelectChannel, 
+    onUpdateServer, 
+    onDeleteServer,
+    onCreateChannel,
+    onUpdateChannel,
+    onDeleteChannel
+}: ServerSidebarProps) {
     const { authUser } = useAuth();
-    const { channels, loading } = { channels: server.channels || [], loading: false }; // Get channels directly from server prop
     const isOwner = authUser?.uid === server.ownerId;
 
     const renderHeader = () => (
@@ -60,34 +84,75 @@ export function ServerSidebar({ server, selectedChannel, onSelectChannel, onUpda
                     <SidebarGroupLabel className="px-2 flex items-center justify-between">
                       Text Channels
                       {isOwner && (
-                         <button className="text-muted-foreground hover:text-foreground">
-                            <Plus className="size-4"/>
-                          </button>
+                         <AddChannelDialog onCreateChannel={onCreateChannel}>
+                            <button className="text-muted-foreground hover:text-foreground">
+                                <Plus className="size-4"/>
+                            </button>
+                         </AddChannelDialog>
                       )}
                     </SidebarGroupLabel>
                     <SidebarMenu>
-                        {loading && (
-                            <div className="space-y-2 px-2">
-                                <div className="h-6 w-3/4 bg-muted/50 rounded animate-pulse" />
-                                <div className="h-6 w-1/2 bg-muted/50 rounded animate-pulse" />
-                            </div>
-                        )}
-                        {channels.map((channel) => (
-                             <SidebarMenuItem key={channel.id} className="px-2">
+                        {server.channels?.map((channel) => (
+                             <SidebarMenuItem key={channel.id} className="px-2 group/channel">
                                 <SidebarMenuButton 
                                     isActive={selectedChannel?.id === channel.id}
                                     onClick={() => onSelectChannel(channel)}
                                     className="w-full justify-start h-8 px-2"
                                 >
                                     <Hash className="size-4 text-muted-foreground"/>
-                                    <span className="truncate">{channel.name.substring(1)}</span>
+                                    <span className="truncate">{channel.name}</span>
                                 </SidebarMenuButton>
+
+                                {isOwner && (
+                                     <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6 absolute right-1 top-1 opacity-0 group-hover/channel:opacity-100">
+                                                <MoreVertical className="size-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent side="right">
+                                            <EditChannelDialog channel={channel} onUpdateChannel={onUpdateChannel}>
+                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                    <Pencil className="mr-2 h-4 w-4" />
+                                                    <span>Edit Channel</span>
+                                                </DropdownMenuItem>
+                                            </EditChannelDialog>
+                                            <DropdownMenuSeparator />
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <DropdownMenuItem 
+                                                        className="text-destructive focus:text-destructive" 
+                                                        onSelect={(e) => e.preventDefault()}
+                                                        disabled={channel.name === '!general'}
+                                                    >
+                                                        <Trash className="mr-2 h-4 w-4" />
+                                                        <span>Delete Channel</span>
+                                                    </DropdownMenuItem>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                    <AlertDialogTitle>Delete #{channel.name}?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Are you sure you want to permanently delete this channel? This cannot be undone.
+                                                    </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => onDeleteChannel(channel.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                                        Delete
+                                                    </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
                             </SidebarMenuItem>
                         ))}
                     </SidebarMenu>
                 </SidebarGroup>
             </div>
-            {/* Potentially a footer for voice controls etc */}
         </div>
     );
 }

@@ -1,38 +1,72 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { 
+    collection, 
+    addDoc, 
+    serverTimestamp,
+    doc,
+    updateDoc,
+    deleteDoc,
+    query,
+    where,
+    getDocs
+} from 'firebase/firestore';
 import type { Channel } from '@/lib/types';
+import { useAuth } from './use-auth';
 
 export function useChannels(serverId: string | undefined) {
-  const [channels, setChannels] = useState<Channel[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { authUser } = useAuth();
 
-  useEffect(() => {
-    if (!serverId) {
-      setChannels([]);
-      setLoading(false);
-      return;
+  const createChannel = useCallback(async (name: string): Promise<Channel | null> => {
+    if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
+    
+    const sanitizedName = name.trim().toLowerCase().replace(/\s+/g, '-');
+    if (!sanitizedName) throw new Error("Channel name cannot be empty.");
+
+    // Check if channel with same name already exists
+    const channelsRef = collection(db, 'servers', serverId, 'channels');
+    const q = query(channelsRef, where('name', '==', sanitizedName));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      throw new Error(`A channel named #${sanitizedName} already exists.`);
+    }
+    
+    const channelPayload: Omit<Channel, 'id'> = {
+      name: sanitizedName,
+      serverId: serverId,
+      createdAt: serverTimestamp(),
+    };
+    
+    const channelRef = await addDoc(channelsRef, channelPayload);
+    
+    return {
+      id: channelRef.id,
+      ...channelPayload
     }
 
-    setLoading(true);
-    const q = query(
-      collection(db, 'servers', serverId, 'channels'),
-      orderBy('createdAt', 'asc')
-    );
+  }, [authUser, serverId]);
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const channelDocs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Channel));
-      setChannels(channelDocs);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching channels:", error);
-      setLoading(false);
-    });
+  const updateChannel = useCallback(async (channelId: string, newName: string) => {
+    if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
 
-    return () => unsubscribe();
-  }, [serverId]);
+    const sanitizedName = newName.trim().toLowerCase().replace(/\s+/g, '-');
+    if (!sanitizedName) throw new Error("Channel name cannot be empty.");
 
-  return { channels, loading };
+    const channelRef = doc(db, 'servers', serverId, 'channels', channelId);
+    await updateDoc(channelRef, { name: sanitizedName });
+  }, [authUser, serverId]);
+
+  const deleteChannel = useCallback(async (channelId: string) => {
+    if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
+    
+    const channelRef = doc(db, 'servers', serverId, 'channels', channelId);
+    await deleteDoc(channelRef);
+
+  }, [authUser, serverId]);
+
+  return { createChannel, updateChannel, deleteChannel };
 }

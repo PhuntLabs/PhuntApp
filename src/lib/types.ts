@@ -49,7 +49,7 @@ export interface FriendRequest {
 }
 
 export interface Server {
-    id: string;
+    id:string;
     name: string;
     ownerId: string;
     members: string[];
@@ -62,5 +62,5 @@ export interface Channel {
     id: string;
     name: string;
     serverId: string;
-    createdAt: FieldValue;
+    createdAt?: FieldValue;
 }

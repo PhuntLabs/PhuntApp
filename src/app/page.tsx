@@ -16,6 +16,7 @@ import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useServers } from '@/hooks/use-servers';
 import { useServer } from '@/hooks/use-server';
+import { useChannels } from '@/hooks/use-channels';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
 import { doc, deleteDoc } from 'firebase/firestore';
@@ -38,7 +39,8 @@ export default function Home() {
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests();
   const { servers, setServers, loading: serversLoading, createServer } = useServers();
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
-  const { server, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
+  const { server, setServer, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
+  const { createChannel, updateChannel, deleteChannel } = useChannels(selectedServer?.id);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [initialLoad, setInitialLoad] = useState(true);
 
@@ -57,9 +59,7 @@ export default function Home() {
       setSelectedChat(null);
     }
     
-    // If there is no selected chat or the selected chat is no longer in the list
     if ((!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0 && !selectedServer) {
-      // Find the most recent chat to select
       const mostRecentChat = chats.reduce((prev, current) => {
         const prevTime = (prev.lastMessageTimestamp as any)?.toMillis() || (prev.createdAt as any)?.toMillis() || 0;
         const currentTime = (current.lastMessageTimestamp as any)?.toMillis() || (current.createdAt as any)?.toMillis() || 0;
@@ -74,14 +74,12 @@ export default function Home() {
   useEffect(() => {
     if (serversLoading || !initialLoad) return;
     
-    // If a server is deleted, fall back to DMs
     if (selectedServer && !servers.find(s => s.id === selectedServer.id)) {
         handleSelectServer(null);
         return;
     }
     
-    // Auto-select the first server only on initial load if nothing else is selected
-    if (selectedServer === null && selectedChat === null && servers.length > 0) {
+    if (initialLoad && !selectedServer && !selectedChat && servers.length > 0) {
       handleSelectServer(servers[0]);
       setInitialLoad(false);
     }
@@ -92,10 +90,8 @@ export default function Home() {
     if (!authUser || !selectedChat) return;
     const sentMessage = await sendMessage(text, authUser.uid);
 
-    // If talking to echo-bot, trigger the flow
     const echoBot = selectedChat.members.find(m => m.id === BOT_ID);
     if (echoBot && sentMessage) {
-        // No await needed, let it run in the background
         processEcho({ chatId: selectedChat.id, message: { id: sentMessage.id, text, sender: authUser.uid }});
     }
   };
@@ -152,7 +148,7 @@ export default function Home() {
   const handleDeleteChat = async (chatId: string) => {
     try {
         await deleteDoc(doc(db, 'chats', chatId));
-        removeChat(chatId); // Optimistically update the UI
+        removeChat(chatId); 
         if (selectedChat?.id === chatId) {
             setSelectedChat(null);
         }
@@ -178,9 +174,9 @@ export default function Home() {
   const handleSelectServer = (server: Server | null) => {
     setSelectedServer(server);
     setSelectedChat(null);
-    if (server && server.channels) {
+    if (server && server.channels && server.channels.length > 0) {
       const generalChannel = server.channels.find(c => c.name === '!general');
-      setSelectedChannel(generalChannel || server.channels?.[0] || null);
+      setSelectedChannel(generalChannel || server.channels[0]);
     } else {
       setSelectedChannel(null);
     }
@@ -190,7 +186,7 @@ export default function Home() {
     try {
       await deleteServer(serverId);
       toast({ title: "Server Deleted" });
-      setSelectedServer(null); // Go back to DMs
+      setSelectedServer(null);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error Deleting Server', description: e.message });
     }
@@ -202,6 +198,51 @@ export default function Home() {
       toast({ title: "Server Updated" });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error Updating Server', description: e.message });
+    }
+  }
+
+  const handleCreateChannel = async (name: string) => {
+    try {
+      const newChannel = await createChannel(name);
+      if (newChannel && server) {
+        const updatedServer = { ...server, channels: [...(server.channels || []), newChannel]};
+        setServer(updatedServer);
+        setSelectedChannel(newChannel);
+        toast({ title: `Channel #${newChannel.name} created!` });
+      }
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error Creating Channel', description: e.message });
+    }
+  }
+  
+  const handleUpdateChannel = async (channelId: string, name: string) => {
+    try {
+      await updateChannel(channelId, name);
+      if (server && server.channels) {
+          const updatedChannels = server.channels.map(c => c.id === channelId ? {...c, name} : c);
+          setServer({...server, channels: updatedChannels });
+      }
+      toast({ title: "Channel Updated" });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error Updating Channel', description: e.message });
+    }
+  }
+
+  const handleDeleteChannel = async (channelId: string) => {
+    try {
+      await deleteChannel(channelId);
+       if (server && server.channels) {
+          const updatedChannels = server.channels.filter(c => c.id !== channelId);
+          setServer({...server, channels: updatedChannels });
+
+          if(selectedChannel?.id === channelId) {
+             const generalChannel = updatedChannels.find(c => c.name === '!general') || updatedChannels[0] || null;
+             setSelectedChannel(generalChannel);
+          }
+      }
+      toast({ title: "Channel Deleted" });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error Deleting Channel', description: e.message });
     }
   }
 
@@ -234,6 +275,9 @@ export default function Home() {
                     onSelectChannel={setSelectedChannel}
                     onUpdateServer={handleUpdateServer}
                     onDeleteServer={handleDeleteServer}
+                    onCreateChannel={handleCreateChannel}
+                    onUpdateChannel={handleUpdateChannel}
+                    onDeleteChannel={handleDeleteChannel}
                 />
                 ) : (
                 <>
@@ -272,7 +316,7 @@ export default function Home() {
             </div>
         </div>
         
-        <div className="flex-1 flex min-w-0">
+        <div className="flex flex-1 min-w-0">
              <main className="flex-1 flex flex-col bg-background/50 min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
                 {server && selectedChannel ? (
                 <ChannelChat channel={selectedChannel} server={server} />
