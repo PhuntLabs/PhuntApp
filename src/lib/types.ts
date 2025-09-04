@@ -2,11 +2,14 @@ import { FieldValue, Timestamp } from "firebase/firestore";
 
 export interface UserProfile {
   id: string;
+  uid: string;
+  email?: string | null;
   displayName: string;
   photoURL: string | null;
   bannerURL?: string | null;
   bio?: string;
   isBot?: boolean;
+  createdAt?: FieldValue;
 }
 
 export interface ChatDocument {
@@ -20,7 +23,7 @@ export interface ChatDocument {
 }
 
 export interface PopulatedChat extends Omit<ChatDocument, 'members'> {
-  members: UserProfile[];
+  members: Partial<UserProfile>[];
 }
 
 export interface Message {

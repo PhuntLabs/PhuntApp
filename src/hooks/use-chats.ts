@@ -33,13 +33,13 @@ async function populateChat(chatDoc: ChatDocument): Promise<PopulatedChat> {
     
     return {
         ...chatDoc,
-        members,
+        members: members as UserProfile[],
     };
 }
 
 
 export function useChats() {
-  const { user } = useAuth();
+  const { authUser } = useAuth();
   const [chats, setChats] = useState<PopulatedChat[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -60,7 +60,7 @@ export function useChats() {
   }, []);
 
   useEffect(() => {
-    if (!user) {
+    if (!authUser) {
         setChats([]);
         setLoading(false);
         return;
@@ -68,7 +68,7 @@ export function useChats() {
 
     const q = query(
       collection(db, 'chats'),
-      where('members', 'array-contains', user.uid)
+      where('members', 'array-contains', authUser.uid)
     );
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
@@ -88,7 +88,7 @@ export function useChats() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [authUser]);
 
   return { chats, loading, addChat };
 }

@@ -22,45 +22,46 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 
 interface UserNavProps {
-    user: User | null;
+    user: User | null; // This should be the authUser
     logout: () => void;
 }
 
 export function UserNav({ user: authUser, logout }: UserNavProps) {
-  const { user, setUser } = useAuth();
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
-  const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
-  const [bannerURL, setBannerURL] = useState((user as any)?.bannerURL || '');
-  const [bio, setBio] = useState((user as any)?.bio || '');
+  const { user: userProfile, setUser: setUserProfile, authUser: firebaseAuthUser } = useAuth();
+  const [displayName, setDisplayName] = useState(userProfile?.displayName || '');
+  const [photoURL, setPhotoURL] = useState(userProfile?.photoURL || '');
+  const [bannerURL, setBannerURL] = useState(userProfile?.bannerURL || '');
+  const [bio, setBio] = useState(userProfile?.bio || '');
   const [isEditing, setIsEditing] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const { toast } = useToast();
 
   useEffect(() => {
-    // When the popover opens, sync state with the latest user object
-    if (isPopoverOpen && user) {
-        setDisplayName(user.displayName || '');
-        setPhotoURL(user.photoURL || '');
-        setBannerURL((user as any).bannerURL || '');
-        setBio((user as any).bio || '');
+    // When the popover opens or userProfile changes, sync state
+    if (userProfile) {
+        setDisplayName(userProfile.displayName || '');
+        setPhotoURL(userProfile.photoURL || '');
+        setBannerURL(userProfile.bannerURL || '');
+        setBio(userProfile.bio || '');
     }
-  }, [isPopoverOpen, user]);
+  }, [isPopoverOpen, userProfile]);
   
-  if (!user) return null;
+  if (!userProfile || !firebaseAuthUser) return null;
 
   const handleProfileUpdate = async () => {
-    if (!user) return;
+    if (!firebaseAuthUser) return;
     try {
-        await updateProfile(user, { displayName, photoURL });
+        // Update Firebase Auth profile
+        await updateProfile(firebaseAuthUser, { displayName, photoURL });
         
-        const userRef = doc(db, 'users', user.uid);
-        
-        // Use set with merge true to create doc if it doesn't exist or update if it does.
-        await setDoc(userRef, { displayName, photoURL, bannerURL, bio }, { merge: true });
+        // Update Firestore document
+        const userRef = doc(db, 'users', firebaseAuthUser.uid);
+        const updatedData = { displayName, photoURL, bannerURL, bio };
+        await setDoc(userRef, updatedData, { merge: true });
 
-        const updatedUser = { ...user, displayName, photoURL, bannerURL, bio };
-        setUser(updatedUser as User);
+        // Update local state
+        setUserProfile((prevProfile) => prevProfile ? { ...prevProfile, ...updatedData } : null);
 
         toast({
             title: 'Profile Updated',
@@ -78,11 +79,11 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
 
   const handleCancel = () => {
     // Reset fields to current user state
-    if (user) {
-        setDisplayName(user.displayName || '');
-        setPhotoURL(user.photoURL || '');
-        setBannerURL((user as any).bannerURL || '');
-        setBio((user as any).bio || '');
+    if (userProfile) {
+        setDisplayName(userProfile.displayName || '');
+        setPhotoURL(userProfile.photoURL || '');
+        setBannerURL(userProfile.bannerURL || '');
+        setBio(userProfile.bio || '');
     }
     setIsEditing(false);
   }
@@ -97,11 +98,11 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
       <PopoverTrigger asChild>
         <button className="flex items-center gap-2 p-2 hover:bg-sidebar-accent rounded-md cursor-pointer transition-colors w-full text-left">
             <Avatar className="size-8">
-              <AvatarImage src={user.photoURL || undefined} />
-              <AvatarFallback>{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
+              <AvatarImage src={userProfile.photoURL || undefined} />
+              <AvatarFallback>{userProfile.displayName?.[0].toUpperCase() || userProfile.email?.[0].toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                <span className="text-sm font-semibold truncate">{user.displayName || user.email}</span>
+                <span className="text-sm font-semibold truncate">{userProfile.displayName || userProfile.email}</span>
             </div>
         </button>
       </PopoverTrigger>
@@ -111,8 +112,8 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                 <Image src={bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
             )}
             <Avatar className="size-20 absolute top-10 left-4 border-4 border-popover">
-              <AvatarImage src={user.photoURL || undefined} />
-              <AvatarFallback className="text-2xl">{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
+              <AvatarImage src={userProfile.photoURL || undefined} />
+              <AvatarFallback className="text-2xl">{userProfile.displayName?.[0].toUpperCase() || userProfile.email?.[0].toUpperCase()}</AvatarFallback>
             </Avatar>
         </div>
         <div className="pt-12">
@@ -122,7 +123,7 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                     <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>Edit Profile</Button>
                 </div>
                 <h3 className="text-xl font-bold">{displayName}</h3>
-                <p className="text-sm text-muted-foreground -mt-1">{user.email}</p>
+                <p className="text-sm text-muted-foreground -mt-1">{userProfile.email}</p>
                 <Separator className="my-2" />
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{bio || 'No bio yet.'}</p>
                 <Separator className="my-4" />
@@ -134,22 +135,22 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                 </div>
              </>
            ) : (
-             <div className="space-y-4">
-                <div className="space-y-2">
+             <div className="space-y-2">
+                <div className="space-y-1">
                     <Label htmlFor="displayName">Display Name</Label>
                     <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                     <Label htmlFor="photoURL">Profile Picture URL</Label>
                     <Input id="photoURL" value={photoURL} onChange={(e) => setPhotoURL(e.target.value)} placeholder="https://example.com/image.png"/>
                 </div>
-                 <div className="space-y-2">
+                 <div className="space-y-1">
                     <Label htmlFor="bannerURL">Banner URL</Label>
                     <Input id="bannerURL" value={bannerURL} onChange={(e) => setBannerURL(e.target.value)} placeholder="https://example.com/banner.gif"/>
                 </div>
-                 <div className="space-y-2">
+                 <div className="space-y-1">
                     <Label htmlFor="bio">Bio</Label>
-                    <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us about yourself..."/>
+                    <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us about yourself..." rows={3}/>
                 </div>
                  <div className="flex justify-end gap-2 mt-4">
                     <Button variant="ghost" onClick={handleCancel}>Cancel</Button>

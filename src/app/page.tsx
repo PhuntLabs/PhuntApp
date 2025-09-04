@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
 
 export default function Home() {
-  const { user, loading, logout } = useAuth();
+  const { user, authUser, loading, logout } = useAuth();
   const router = useRouter();
   const { chats, loading: chatsLoading, addChat } = useChats();
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
@@ -30,10 +30,10 @@ export default function Home() {
 
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !authUser) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [authUser, loading, router]);
   
   useEffect(() => {
     // If there is no selected chat or the selected chat is no longer in the list
@@ -50,13 +50,13 @@ export default function Home() {
 
 
   const handleSendMessage = async (text: string) => {
-    if (!user || !selectedChat) return;
-    const sentMessage = await sendMessage(text, user.uid);
+    if (!authUser || !selectedChat) return;
+    const sentMessage = await sendMessage(text, authUser.uid);
 
     // If talking to echo-bot, trigger the flow
     const echoBot = selectedChat.members.find(m => m.id === 'echo_bot');
     if (echoBot && sentMessage) {
-        await processEcho({ chatId: selectedChat.id, message: { id: sentMessage.id, text, sender: user.uid }});
+        await processEcho({ chatId: selectedChat.id, message: { id: sentMessage.id, text, sender: authUser.uid }});
     }
   };
   
@@ -74,20 +74,20 @@ export default function Home() {
   }
 
   const handleAcceptFriendRequest = async (requestId: string, fromUser: { id: string, displayName: string }) => {
-     if (!user) return;
+     if (!authUser) return;
     try {
         await acceptFriendRequest(requestId, fromUser);
         toast({ title: 'Friend Added!', description: `You and ${fromUser.displayName} are now friends.` });
 
         // Check if chat already exists
-        const q = query(collection(db, 'chats'), where('members', 'array-contains', user.uid));
+        const q = query(collection(db, 'chats'), where('members', 'array-contains', authUser.uid));
         const querySnapshot = await getDocs(q);
         const existingChat = querySnapshot.docs.find(doc => doc.data().members.includes(fromUser.id));
 
         if (!existingChat) {
             // Create a new chat
             const newChatRef = await addDoc(collection(db, 'chats'), {
-                members: [user.uid, fromUser.id],
+                members: [authUser.uid, fromUser.id],
                 createdAt: serverTimestamp(),
                 lastMessageTimestamp: serverTimestamp()
             });
@@ -111,7 +111,7 @@ export default function Home() {
     }
   }
 
-  if (loading || !user || chatsLoading) {
+  if (loading || !authUser || !user || chatsLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <p>Loading...</p>
@@ -142,7 +142,7 @@ export default function Home() {
           <Servers />
         </SidebarContent>
         <SidebarFooter>
-          <UserNav user={user} logout={logout}/>
+          <UserNav user={authUser} logout={logout}/>
         </SidebarFooter>
       </Sidebar>
       {selectedChat && user ? (
@@ -152,7 +152,7 @@ export default function Home() {
           onSendMessage={handleSendMessage}
           onEditMessage={editMessage}
           onDeleteMessage={deleteMessage}
-          currentUser={user}
+          currentUser={authUser}
         />
       ) : (
         <div className="flex flex-1 items-center justify-center h-screen bg-muted/20">

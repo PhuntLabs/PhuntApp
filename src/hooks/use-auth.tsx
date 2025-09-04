@@ -20,11 +20,13 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
 
 
 interface AuthContextType {
-  user: User | null;
-  setUser: Dispatch<SetStateAction<User | null>>;
+  user: UserProfile | null;
+  authUser: User | null;
+  setUser: Dispatch<SetStateAction<UserProfile | null>>;
   loading: boolean;
   signup: (email: string, pass: string, username: string) => Promise<UserCredential>;
   login: (email: string, pass: string) => Promise<any>;
@@ -34,26 +36,33 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // Attach firestore data to user object
-        const userDocRef = doc(db, 'users', user.uid);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setLoading(true);
+      if (firebaseUser) {
+        setAuthUser(firebaseUser);
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
         getDoc(userDocRef).then(userDoc => {
             if(userDoc.exists()) {
-                const userData = userDoc.data();
-                const combinedUser = {...user, ...userData};
-                setUser(combinedUser);
+                const userData = userDoc.data() as UserProfile;
+                setUser({ id: userDoc.id, ...userData });
             } else {
-                setUser(user);
+                // This case might happen briefly if the Firestore doc isn't created yet
+                setUser({
+                    id: firebaseUser.uid,
+                    displayName: firebaseUser.displayName || '',
+                    photoURL: firebaseUser.photoURL || null,
+                });
             }
              setLoading(false);
         });
       } else {
-        setUser(user);
+        setAuthUser(null);
+        setUser(null);
         setLoading(false);
       }
     });
@@ -63,32 +72,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = async (email: string, pass: string, username: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    const { user } = userCredential;
+    const firebaseUser = userCredential.user;
     
-    const photoURL = `https://i.pravatar.cc/150?u=${user.uid}`
+    const photoURL = `https://i.pravatar.cc/150?u=${firebaseUser.uid}`
 
-    await updateProfile(user, {
+    await updateProfile(firebaseUser, {
       displayName: username,
       photoURL,
     });
     
-    await setDoc(doc(db, 'users', user.uid), {
-      uid: user.uid,
+    const userPayload: Omit<UserProfile, 'id'> = {
       displayName: username,
-      email: user.email,
+      email: firebaseUser.email,
       createdAt: serverTimestamp(),
-      photoURL: photoURL
-    });
+      photoURL: photoURL,
+      uid: firebaseUser.uid,
+    };
+    
+    await setDoc(doc(db, 'users', firebaseUser.uid), userPayload);
 
 
     // Manually reload the user object to get the updated profile
-    await user.reload();
-    // We need to update the state to reflect the new displayName
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    const userData = userDoc.data();
-    const combinedUser = {...user, ...userData};
-    setUser(combinedUser as User);
+    await firebaseUser.reload();
+    setAuthUser(firebaseUser);
 
+    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+    setUser({id: userDoc.id, ...(userDoc.data() as UserProfile)});
 
     return userCredential;
   };
@@ -103,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = {
     user,
+    authUser,
     setUser,
     loading,
     signup,
