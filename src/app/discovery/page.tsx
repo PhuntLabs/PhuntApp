@@ -14,7 +14,7 @@ import Link from 'next/link';
 
 export default function DiscoveryPage() {
     const { publicServers, loading: publicServersLoading } = usePublicServers();
-    const { servers, loading: userServersLoading } = useServers();
+    const { servers, loading: userServersLoading, createServer, setServers } = useServers();
     const { user, loading: authLoading } = useAuth();
     
     const loading = publicServersLoading || userServersLoading || authLoading;
@@ -23,8 +23,13 @@ export default function DiscoveryPage() {
 
     return (
         <div className="flex h-screen bg-background/70">
-            {/* The servers component is included for consistent layout, but it won't be interactive on this page */}
-            <div className="w-20 flex-shrink-0 h-full flex flex-col items-center py-3 gap-3 bg-background/80 overflow-y-auto" />
+            <Servers 
+                servers={servers}
+                loading={userServersLoading}
+                onCreateServer={createServer}
+                selectedServer={null} // No server is "selected" on the discovery page
+                onSelectServer={() => {}} // Selecting a server should navigate home, handled by the component itself
+            />
 
             <div className="flex-1 flex flex-col">
                 <header className="p-4 border-b bg-secondary/30">

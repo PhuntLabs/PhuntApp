@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useServer } from '@/hooks/use-server';
 import { useAuth } from '@/hooks/use-auth';
@@ -15,23 +15,13 @@ import { useServers } from '@/hooks/use-servers';
 export default function JoinServerPage() {
     const { serverId } = useParams() as { serverId: string };
     const { server, loading: serverLoading, joinServer } = useServer(serverId);
-    const { user, authUser, loading: authLoading } = useAuth();
-    const { servers: userServers } = useServers();
+    const { authUser, loading: authLoading } = useAuth();
+    const { servers: userServers, loading: userServersLoading } = useServers();
     const router = useRouter();
     const { toast } = useToast();
+    const [isJoining, setIsJoining] = useState(false);
 
     const isMember = userServers.some(s => s.id === serverId);
-
-    // If user is already a member, redirect them home.
-    useEffect(() => {
-        if (isMember) {
-            toast({
-                title: "Already a member!",
-                description: `You are already in the ${server?.name} server.`,
-            });
-            router.push('/');
-        }
-    }, [isMember, router, server?.name, toast]);
 
     const handleJoin = async () => {
         if (!authUser) {
@@ -40,20 +30,30 @@ export default function JoinServerPage() {
             return;
         }
 
+        if (isMember) {
+             toast({ title: "Already a member!", description: `You are already in the ${server?.name} server.` });
+             router.push('/');
+             return;
+        }
+        
+        setIsJoining(true);
         try {
             await joinServer(serverId);
             toast({
                 title: 'Welcome!',
                 description: `You have successfully joined the ${server?.name} server.`,
+                className: 'bg-green-500 text-white'
             });
             router.push('/');
         } catch (e: any) {
              toast({ variant: 'destructive', title: 'Error', description: e.message });
+        } finally {
+            setIsJoining(false);
         }
     }
 
 
-    if (serverLoading || authLoading) {
+    if (serverLoading || authLoading || userServersLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background">
                 <p>Loading server details...</p>
@@ -101,8 +101,8 @@ export default function JoinServerPage() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={handleJoin} className="w-full" size="lg" disabled={isMember}>
-                       {isMember ? "Already Joined" : "Accept Invite"}
+                    <Button onClick={handleJoin} className="w-full" size="lg" disabled={isJoining || isMember}>
+                       {isMember ? "Already Joined" : isJoining ? "Joining..." : "Accept Invite"}
                     </Button>
                 </CardFooter>
              </Card>
