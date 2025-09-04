@@ -86,7 +86,7 @@ export function useFriendRequests() {
             members: [fromUser.id, toUserId].sort()
         });
     } catch(e: any) {
-        throw new Error(`Permission denied when trying to create the friend request document in the database. Please check Firestore security rules for the 'friendRequests' collection. Original error: ${e.message}`);
+        throw new Error(`Permission denied when trying to create the friend request document in the database. Original error: ${e.message}`);
     }
 
 
@@ -113,27 +113,29 @@ export function useFriendRequests() {
     const requestRef = doc(db, 'friendRequests', requestId);
     batch.update(requestRef, { status: 'accepted' });
 
-    // 2. Create a new chat. Security rules should prevent creation if one exists.
     const sortedMembers = [authUser.uid, fromUser.id].sort();
     
-    // Check if chat already exists
-    const chatQuery = query(collection(db, 'chats'), where('members', '==', sortedMembers));
-    const chatSnapshot = await getDocs(chatQuery);
-    
-    if (chatSnapshot.empty) {
-        const newChatRef = doc(collection(db, 'chats'));
-        batch.set(newChatRef, {
-            members: sortedMembers,
-            createdAt: serverTimestamp(),
-            lastMessageTimestamp: serverTimestamp()
-        });
+    try {
+        // 2. Check if chat already exists
+        const chatQuery = query(collection(db, 'chats'), where('members', '==', sortedMembers));
+        const chatSnapshot = await getDocs(chatQuery);
+        
+        if (chatSnapshot.empty) {
+            const newChatRef = doc(collection(db, 'chats'));
+            batch.set(newChatRef, {
+                members: sortedMembers,
+                createdAt: serverTimestamp(),
+                lastMessageTimestamp: serverTimestamp()
+            });
+        }
+    } catch (e: any) {
+        throw new Error(`Permission denied when checking for existing chat. Original error: ${e.message}`);
     }
     
     // 3. Commit all database changes
     try {
         await batch.commit();
     } catch(e: any) {
-        console.error("Error committing friend request acceptance batch:", e);
         throw new Error(`Permission denied when updating friend request and creating chat. Original error: ${e.message}`);
     }
 
