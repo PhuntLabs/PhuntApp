@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
@@ -298,7 +299,7 @@ export default function Home() {
               )}
             </main>
             {server && members.length > 0 && (
-                 <MemberList members={members} loading={serverDetailsLoading} />
+                 <MemberList server={server} members={members} loading={serverDetailsLoading} />
             )}
           </div>
       </div>
