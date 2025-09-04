@@ -1,52 +1,67 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users Collection Rules
     match /users/{userId} {
-      // Allow anyone to query the users collection to check for usernames during signup.
-      // This is safe as user documents should not contain private info.
-      allow list: if true;
-      // Allow any authenticated user to read user profiles (needed for member lists, etc.)
-      allow read: if request.auth != null;
-      // A user can only create their own user document.
+      // Any authenticated user can query for users (to find friends)
+      // and read user profiles. This is safe for non-sensitive public profile data.
+      allow list, read: if request.auth != null;
+
+      // A user can create their own user document.
       allow create: if request.auth.uid == userId;
-      // A user can only update their own user document.
+
+      // A user can only update their own profile.
       allow update: if request.auth.uid == userId;
     }
     
+    // Friend Requests Collection Rules
     match /friendRequests/{requestId} {
-      // Allow a user to create a friend request if they are the sender.
+      // A user can only create a friend request that comes from them.
       allow create: if request.auth.uid == request.resource.data.from.id;
-      // Allow a user to read a request if they are the sender or receiver.
+
+      // A user can read a request if they sent it or received it.
       allow read: if request.auth.uid == resource.data.to || request.auth.uid == resource.data.from.id;
-      // Allow a user to update a request (accept/decline) only if they are the receiver.
+      
+      // Only the recipient can update the request (accept/decline).
       allow update: if request.auth.uid == resource.data.to;
     }
 
+    // Chats Collection Rules
     match /chats/{chatId} {
-      // Allow read/write operations on a chat if the user is a member of that chat.
-      // This rule allows the query in useChats to work, as it filters the results to only what the user can read.
-      allow read, update, delete: if request.auth.uid in resource.data.members;
-      // Allow a user to create a chat if they are including themselves in the members list.
+      // A user can query for their own chats, and read/write to them.
+      allow list, read, update, delete: if request.auth.uid in resource.data.members;
+
+      // A user can create a chat if they are one of the members in the new chat document.
       allow create: if request.auth.uid in request.resource.data.members;
 
+      // Messages Sub-collection Rules
       match /messages/{messageId} {
-        // Allow read/create on messages if the user is a member of the parent chat.
-        allow read, create: if request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
-        // Allow update/delete only if the user is the sender of the message.
+        // Allow read/create if the user is a member of the parent chat.
+        allow read, create: if get(/databases/$(database)/documents/chats/$(chatId)).data.members.hasAny([request.auth.uid]);
+        
+        // Allow update/delete only if the user is the original sender.
         allow update, delete: if request.auth.uid == resource.data.sender;
       }
     }
 
+    // Servers Collection Rules
     match /servers/{serverId} {
       // Any authenticated user can read public server information.
       allow read: if request.auth != null;
       
-      // Allow creation if the user is the owner.
+      // A user can create a server if they are the owner.
       allow create: if request.auth.uid == request.resource.data.ownerId;
 
-      // Allow updates if the user is the owner, OR if they are only adding themselves to the members list.
+      // Allow server owners to update their server.
+      // Also, allow any authenticated user to join a server (add themselves to the members list).
       allow update: if request.auth.uid == resource.data.ownerId || 
                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
                        request.resource.data.members.size() == resource.data.members.size() + 1 &&
@@ -55,17 +70,23 @@ service cloud.firestore {
       // Only the owner can delete a server.
       allow delete: if request.auth.uid == resource.data.ownerId;
 
+      // Channels Sub-collection Rules
       match /channels/{channelId} {
-        // Any authenticated user can read channel info.
-        allow read: if request.auth != null;
+        // Any authenticated user can list/read channels.
+        allow list, read: if request.auth != null;
         
-        // Only server members can manage channels.
+        // Only members of the server can manage channels.
         allow create, update, delete: if get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
 
+        // Channel Messages Sub-collection Rules
         match /messages/{messageId} {
-          // A user must be a member of the server to read or create messages.
-          allow read, create: if get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
-          // A user can only update/delete their own messages.
+          // A user can read messages if they are a member of the server.
+          allow read: if get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
+          
+          // A user can create a message if they are a member of the server.
+          allow create: if request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+          
+          // A user can update/delete a message only if they are the sender.
           allow update, delete: if request.auth.uid == resource.data.sender;
         }
       }
