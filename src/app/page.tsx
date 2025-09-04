@@ -40,6 +40,7 @@ export default function Home() {
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
   const { server, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   const { toast } = useToast();
 
@@ -71,7 +72,7 @@ export default function Home() {
   }, [chats, selectedChat, chatsLoading, selectedServer]);
 
   useEffect(() => {
-    if (serversLoading) return;
+    if (serversLoading || !initialLoad) return;
     
     // If a server is deleted, fall back to DMs
     if (selectedServer && !servers.find(s => s.id === selectedServer.id)) {
@@ -82,9 +83,9 @@ export default function Home() {
     // Auto-select the first server only on initial load if nothing else is selected
     if (selectedServer === null && selectedChat === null && servers.length > 0) {
       handleSelectServer(servers[0]);
+      setInitialLoad(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [servers, serversLoading]);
+  }, [servers, serversLoading, selectedServer, selectedChat, initialLoad]);
 
 
   const handleSendMessage = async (text: string) => {
@@ -271,8 +272,8 @@ export default function Home() {
             </div>
         </div>
         
-        <div className="flex flex-1 min-w-0">
-             <main className="flex-1 flex flex-col bg-background/50 min-w-0">
+        <div className="flex-1 flex min-w-0">
+             <main className="flex-1 flex flex-col bg-background/50 min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
                 {server && selectedChannel ? (
                 <ChannelChat channel={selectedChannel} server={server} />
                 ) : server ? (
