@@ -1,7 +1,7 @@
 
 'use client';
 
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -71,25 +71,17 @@ export default function Home() {
   }, [chats, selectedChat, chatsLoading, selectedServer]);
 
   useEffect(() => {
-    if (serversLoading || !servers.length || selectedServer) return;
+    if (serversLoading || !servers.length) return;
   
-    // Check if the user was last on DMs
     const lastSelectedWasDM = !selectedServer;
   
-    // Only auto-select a server if the user wasn't on DMs.
-    // This logic is currently set to NOT auto-select a server on load,
-    // keeping the user in DMs by default.
-    if (!lastSelectedWasDM) {
-        const sortedServers = [...servers].sort((a, b) => {
-            const timeA = (a.createdAt as any)?.toMillis() || 0;
-            const timeB = (b.createdAt as any)?.toMillis() || 0;
-            return timeA - timeB; 
-        });
-        // setSelectedServer(sortedServers[0]);
-    }
-    
-    if (selectedServer && !servers.find(s => s.id === selectedServer.id)) {
-        setSelectedServer(null); // Default back to DMs
+    if (!lastSelectedWasDM && selectedServer && !servers.find(s => s.id === selectedServer.id)) {
+        setSelectedServer(null); // Default back to DMs if server is deleted
+    } else if (!selectedServer && servers.length > 0) {
+        // Only autoselect a server if nothing is selected.
+        // This avoids switching away from DMs on refresh.
+        // You could also store last selected server ID in local storage for persistence.
+        // setSelectedServer(servers[0]); 
     }
   }, [servers, serversLoading, selectedServer]);
 
@@ -183,7 +175,6 @@ export default function Home() {
 
   const handleSelectServer = (server: Server | null) => {
     setSelectedServer(server);
-    // When switching servers, clear the selected chat and channel
     setSelectedChat(null);
     setSelectedChannel(null);
   }
@@ -273,42 +264,44 @@ export default function Home() {
             </div>
           </SidebarFooter>
         </div>
+        
+        <div className="flex-1 flex min-w-0">
+            <main className="flex-1 flex flex-col bg-background/50 min-w-0">
+                {server && selectedChannel ? (
+                <ChannelChat channel={selectedChannel} server={server} />
+                ) : server ? (
+                <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
+                    <div className="text-center">
+                    <h2 className="text-xl font-medium text-foreground">{`Welcome to ${server.name}`}</h2>
+                    <p className="text-muted-foreground">Select a channel to start talking.</p>
+                    </div>
+                </div>
+                ) : selectedChat && user ? (
+                <Chat
+                    chat={selectedChat}
+                    messages={messages}
+                    onSendMessage={handleSendMessage}
+                    onEditMessage={editMessage}
+                    onDeleteMessage={deleteMessage}
+                    currentUser={authUser}
+                />
+                ) : (
+                <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
+                    <div className="text-center">
+                    <h2 className="text-xl font-medium text-foreground">No Chat Selected</h2>
+                    <p className="text-muted-foreground">Select a conversation from the sidebar or add a friend to start chatting.</p>
+                    </div>
+                </div>
+                )}
+            </main>
 
-        <SidebarInset className="flex-1 flex min-w-0">
-          <main className="flex-1 flex flex-col bg-background/50 min-w-0">
-            {server && selectedChannel ? (
-              <ChannelChat channel={selectedChannel} server={server} />
-            ) : server ? (
-              <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
-                <div className="text-center">
-                  <h2 className="text-xl font-medium text-foreground">{`Welcome to ${server.name}`}</h2>
-                  <p className="text-muted-foreground">Select a channel to start talking.</p>
-                </div>
-              </div>
-            ) : selectedChat && user ? (
-              <Chat
-                chat={selectedChat}
-                messages={messages}
-                onSendMessage={handleSendMessage}
-                onEditMessage={editMessage}
-                onDeleteMessage={deleteMessage}
-                currentUser={authUser}
-              />
-            ) : (
-              <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
-                <div className="text-center">
-                  <h2 className="text-xl font-medium text-foreground">No Chat Selected</h2>
-                  <p className="text-muted-foreground">Select a conversation from the sidebar or add a friend to start chatting.</p>
-                </div>
-              </div>
+            {server && members.length > 0 && (
+                <MemberList server={server} members={members} loading={serverDetailsLoading} />
             )}
-          </main>
-
-          {server && members.length > 0 && (
-            <MemberList server={server} members={members} loading={serverDetailsLoading} />
-          )}
-        </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );
 }
+
+    
