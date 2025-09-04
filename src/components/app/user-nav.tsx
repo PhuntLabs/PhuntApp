@@ -157,7 +157,7 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
            {!isEditing ? (
              <>
                 {isCurrentUser && (
-                    <div className="flex justify-end gap-1">
+                    <div className="absolute top-4 right-4 flex justify-end gap-1">
                         <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>Edit Profile</Button>
                     </div>
                 )}
@@ -183,7 +183,7 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
                 )}
              </>
            ) : (
-             <div className="space-y-2 h-auto max-h-[calc(100vh-20rem)] overflow-y-auto pr-2">
+             <div className="space-y-4 h-auto max-h-[calc(100vh-20rem)] overflow-y-auto pr-2">
                 <div className="space-y-1">
                     <Label htmlFor="displayName">Display Name</Label>
                     <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />

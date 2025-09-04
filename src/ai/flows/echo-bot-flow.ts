@@ -21,7 +21,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { z } from 'zod';
-import { BOT_ID } from '@/ai/bots/config';
+import { BOT_ID, BOT_USERNAME, BOT_PHOTO_URL } from '@/ai/bots/config';
 
 // This function runs once on server startup to ensure the bot user exists.
 async function ensureBotUser() {
@@ -30,10 +30,11 @@ async function ensureBotUser() {
     if (!botUserDoc.exists()) {
         await setDoc(botUserRef, {
             uid: BOT_ID,
-            displayName: 'echo-bot',
+            displayName: BOT_USERNAME,
+            displayName_lowercase: BOT_USERNAME.toLowerCase(),
             email: 'echo@whisper.chat',
             isBot: true,
-            photoURL: 'https://picsum.photos/seed/echobot/100',
+            photoURL: BOT_PHOTO_URL,
             createdAt: serverTimestamp(),
             badges: ['bot']
         });

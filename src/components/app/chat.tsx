@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { PopulatedChat, Message, UserProfile } from '@/lib/types';
-import { Send, CheckCircle, Trash2, Pencil, Bot } from 'lucide-react';
+import { Send, Trash2, Pencil, Bot } from 'lucide-react';
 import { UserNav } from './user-nav';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
@@ -91,7 +91,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                 <div
                   key={message.id}
                   className={cn(
-                    "group relative flex items-start gap-3 hover:bg-foreground/5",
+                    "group relative flex items-start gap-3 hover:bg-foreground/5 p-2 rounded-md",
                     showAvatar ? "mt-4" : "mt-0.5",
                     isEditing ? "bg-foreground/10" : ""
                   )}
@@ -147,7 +147,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                   </div>
 
                   {isCurrentUser && !isEditing && (
-                    <div className="absolute right-4 top-0 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md border p-0.5">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md border p-0.5">
                       <Button variant="ghost" size="icon" className="size-6" onClick={() => handleEdit(message)}><Pencil className="size-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="size-6 text-red-500 hover:text-red-500" onClick={() => onDeleteMessage(message.id)}><Trash2 className="size-3.5" /></Button>
                     </div>
