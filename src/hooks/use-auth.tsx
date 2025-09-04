@@ -134,27 +134,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signup = async (email: string, pass: string, username: string) => {
-    // Check if username is already taken
-    const usernameQuery = query(collection(db, 'users'), where('displayName_lowercase', '==', username.toLowerCase()));
-    const usernameSnapshot = await getDocs(usernameQuery);
-    if (!usernameSnapshot.empty) {
-        throw new Error("Username is already taken.");
+    // 1. Check if username is already taken
+    try {
+        const usernameQuery = query(collection(db, 'users'), where('displayName_lowercase', '==', username.toLowerCase()));
+        const usernameSnapshot = await getDocs(usernameQuery);
+        if (!usernameSnapshot.empty) {
+            throw new Error("Username is already taken.");
+        }
+    } catch (error: any) {
+        throw new Error(`Failed to check username uniqueness: ${error.message}`);
     }
 
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      pass
-    );
+    // 2. Create the user in Firebase Auth
+    let userCredential;
+    try {
+        userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    } catch (error: any) {
+        throw new Error(`Failed to create authentication user: ${error.message}`);
+    }
+    
     const firebaseUser = userCredential.user;
-
     const photoURL = `https://i.pravatar.cc/150?u=${firebaseUser.uid}`;
 
-    await updateProfile(firebaseUser, {
-      displayName: username,
-      photoURL,
-    });
+    // 3. Update the Firebase Auth profile
+    try {
+        await updateProfile(firebaseUser, {
+          displayName: username,
+          photoURL,
+        });
+    } catch (error: any) {
+        throw new Error(`Failed to update auth profile: ${error.message}`);
+    }
 
+    // 4. Create the user document in Firestore
     const userPayload: Omit<UserProfile, 'id'> = {
       displayName: username,
       displayName_lowercase: username.toLowerCase(),
@@ -164,9 +176,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       uid: firebaseUser.uid,
     };
 
-    await setDoc(doc(db, 'users', firebaseUser.uid), userPayload);
+    try {
+        await setDoc(doc(db, 'users', firebaseUser.uid), userPayload);
+    } catch (error: any) {
+        console.error("Firestore user creation failed:", error);
+        throw new Error(`Failed to create user profile in database. This is likely a security rule issue. Original error: ${error.message}`);
+    }
 
-    // Manually reload the user object to get the updated profile
+    // 5. Finalize session and welcome new user
     await firebaseUser.reload();
     setAuthUser(auth.currentUser);
 
@@ -174,7 +191,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const finalUser = { id: userDoc.id, ...(userDoc.data() as UserProfile) };
     setUser(applyDeveloperBadge(finalUser));
     
-    // Create welcome chat for new user
     await createWelcomeChat({ userId: firebaseUser.uid, username: username });
 
     return userCredential;
