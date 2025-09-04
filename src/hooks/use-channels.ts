@@ -12,8 +12,7 @@ import {
     deleteDoc,
     query,
     where,
-    getDocs,
-    writeBatch
+    getDocs
 } from 'firebase/firestore';
 import type { Channel, ChannelType } from '@/lib/types';
 import { useAuth } from './use-auth';
@@ -85,17 +84,6 @@ export function useChannels(serverId: string | undefined) {
 
   }, [authUser, serverId]);
 
-  const updateChannelOrder = useCallback(async (orderedChannels: Channel[]) => {
-    if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
 
-    const batch = writeBatch(db);
-    orderedChannels.forEach((channel, index) => {
-        const channelRef = doc(db, 'servers', serverId, 'channels', channel.id);
-        batch.update(channelRef, { position: index });
-    });
-    await batch.commit();
-
-  }, [authUser, serverId]);
-
-  return { createChannel, updateChannel, updateChannelOrder, deleteChannel };
+  return { createChannel, updateChannel, deleteChannel };
 }
