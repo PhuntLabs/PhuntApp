@@ -20,7 +20,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { z } from 'zod';
-import { BOT_ID, BOT_USERNAME, BOT_PHOTO_URL } from '@/ai/bots/config';
+import { BOT_ID } from '@/ai/bots/config';
 
 const EchoBotInputSchema = z.object({
   chatId: z.string().describe('The ID of the chat.'),
@@ -36,19 +36,6 @@ export type EchoBotInput = z.infer<typeof EchoBotInputSchema>;
 export async function processEcho(input: EchoBotInput): Promise<void> {
   return echoBotFlow(input);
 }
-
-const ensureBotUser = async () => {
-    await setDoc(doc(db, 'users', BOT_ID), {
-        uid: BOT_ID,
-        displayName: BOT_USERNAME,
-        email: 'echo@whisper.chat',
-        isBot: true,
-        photoURL: BOT_PHOTO_URL,
-    }, { merge: true });
-};
-
-// Immediately create the bot user when the server starts up.
-ensureBotUser();
 
 const autoAcceptFriendRequest = async (userId: string) => {
     const q = query(

@@ -7,7 +7,7 @@
  */
 import { ai } from '@/ai/genkit';
 import { db } from '@/lib/firebase';
-import { addDoc, collection, doc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { z } from 'zod';
 import { BOT_ID, BOT_PHOTO_URL, BOT_USERNAME } from '../bots/config';
 
