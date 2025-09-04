@@ -25,8 +25,8 @@ export function UserNav({ user, logout }: UserNavProps) {
       <DropdownMenuTrigger asChild>
         <div className="flex items-center gap-2 p-2 hover:bg-sidebar-accent rounded-md cursor-pointer">
             <Avatar className="size-8">
-              <AvatarImage src={user.photoURL || "https://picsum.photos/100"} />
-              <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+              <AvatarImage src={user.photoURL || undefined} />
+              <AvatarFallback>{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col text-left group-data-[collapsible=icon]:hidden">
                 <span className="text-sm font-semibold truncate">{user.displayName || user.email}</span>

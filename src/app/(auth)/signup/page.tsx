@@ -9,9 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { createWelcomeChat } from '@/ai/flows/welcome-chat-flow';
 
 
 export default function SignupPage() {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { signup } = useAuth();
@@ -21,7 +23,8 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await signup(email, password);
+      const userCredential = await signup(email, password, username);
+      await createWelcomeChat({ userId: userCredential.user.uid, username });
       router.push('/');
     } catch (error: any) {
       toast({
@@ -40,6 +43,17 @@ export default function SignupPage() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+           <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              type="text"
+              placeholder="Your unique username"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input

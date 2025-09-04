@@ -12,15 +12,18 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  updateProfile,
   User,
-  Auth,
+  UserCredential,
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signup: (email: string, pass: string) => Promise<any>;
+  signup: (email: string, pass: string, username: string) => Promise<UserCredential>;
   login: (email: string, pass: string) => Promise<any>;
   logout: () => Promise<void>;
 }
@@ -40,8 +43,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const signup = (email: string, pass: string) => {
-    return createUserWithEmailAndPassword(auth, email, pass);
+  const signup = async (email: string, pass: string, username: string) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    const { user } = userCredential;
+
+    await updateProfile(user, {
+      displayName: username,
+    });
+    
+    await setDoc(doc(db, 'users', user.uid), {
+      uid: user.uid,
+      displayName: username,
+      email: user.email,
+      createdAt: serverTimestamp(),
+      photoURL: user.photoURL
+    });
+
+
+    // Manually reload the user object to get the updated profile
+    await user.reload();
+    // We need to update the state to reflect the new displayName
+    setUser({ ...user });
+
+    return userCredential;
   };
 
   const login = (email: string, pass: string) => {

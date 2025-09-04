@@ -1,10 +1,21 @@
 import { FieldValue } from "firebase/firestore";
 
-export interface DirectMessage {
+export interface UserProfile {
   id: string;
-  name: string;
-  avatar: string;
-  online: boolean;
+  displayName: string;
+  photoURL: string | null;
+}
+
+export interface ChatDocument {
+  id: string;
+  members: string[];
+  isOfficial?: boolean;
+  name?: string;
+  photoURL?: string;
+}
+
+export interface PopulatedChat extends Omit<ChatDocument, 'members'> {
+  members: UserProfile[];
 }
 
 export interface Message {

@@ -7,14 +7,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import type { DirectMessage, Message } from '@/lib/types';
-import { Send } from 'lucide-react';
+import type { PopulatedChat, Message } from '@/lib/types';
+import { Send, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface ChatProps {
-  chat: DirectMessage;
+  chat: PopulatedChat;
   messages: Message[];
   onSendMessage: (text: string) => void;
-  currentUser: User | null;
+  currentUser: User;
 }
 
 export function Chat({ chat, messages, onSendMessage, currentUser }: ChatProps) {
@@ -27,49 +28,65 @@ export function Chat({ chat, messages, onSendMessage, currentUser }: ChatProps) 
     setNewMessage('');
   };
 
+  const otherMember = chat.members.find(m => m.id !== currentUser.uid);
+  const chatName = otherMember?.displayName || chat.name || 'Chat';
+  const chatAvatar = otherMember?.photoURL || chat.photoURL;
+
   return (
     <SidebarInset>
       <div className="p-4 flex items-center gap-2 border-b">
         <SidebarTrigger />
         <Avatar className="size-8">
-          <AvatarImage src={chat.avatar} />
-          <AvatarFallback>{chat.name[0]}</AvatarFallback>
+          <AvatarImage src={chatAvatar || undefined} />
+          <AvatarFallback>{chatName[0]}</AvatarFallback>
         </Avatar>
-        <h1 className="text-xl font-semibold">{chat.name}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-semibold">{chatName}</h1>
+          {chat.isOfficial && (
+            <Badge variant="outline" className="flex items-center gap-1 border-green-500 text-green-500">
+              <CheckCircle className="size-3" /> OFFICIAL
+            </Badge>
+          )}
+        </div>
       </div>
       <div className="flex flex-1 flex-col h-full bg-muted/20">
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex items-end gap-2 ${
-                  message.sender === currentUser?.uid ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                {message.sender !== currentUser?.uid && (
-                  <Avatar className="size-8">
-                     <AvatarImage src={chat.avatar} />
-                    <AvatarFallback>{chat.name[0]}</AvatarFallback>
-                  </Avatar>
-                )}
+            {messages.map((message) => {
+              const sender = chat.members.find(m => m.id === message.sender);
+              const isCurrentUser = message.sender === currentUser?.uid;
+
+              return (
                 <div
-                  className={`max-w-xs lg:max-w-md p-3 rounded-2xl ${
-                    message.sender === currentUser?.uid
-                      ? 'bg-primary text-primary-foreground rounded-br-none'
-                      : 'bg-card rounded-bl-none'
+                  key={message.id}
+                  className={`flex items-end gap-2 ${
+                    isCurrentUser ? 'justify-end' : 'justify-start'
                   }`}
                 >
-                  <p className="text-sm">{message.text}</p>
+                  {!isCurrentUser && (
+                    <Avatar className="size-8">
+                       <AvatarImage src={sender?.photoURL || undefined} />
+                      <AvatarFallback>{sender?.displayName?.[0]}</AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div
+                    className={`max-w-xs lg:max-w-md p-3 rounded-2xl ${
+                      isCurrentUser
+                        ? 'bg-primary text-primary-foreground rounded-br-none'
+                        : 'bg-card rounded-bl-none'
+                    }`}
+                  >
+                    <p className="text-sm">{message.text}</p>
+                  </div>
+                   {isCurrentUser && (
+                    <Avatar className="size-8">
+                      <AvatarImage src={currentUser.photoURL || undefined} />
+                      <AvatarFallback>{currentUser.displayName?.[0].toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  )}
                 </div>
-                 {message.sender === currentUser?.uid && currentUser && (
-                  <Avatar className="size-8">
-                    <AvatarImage src={currentUser.photoURL || undefined} />
-                    <AvatarFallback>{currentUser.email?.[0].toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </ScrollArea>
         <div className="p-4 border-t bg-card">
