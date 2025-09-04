@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { EditServerDialog } from './edit-server-dialog';
 import { AddChannelDialog } from './add-channel-dialog';
 import { EditChannelDialog } from './edit-channel-dialog';
+import { Button } from '@/components/ui/button';
 
 interface ServerSidebarProps {
   server: Server;
