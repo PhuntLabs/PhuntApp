@@ -3,7 +3,7 @@
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 import { UserNav } from '@/components/app/user-nav';
 import { Chat } from '@/components/app/chat';
@@ -28,6 +28,7 @@ export default function Home() {
   const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests();
   const { toast } = useToast();
+  const isCreatingBotChat = useRef(false);
 
 
   useEffect(() => {
@@ -38,6 +39,17 @@ export default function Home() {
   
   useEffect(() => {
     if (chatsLoading) return;
+    
+    // If a bot chat was just created, select it
+    if (isCreatingBotChat.current && chats.length > 0) {
+        const botChat = chats.find(c => c.members.some(m => m.id === BOT_ID));
+        if (botChat) {
+            setSelectedChat(botChat);
+            isCreatingBotChat.current = false;
+            return;
+        }
+    }
+    
     // If there is no selected chat or the selected chat is no longer in the list
     if ((!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0) {
       // Find the most recent chat to select
@@ -90,17 +102,11 @@ export default function Home() {
 
         if (!existingChat) {
             // Create a new chat
-            const newChatRef = await addDoc(collection(db, 'chats'), {
+            await addDoc(collection(db, 'chats'), {
                 members: [authUser.uid, fromUser.id],
                 createdAt: serverTimestamp(),
                 lastMessageTimestamp: serverTimestamp()
             });
-            const newChatDoc = await getDoc(newChatRef);
-            if (newChatDoc.exists()){
-                const newChatData = {id: newChatDoc.id, ...newChatDoc.data()} as ChatDocument;
-                const populatedChat = await addChat(newChatData);
-                setSelectedChat(populatedChat);
-            }
         }
 
     } catch(e: any) {
@@ -131,24 +137,21 @@ export default function Home() {
         toast({ title: 'Chat Already Exists', description: "You're already chatting with echo-bot." });
         return;
       }
+      
+      isCreatingBotChat.current = true;
 
       // Create a new chat
-      const newChatRef = await addDoc(collection(db, 'chats'), {
+      await addDoc(collection(db, 'chats'), {
         members: [authUser.uid, BOT_ID],
         createdAt: serverTimestamp(),
         lastMessageTimestamp: serverTimestamp()
       });
-      const newChatDoc = await getDoc(newChatRef);
-
-      if (newChatDoc.exists()) {
-        const newChatData = {id: newChatDoc.id, ...newChatDoc.data()} as ChatDocument;
-        const populatedChat = await addChat(newChatData); // addChat now returns the populated chat
-        setSelectedChat(populatedChat);
-        toast({ title: 'Bot Added', description: 'Started a chat with echo-bot.' });
-      }
+      
+      toast({ title: 'Bot Added', description: 'Started a chat with echo-bot.' });
 
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
+      isCreatingBotChat.current = false;
     }
   }
 

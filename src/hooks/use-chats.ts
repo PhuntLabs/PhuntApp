@@ -52,7 +52,7 @@ export function useChats() {
   const [chats, setChats] = useState<PopulatedChat[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const addChat = useCallback(async (newChat: ChatDocument): Promise<PopulatedChat> => {
+  const addChat = useCallback(async (newChat: ChatDocument) => {
     const populated = await populateChat(newChat);
     setChats((prevChats) => {
         // Avoid adding duplicates
@@ -68,7 +68,6 @@ export function useChats() {
         });
         return updatedChats;
     });
-    return populated;
   }, []);
 
   const removeChat = useCallback((chatId: string) => {
@@ -82,13 +81,13 @@ export function useChats() {
         return;
     };
 
+    setLoading(true);
     const q = query(
       collection(db, 'chats'),
       where('members', 'array-contains', authUser.uid)
     );
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
-      setLoading(true);
       const chatDocs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatDocument));
       const populatedChats = await Promise.all(chatDocs.map(populateChat));
       
