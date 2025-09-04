@@ -1,7 +1,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Settings, Save } from 'lucide-react';
+import { LogOut, Save } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -56,10 +56,11 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
         
         const userRef = doc(db, 'users', user.uid);
         
+        // Use set with merge true to create doc if it doesn't exist or update if it does.
         await setDoc(userRef, { displayName, photoURL, bannerURL, bio }, { merge: true });
 
         const updatedUser = { ...user, displayName, photoURL, bannerURL, bio };
-        setUser(updatedUser);
+        setUser(updatedUser as User);
 
         toast({
             title: 'Profile Updated',
@@ -77,10 +78,12 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
 
   const handleCancel = () => {
     // Reset fields to current user state
-    setDisplayName(user.displayName || '');
-    setPhotoURL(user.photoURL || '');
-    setBannerURL((user as any).bannerURL || '');
-    setBio((user as any).bio || '');
+    if (user) {
+        setDisplayName(user.displayName || '');
+        setPhotoURL(user.photoURL || '');
+        setBannerURL((user as any).bannerURL || '');
+        setBio((user as any).bio || '');
+    }
     setIsEditing(false);
   }
 
@@ -122,6 +125,13 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                 <p className="text-sm text-muted-foreground -mt-1">{user.email}</p>
                 <Separator className="my-2" />
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{bio || 'No bio yet.'}</p>
+                <Separator className="my-4" />
+                <div className="flex flex-col gap-1">
+                    <Button variant="ghost" onClick={() => logout()} className="justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                    </Button>
+                </div>
              </>
            ) : (
              <div className="space-y-4">
@@ -149,23 +159,6 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                     </Button>
                  </div>
              </div>
-           )}
-           
-           {/* Actions are always visible outside of edit mode */}
-           {!isEditing && (
-            <>
-              <Separator className="my-4" />
-              <div className="flex flex-col gap-1">
-                  <Button variant="ghost" className="justify-start" onClick={() => setIsEditing(true)}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Edit Profile & Settings</span>
-                  </Button>
-                  <Button variant="ghost" onClick={() => logout()} className="justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                  </Button>
-              </div>
-            </>
            )}
         </div>
       </PopoverContent>

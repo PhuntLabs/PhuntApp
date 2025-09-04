@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userDoc = await getDoc(doc(db, 'users', user.uid));
     const userData = userDoc.data();
     const combinedUser = {...user, ...userData};
-    setUser(combinedUser);
+    setUser(combinedUser as User);
 
 
     return userCredential;
