@@ -6,15 +6,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Users can create their own user document, and anyone can read user profiles
     match /users/{userId} {
-      // Allow public read access to user profiles for username checks and profile viewing.
-      allow read: if true;
-      
-      // Allow users to create their own profile document.
-      // The `uid` in the document must match the authenticated user's uid.
-      allow create: if request.auth.uid == request.resource.data.uid;
-      
-      // Allow users to update their own profile.
+      allow list, read: if true;
+      allow create: if request.auth.uid == userId;
       allow update: if request.auth.uid == userId;
     }
     
@@ -33,25 +28,37 @@ service cloud.firestore {
     }
 
     match /servers/{serverId} {
+      // Any authenticated user can read server and channel info.
+      // This is necessary for the discovery and join pages to function.
       allow read: if request.auth != null;
       
+      // Users can create servers.
       allow create: if request.auth.uid == request.resource.data.ownerId;
 
+      // An authenticated user can update a server if:
+      // 1. They are the owner (for changing name, icon, etc.)
+      // 2. They are adding THEMSELVES to the members list (joining the server)
       allow update: if request.auth.uid == resource.data.ownerId || 
                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
                        request.resource.data.members.size() == resource.data.members.size() + 1 &&
                        request.auth.uid in request.resource.data.members);
       
+      // Only the owner can delete a server.
       allow delete: if request.auth.uid == resource.data.ownerId;
 
       match /channels/{channelId} {
+        // Allow logged-in users to read channels to see server details before joining
         allow list, read: if request.auth != null;
         
+        // Only server members can create/update/delete channels (delegated to server owner in UI)
         allow create, update, delete: if get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
 
         match /messages/{messageId} {
+          // A user can create a message if they are a member of the server.
           allow create: if request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+          // A user can read messages if they are a member of the server.
           allow read: if get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
+          // A user can update/delete a message if they are the sender.
           allow update, delete: if request.auth.uid == resource.data.sender;
         }
       }
