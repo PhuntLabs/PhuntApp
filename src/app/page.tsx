@@ -1,3 +1,5 @@
+'use client';
+
 import {
   SidebarProvider,
   Sidebar,
@@ -12,28 +14,41 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
-import {
-  MessageSquare,
-  Users,
-  Bell,
-  Settings,
-  LogOut,
-  Server,
-  User,
-} from 'lucide-react';
+import { MessageSquare, Users, Settings, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 
 export default function Home() {
+  const { user, loading, logout } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
             <Avatar className="size-8">
-              <AvatarImage src="https://picsum.photos/100" />
-              <AvatarFallback>U</AvatarFallback>
+              <AvatarImage src={user.photoURL || "https://picsum.photos/100"} />
+              <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
             </Avatar>
-            <span className="text-sm font-semibold">User</span>
+            <span className="text-sm font-semibold">{user.email}</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -78,22 +93,20 @@ export default function Home() {
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Profile">
-                <User />
-                Profile
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
               <SidebarMenuButton tooltip="Settings">
                 <Settings />
                 Settings
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Logout">
-                <LogOut />
+              <Button
+                variant="ghost"
+                className="w-full justify-start"
+                onClick={() => logout()}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
                 Logout
-              </SidebarMenuButton>
+              </Button>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
