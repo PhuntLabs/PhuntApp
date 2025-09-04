@@ -1,3 +1,4 @@
+
 import { FieldValue, Timestamp } from "firebase/firestore";
 
 export interface UserProfile {
@@ -54,6 +55,7 @@ export interface Server {
     members: string[];
     photoURL?: string | null;
     createdAt: FieldValue;
+    channels?: Channel[];
 }
 
 export interface Channel {

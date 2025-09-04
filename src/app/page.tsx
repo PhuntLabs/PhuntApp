@@ -1,7 +1,7 @@
 
 'use client';
 
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -71,19 +71,19 @@ export default function Home() {
   }, [chats, selectedChat, chatsLoading, selectedServer]);
 
   useEffect(() => {
-    if (serversLoading || !servers.length) return;
+    if (serversLoading) return;
   
     const lastSelectedWasDM = !selectedServer;
-  
+    
+    // If a server is deleted, fall back to DMs
     if (!lastSelectedWasDM && selectedServer && !servers.find(s => s.id === selectedServer.id)) {
-        setSelectedServer(null); // Default back to DMs if server is deleted
-    } else if (!selectedServer && servers.length > 0) {
-        // Only autoselect a server if nothing is selected.
-        // This avoids switching away from DMs on refresh.
-        // You could also store last selected server ID in local storage for persistence.
-        // setSelectedServer(servers[0]); 
+        setSelectedServer(null); 
+    } 
+    // If nothing is selected at all (e.g. first load), select the first server if it exists
+    else if (!selectedServer && servers.length > 0 && !selectedChat) {
+        setSelectedServer(servers[0]); 
     }
-  }, [servers, serversLoading, selectedServer]);
+  }, [servers, serversLoading, selectedServer, selectedChat]);
 
 
   const handleSendMessage = async (text: string) => {
@@ -176,7 +176,12 @@ export default function Home() {
   const handleSelectServer = (server: Server | null) => {
     setSelectedServer(server);
     setSelectedChat(null);
-    setSelectedChannel(null);
+    if (server) {
+      const generalChannel = server.channels?.find(c => c.name === '!general');
+      setSelectedChannel(generalChannel || server.channels?.[0] || null);
+    } else {
+      setSelectedChannel(null);
+    }
   }
 
   const handleDeleteServer = async (serverId: string) => {
@@ -219,54 +224,57 @@ export default function Home() {
         />
         
         <div className="w-64 flex-shrink-0 bg-secondary/30 flex flex-col">
-          <div className="flex-1 overflow-y-auto">
-            {server ? (
-              <ServerSidebar 
-                server={server}
-                selectedChannel={selectedChannel}
-                onSelectChannel={setSelectedChannel}
-                onUpdateServer={handleUpdateServer}
-                onDeleteServer={handleDeleteServer}
-              />
-            ) : (
-              <>
-                <SidebarHeader className="p-4 border-b">
-                  <h2 className="font-semibold text-lg">Direct Messages</h2>
-                </SidebarHeader>
-                <SidebarContent className="py-2">
-                  {incomingRequests.length > 0 && (
-                    <PendingRequests
-                      requests={incomingRequests}
-                      onAccept={handleAcceptFriendRequest}
-                      onDecline={handleDeclineFriendRequest}
+            <div className="flex-1 overflow-y-auto">
+                {server ? (
+                <ServerSidebar 
+                    server={server}
+                    selectedChannel={selectedChannel}
+                    onSelectChannel={setSelectedChannel}
+                    onUpdateServer={handleUpdateServer}
+                    onDeleteServer={handleDeleteServer}
+                />
+                ) : (
+                <>
+                    <div className="p-4 border-b">
+                        <h2 className="font-semibold text-lg truncate">Direct Messages</h2>
+                    </div>
+                    <div className="py-2">
+                    {incomingRequests.length > 0 && (
+                        <PendingRequests
+                        requests={incomingRequests}
+                        onAccept={handleAcceptFriendRequest}
+                        onDecline={handleDeclineFriendRequest}
+                        />
+                    )}
+                    <DirectMessages
+                        directMessages={chats}
+                        selectedChat={selectedChat}
+                        onSelectChat={setSelectedChat}
+                        onAddUser={handleSendFriendRequest}
+                        onAddBot={handleCreateChatWithBot}
+                        onDeleteChat={handleDeleteChat}
+                        loading={chatsLoading}
                     />
-                  )}
-                  <DirectMessages
-                    directMessages={chats}
-                    selectedChat={selectedChat}
-                    onSelectChat={setSelectedChat}
-                    onAddUser={handleSendFriendRequest}
-                    onAddBot={handleCreateChatWithBot}
-                    onDeleteChat={handleDeleteChat}
-                    loading={chatsLoading}
-                  />
-                </SidebarContent>
-              </>
-            )}
-          </div>
-          <SidebarFooter className="bg-background/50 p-2">
-            <div className="flex items-center justify-between">
-              <UserNav user={user} logout={logout}/>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
-                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
-              </div>
+                    </div>
+                </>
+                )}
             </div>
-          </SidebarFooter>
+            <div className="bg-background/50 p-2 border-t border-border">
+                <div className="flex items-center justify-between">
+                <UserNav user={user} logout={logout}/>
+                <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
+                    <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
+                </div>
+                </div>
+            </div>
         </div>
         
-        <div className="flex-1 flex min-w-0">
-            <main className="flex-1 flex flex-col bg-background/50 min-w-0">
+        <div className="flex flex-1 min-w-0">
+             <main 
+                className="flex flex-col bg-background/50 min-w-0" 
+                style={{ width: 'calc(100vw - 20rem - 15rem)'}}
+             >
                 {server && selectedChannel ? (
                 <ChannelChat channel={selectedChannel} server={server} />
                 ) : server ? (
@@ -303,5 +311,3 @@ export default function Home() {
     </SidebarProvider>
   );
 }
-
-    

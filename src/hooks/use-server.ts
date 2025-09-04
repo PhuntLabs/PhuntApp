@@ -3,8 +3,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import type { Server, UserProfile } from '@/lib/types';
+import { doc, onSnapshot, updateDoc, deleteDoc, getDoc, collection, query, orderBy } from 'firebase/firestore';
+import type { Server, UserProfile, Channel } from '@/lib/types';
 import { useAuth } from './use-auth';
 
 export function useServer(serverId: string | undefined) {
@@ -27,7 +27,6 @@ export function useServer(serverId: string | undefined) {
     const unsubscribe = onSnapshot(serverRef, async (docSnapshot) => {
       if (docSnapshot.exists()) {
         const serverData = { id: docSnapshot.id, ...docSnapshot.data() } as Server;
-        setServer(serverData);
         
         // Fetch members
         if (serverData.members) {
@@ -46,6 +45,15 @@ export function useServer(serverId: string | undefined) {
             const memberProfiles = await Promise.all(memberPromises);
             setMembers(memberProfiles);
         }
+        
+        // Fetch channels
+        const channelsQuery = query(collection(db, 'servers', serverId, 'channels'), orderBy('createdAt', 'asc'));
+        const channelsSnapshot = await getDoc(channelsQuery as any);
+        const channelDocs = channelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Channel));
+        serverData.channels = channelDocs;
+
+
+        setServer(serverData);
 
       } else {
         setServer(null);

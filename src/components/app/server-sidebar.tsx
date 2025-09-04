@@ -1,11 +1,11 @@
+
 'use client';
 
-import { CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useChannels } from '@/hooks/use-channels';
 import type { Server, Channel } from '@/lib/types';
-import { Hash, ChevronDown, Settings, Trash } from 'lucide-react';
+import { Hash, ChevronDown, Settings, Trash, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { EditServerDialog } from './edit-server-dialog';
 
@@ -19,11 +19,11 @@ interface ServerSidebarProps {
 
 export function ServerSidebar({ server, selectedChannel, onSelectChannel, onUpdateServer, onDeleteServer }: ServerSidebarProps) {
     const { authUser } = useAuth();
-    const { channels, loading } = useChannels(server.id);
+    const { channels, loading } = { channels: server.channels || [], loading: false }; // Get channels directly from server prop
     const isOwner = authUser?.uid === server.ownerId;
 
     const renderHeader = () => (
-         <CardHeader className="p-0 border-b">
+         <div className="p-0 border-b">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <button className="flex items-center justify-between p-4 w-full hover:bg-accent/50 transition-colors">
@@ -49,15 +49,22 @@ export function ServerSidebar({ server, selectedChannel, onSelectChannel, onUpda
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-        </CardHeader>
+        </div>
     )
 
     return (
         <div className="h-full flex flex-col bg-card/40">
            {renderHeader()}
-            <CardContent className="p-0 flex-1 overflow-y-auto">
+            <div className="p-0 flex-1 overflow-y-auto">
                 <SidebarGroup className="py-2">
-                    <SidebarGroupLabel className="px-2">Channels</SidebarGroupLabel>
+                    <SidebarGroupLabel className="px-2 flex items-center justify-between">
+                      Text Channels
+                      {isOwner && (
+                         <button className="text-muted-foreground hover:text-foreground">
+                            <Plus className="size-4"/>
+                          </button>
+                      )}
+                    </SidebarGroupLabel>
                     <SidebarMenu>
                         {loading && (
                             <div className="space-y-2 px-2">
@@ -79,7 +86,7 @@ export function ServerSidebar({ server, selectedChannel, onSelectChannel, onUpda
                         ))}
                     </SidebarMenu>
                 </SidebarGroup>
-            </CardContent>
+            </div>
             {/* Potentially a footer for voice controls etc */}
         </div>
     );
