@@ -103,27 +103,7 @@ export default function Home() {
   const handleAcceptFriendRequest = async (requestId: string, fromUser: { id: string, displayName: string }) => {
      if (!authUser) return;
     try {
-        const batch = writeBatch(db);
-
-        // Update request status
-        batch.update(doc(db, 'friendRequests', requestId), { status: 'accepted' });
-
-        // Check if chat already exists
-        const q = query(collection(db, 'chats'), where('members', 'array-contains', authUser.uid));
-        const querySnapshot = await getDocs(q);
-        const existingChat = querySnapshot.docs.find(doc => doc.data().members.includes(fromUser.id));
-
-        if (!existingChat) {
-            // Create a new chat
-            const newChatRef = doc(collection(db, 'chats'));
-            batch.set(newChatRef, {
-                members: [authUser.uid, fromUser.id],
-                createdAt: serverTimestamp(),
-                lastMessageTimestamp: serverTimestamp()
-            });
-        }
-        
-        await batch.commit();
+        await acceptFriendRequest(requestId, fromUser);
         toast({ title: 'Friend Added!', description: `You and ${fromUser.displayName} are now friends.` });
 
     } catch(e: any) {

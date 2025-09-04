@@ -64,18 +64,16 @@ export function useFriendRequests() {
 
     // 2. Check if a request already exists or if they are already friends
     const existingRequestQuery = query(collection(db, 'friendRequests'), 
-        where('from.id', 'in', [fromUser.id, toUserId]),
-        where('to', 'in', [fromUser.id, toUserId])
+        where('members', 'array-contains-any', [fromUser.id, toUserId])
     );
     const existingRequestSnapshot = await getDocs(existingRequestQuery);
-    if (!existingRequestSnapshot.empty) {
-        const existingRequest = existingRequestSnapshot.docs[0].data();
-        if (existingRequest.status === 'pending') {
-            throw new Error("A friend request between you and this user already exists.");
-        }
-        if (existingRequest.status === 'accepted') {
-            throw new Error("You are already friends with this user.");
-        }
+    const alreadyExists = existingRequestSnapshot.docs.some(doc => {
+        const data = doc.data();
+        return (data.from.id === fromUser.id && data.to === toUserId) || (data.from.id === toUserId && data.to === fromUser.id)
+    });
+    
+    if (alreadyExists) {
+        throw new Error("A friend request has already been sent or you are already friends.");
     }
 
 
@@ -85,6 +83,7 @@ export function useFriendRequests() {
       to: toUserId,
       status: 'pending',
       createdAt: serverTimestamp(),
+      members: [fromUser.id, toUserId] // For easier querying
     });
 
     // 4. If the request is to the bot, trigger the auto-accept flow
@@ -104,12 +103,28 @@ export function useFriendRequests() {
   const acceptFriendRequest = useCallback(async (requestId: string, fromUser: { id: string, displayName: string }) => {
     if (!user) throw new Error("You must be logged in.");
     
-    const requestRef = doc(db, 'friendRequests', requestId);
-    
-    await updateDoc(requestRef, { status: 'accepted' });
+    const batch = writeBatch(db);
 
-    // The chat creation is now handled by the client that accepted the request
-    // This simplifies the logic and avoids potential race conditions with flows.
+    // Update request status
+    const requestRef = doc(db, 'friendRequests', requestId);
+    batch.update(requestRef, { status: 'accepted' });
+
+    // Check if chat already exists
+    const q = query(collection(db, 'chats'), where('members', 'array-contains', user.uid));
+    const querySnapshot = await getDocs(q);
+    const existingChat = querySnapshot.docs.find(doc => doc.data().members.includes(fromUser.id));
+
+    if (!existingChat) {
+        // Create a new chat
+        const newChatRef = doc(collection(db, 'chats'));
+        batch.set(newChatRef, {
+            members: [user.uid, fromUser.id],
+            createdAt: serverTimestamp(),
+            lastMessageTimestamp: serverTimestamp()
+        });
+    }
+    
+    await batch.commit();
 
   }, [user]);
 
