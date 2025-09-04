@@ -7,7 +7,7 @@
  */
 import { ai } from '@/ai/genkit';
 import { db } from '@/lib/firebase';
-import { addDoc, collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
 
 const WelcomeChatInputSchema = z.object({
@@ -45,7 +45,7 @@ const createWelcomeChatFlow = ai.defineFlow(
       isOfficial: true,
       name: 'WhisperChat',
       photoURL: 'https://picsum.photos/seed/bot/100',
-      lastMessageTimestamp: serverTimestamp(),
+      createdAt: serverTimestamp(),
     });
 
     // Add the welcome message
@@ -53,6 +53,11 @@ const createWelcomeChatFlow = ai.defineFlow(
       sender: botId,
       text: `Hello ${username}, welcome to WhisperChat! This is a place to connect and share. Feel free to look around and start a conversation.`,
       timestamp: serverTimestamp(),
+    });
+    
+    // Update the last message timestamp on the chat
+    await updateDoc(chatRef, {
+        lastMessageTimestamp: serverTimestamp(),
     });
   }
 );

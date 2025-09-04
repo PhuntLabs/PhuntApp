@@ -1,19 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, getDoc, doc } from 'firebase/firestore';
 import type { PopulatedChat, ChatDocument, UserProfile } from '@/lib/types';
 import { useAuth } from './use-auth';
 
 async function populateChat(chatDoc: ChatDocument): Promise<PopulatedChat> {
+    if (!chatDoc.members) {
+      console.warn("Chat document missing members array:", chatDoc);
+      return {
+        ...chatDoc,
+        members: [],
+      }
+    }
     const memberPromises = chatDoc.members.map(async (memberId) => {
         const userDoc = await getDoc(doc(db, 'users', memberId));
         if (userDoc.exists()) {
             const userData = userDoc.data();
             return {
                 id: userDoc.id,
-                displayName: userData.displayName,
+                displayName: userData.displayName || 'Unnamed User',
                 photoURL: userData.photoURL || null,
             };
         }
@@ -34,6 +41,10 @@ export function useChats() {
   const { user } = useAuth();
   const [chats, setChats] = useState<PopulatedChat[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const addChat = useCallback((newChat: PopulatedChat) => {
+    setChats((prevChats) => [newChat, ...prevChats]);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -54,8 +65,8 @@ export function useChats() {
       
       // Sort by last message timestamp if available, otherwise by creation
       populatedChats.sort((a, b) => {
-        const timeA = (a as any).lastMessageTimestamp?.toMillis() || 0;
-        const timeB = (b as any).lastMessageTimestamp?.toMillis() || 0;
+        const timeA = (a as any).lastMessageTimestamp?.toMillis() || (a as any).createdAt?.toMillis() || 0;
+        const timeB = (b as any).lastMessageTimestamp?.toMillis() || (b as any).createdAt?.toMillis() || 0;
         return timeB - timeA;
       });
 
@@ -66,5 +77,5 @@ export function useChats() {
     return () => unsubscribe();
   }, [user]);
 
-  return { chats, loading };
+  return { chats, loading, addChat };
 }

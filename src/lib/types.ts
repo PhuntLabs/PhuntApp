@@ -1,4 +1,4 @@
-import { FieldValue } from "firebase/firestore";
+import { FieldValue, Timestamp } from "firebase/firestore";
 
 export interface UserProfile {
   id: string;
@@ -12,6 +12,8 @@ export interface ChatDocument {
   isOfficial?: boolean;
   name?: string;
   photoURL?: string;
+  createdAt?: Timestamp;
+  lastMessageTimestamp?: Timestamp;
 }
 
 export interface PopulatedChat extends Omit<ChatDocument, 'members'> {
@@ -23,4 +25,15 @@ export interface Message {
   sender: string;
   text: string;
   timestamp: FieldValue;
+}
+
+export interface FriendRequest {
+    id: string;
+    from: {
+        id: string;
+        displayName: string;
+    },
+    to: string;
+    status: 'pending' | 'accepted' | 'declined';
+    createdAt: Timestamp;
 }

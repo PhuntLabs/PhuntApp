@@ -7,23 +7,27 @@ import { PlusCircle, CheckCircle } from 'lucide-react';
 import type { PopulatedChat } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '../ui/badge';
+import { AddUserDialog } from './add-user-dialog';
 
 interface DirectMessagesProps {
   directMessages: PopulatedChat[];
   selectedChat: PopulatedChat | null;
   onSelectChat: (chat: PopulatedChat) => void;
+  onAddUser: (username: string) => void;
 }
 
-export function DirectMessages({ directMessages, selectedChat, onSelectChat }: DirectMessagesProps) {
+export function DirectMessages({ directMessages, selectedChat, onSelectChat, onAddUser }: DirectMessagesProps) {
   const { user } = useAuth();
   
   return (
     <SidebarGroup>
       <SidebarGroupLabel className="flex items-center justify-between">
         Direct Messages
-        <Button variant="ghost" size="icon" className="h-6 w-6">
-          <PlusCircle className="h-4 w-4" />
-        </Button>
+        <AddUserDialog onAddUser={onAddUser}>
+          <Button variant="ghost" size="icon" className="h-6 w-6">
+            <PlusCircle className="h-4 w-4" />
+          </Button>
+        </AddUserDialog>
       </SidebarGroupLabel>
       <SidebarMenu>
         {directMessages.map((chat) => {
