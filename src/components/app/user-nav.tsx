@@ -167,6 +167,10 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
                     <>
                     <Separator className="my-4" />
                     <div className="flex flex-col gap-1">
+                        <Button variant="ghost" className="justify-start">
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Settings</span>
+                        </Button>
                         <Button variant="ghost" onClick={() => logout && logout()} className="justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10">
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
@@ -176,7 +180,7 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
                 )}
              </>
            ) : (
-             <div className="space-y-2 h-auto max-h-[calc(100vh-28rem)] overflow-y-auto pr-2">
+             <div className="space-y-2 h-auto max-h-[calc(100vh-20rem)] overflow-y-auto pr-2">
                 <div className="space-y-1">
                     <Label htmlFor="displayName">Display Name</Label>
                     <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
