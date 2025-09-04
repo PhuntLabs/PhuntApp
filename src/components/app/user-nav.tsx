@@ -1,7 +1,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code, Bot, Settings } from 'lucide-react';
+import { LogOut, Save, Code, Bot, Settings, Pencil } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -159,7 +159,9 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
              <>
                 {isCurrentUser && (
                     <div className="absolute top-4 right-4 flex justify-end gap-1">
-                        <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>Edit Profile</Button>
+                        <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                            <Pencil className="mr-2 h-3.5 w-3.5"/> Edit Profile
+                        </Button>
                     </div>
                 )}
                 <h3 className="text-xl font-bold">{displayName}</h3>
