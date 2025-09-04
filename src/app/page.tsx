@@ -17,13 +17,14 @@ import { PendingRequests } from '@/components/app/pending-requests';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, getDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { processEcho } from '@/ai/flows/echo-bot-flow';
 
 export default function Home() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const { chats, loading: chatsLoading, addChat } = useChats();
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
-  const { messages, sendMessage } = useChat(selectedChat?.id);
+  const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests();
   const { toast } = useToast();
 
@@ -35,15 +36,28 @@ export default function Home() {
   }, [user, loading, router]);
   
   useEffect(() => {
-    if (!selectedChat && chats.length > 0) {
-      setSelectedChat(chats[0]);
+    // If there is no selected chat or the selected chat is no longer in the list
+    if ((!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0) {
+      // Find the most recent chat to select
+      const mostRecentChat = chats.reduce((prev, current) => {
+        const prevTime = (prev.lastMessageTimestamp as any)?.toMillis() || (prev.createdAt as any)?.toMillis() || 0;
+        const currentTime = (current.lastMessageTimestamp as any)?.toMillis() || (current.createdAt as any)?.toMillis() || 0;
+        return (prevTime > currentTime) ? prev : current;
+      });
+      setSelectedChat(mostRecentChat);
     }
   }, [chats, selectedChat]);
 
 
   const handleSendMessage = async (text: string) => {
     if (!user || !selectedChat) return;
-    await sendMessage(text, user.uid);
+    const sentMessage = await sendMessage(text, user.uid);
+
+    // If talking to echo-bot, trigger the flow
+    const echoBot = selectedChat.members.find(m => m.id === 'echo_bot');
+    if (echoBot && sentMessage) {
+        await processEcho({ chatId: selectedChat.id, message: { id: sentMessage.id, text, sender: user.uid }});
+    }
   };
   
   const handleSendFriendRequest = async (username: string) => {
@@ -134,6 +148,8 @@ export default function Home() {
           chat={selectedChat}
           messages={messages}
           onSendMessage={handleSendMessage}
+          onEditMessage={editMessage}
+          onDeleteMessage={deleteMessage}
           currentUser={user}
         />
       ) : (

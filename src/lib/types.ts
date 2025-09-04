@@ -25,6 +25,7 @@ export interface Message {
   sender: string;
   text: string;
   timestamp: FieldValue;
+  edited?: boolean;
 }
 
 export interface FriendRequest {
