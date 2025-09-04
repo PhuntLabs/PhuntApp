@@ -117,20 +117,27 @@ export function useFriendRequests() {
     
     const batch = writeBatch(db);
 
-    // Update request status
+    // 1. Update request status
     const requestRef = doc(db, 'friendRequests', requestId);
     batch.update(requestRef, { status: 'accepted' });
 
-    // Check if chat already exists
+    // 2. Check if a chat already exists
     const sortedMembers = [authUser.uid, fromUser.id].sort();
     const chatQuery = query(
         collection(db, 'chats'),
         where('members', '==', sortedMembers)
     );
-    const chatSnapshot = await getDocs(chatQuery);
     
+    let chatSnapshot;
+    try {
+        chatSnapshot = await getDocs(chatQuery);
+    } catch (e: any) {
+        console.error("Error checking for existing chat:", e);
+        throw new Error(`Permission denied when checking for existing chat. Original error: ${e.message}`);
+    }
+
+    // 3. If no chat exists, create a new one
     if (chatSnapshot.empty) {
-        // Create a new chat
         const newChatRef = doc(collection(db, 'chats'));
         batch.set(newChatRef, {
             members: sortedMembers,
@@ -139,7 +146,13 @@ export function useFriendRequests() {
         });
     }
     
-    await batch.commit();
+    // 4. Commit all database changes
+    try {
+        await batch.commit();
+    } catch(e: any) {
+        console.error("Error committing friend request acceptance batch:", e);
+        throw new Error(`Permission denied when updating friend request and creating chat. Original error: ${e.message}`);
+    }
 
   }, [authUser]);
 
