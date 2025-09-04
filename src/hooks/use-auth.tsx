@@ -49,11 +49,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         getDoc(userDocRef).then(userDoc => {
             if(userDoc.exists()) {
                 const userData = userDoc.data() as UserProfile;
+                
+                // Add developer badge for specific user
+                if (userData.email === 'raidensch0@gmail.com') {
+                    if (!userData.badges) {
+                        userData.badges = [];
+                    }
+                    if (!userData.badges.includes('developer')) {
+                        userData.badges.push('developer');
+                    }
+                }
+
                 setUser({ id: userDoc.id, ...userData });
             } else {
                 // This case might happen briefly if the Firestore doc isn't created yet
                 setUser({
                     id: firebaseUser.uid,
+                    uid: firebaseUser.uid,
                     displayName: firebaseUser.displayName || '',
                     photoURL: firebaseUser.photoURL || null,
                 });
@@ -94,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Manually reload the user object to get the updated profile
     await firebaseUser.reload();
-    setAuthUser(firebaseUser);
+    setAuthUser(auth.currentUser);
 
     const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
     setUser({id: userDoc.id, ...(userDoc.data() as UserProfile)});

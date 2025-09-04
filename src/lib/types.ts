@@ -10,6 +10,7 @@ export interface UserProfile {
   bio?: string;
   isBot?: boolean;
   createdAt?: FieldValue;
+  badges?: string[];
 }
 
 export interface ChatDocument {

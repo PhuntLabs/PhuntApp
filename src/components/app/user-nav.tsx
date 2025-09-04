@@ -1,7 +1,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save } from 'lucide-react';
+import { LogOut, Save, Code } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -20,6 +20,7 @@ import { db } from '@/lib/firebase';
 import { updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
+import { Badge } from '../ui/badge';
 
 interface UserNavProps {
     user: User | null; // This should be the authUser
@@ -122,7 +123,15 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                 <div className="flex justify-end">
                     <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>Edit Profile</Button>
                 </div>
-                <h3 className="text-xl font-bold">{displayName}</h3>
+                <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold">{displayName}</h3>
+                    {userProfile.badges?.includes('developer') && (
+                        <Badge variant="secondary" className="flex items-center gap-1 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                            <Code className="size-3.5" />
+                            Developer
+                        </Badge>
+                    )}
+                </div>
                 <p className="text-sm text-muted-foreground -mt-1">{userProfile.email}</p>
                 <Separator className="my-2" />
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{bio || 'No bio yet.'}</p>
@@ -135,7 +144,7 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                 </div>
              </>
            ) : (
-             <div className="space-y-2">
+             <div className="space-y-2 h-auto max-h-[calc(100vh-25rem)] overflow-y-auto pr-2">
                 <div className="space-y-1">
                     <Label htmlFor="displayName">Display Name</Label>
                     <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
