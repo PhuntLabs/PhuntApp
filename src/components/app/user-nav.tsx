@@ -144,7 +144,7 @@ export function UserNav({ user: authUser, logout }: UserNavProps) {
                 </div>
              </>
            ) : (
-             <div className="space-y-2 h-auto max-h-[calc(100vh-25rem)] overflow-y-auto pr-2">
+             <div className="space-y-2 h-auto max-h-[calc(100vh-30rem)] overflow-y-auto pr-2">
                 <div className="space-y-1">
                     <Label htmlFor="displayName">Display Name</Label>
                     <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />

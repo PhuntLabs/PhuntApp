@@ -35,6 +35,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const developerEmails = ['raidensch0@gmail.com'];
+const developerUsernames = ['testacc', 'aura farmer'];
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -50,8 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if(userDoc.exists()) {
                 const userData = userDoc.data() as UserProfile;
                 
-                // Add developer badge for specific user
-                if (userData.email === 'raidensch0@gmail.com') {
+                // Add developer badge for specific users
+                if (
+                  (userData.email && developerEmails.includes(userData.email)) ||
+                  (userData.displayName && developerUsernames.includes(userData.displayName))
+                ) {
                     if (!userData.badges) {
                         userData.badges = [];
                     }
