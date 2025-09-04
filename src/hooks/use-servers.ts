@@ -61,16 +61,12 @@ export function useServers() {
       ownerId: authUser.uid,
       members: [authUser.uid],
       createdAt: serverTimestamp(),
-      photoURL: null, // Set photoURL later
+      photoURL: `https://picsum.photos/seed/${Math.random()}/200`
     });
 
-    // 2. Now that we have the ID, create a batch for channels and updating the photoURL.
+    // 2. Now that we have the ID, create a batch for channels.
     const batch = writeBatch(db);
     
-    // Update the server with the correct photoURL
-    const photoURL = `https://picsum.photos/seed/${serverRef.id}/200`;
-    batch.update(serverRef, { photoURL });
-
     // Create the default channels
     const channelsRef = collection(db, 'servers', serverRef.id, 'channels');
     
@@ -88,7 +84,7 @@ export function useServers() {
       createdAt: serverTimestamp(),
     });
 
-    // 3. Commit the batch with the remaining operations.
+    // 3. Commit the batch.
     await batch.commit();
 
   }, [authUser]);
