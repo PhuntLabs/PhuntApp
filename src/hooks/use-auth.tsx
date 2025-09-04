@@ -29,6 +29,7 @@ import {
   query,
   where,
   getDocs,
+  updateDoc,
 } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { createWelcomeChat } from '@/ai/flows/welcome-chat-flow';
@@ -53,6 +54,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const developerEmails = ['raidensch0@gmail.com'];
 const developerUsernames = ['testacc', 'aura farmer'];
 
+function applyDeveloperBadge(profile: UserProfile): UserProfile {
+    if (
+        (profile.email && developerEmails.includes(profile.email)) ||
+        (profile.displayName && developerUsernames.includes(profile.displayName.toLowerCase()))
+    ) {
+        const badges = profile.badges ? [...profile.badges] : [];
+        if (!badges.includes('developer')) {
+            badges.push('developer');
+        }
+        return { ...profile, badges };
+    }
+    return profile;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -67,22 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
-          const userData = userDoc.data() as UserProfile;
-
-          // Add developer badge for specific users
-          if (
-            (userData.email && developerEmails.includes(userData.email)) ||
-            (userData.displayName &&
-              developerUsernames.includes(userData.displayName.toLowerCase()))
-          ) {
-            if (!userData.badges) {
-              userData.badges = [];
-            }
-            if (!userData.badges.includes('developer')) {
-              userData.badges.push('developer');
-            }
-          }
-          setUser({ id: userDoc.id, ...userData });
+          const userData = { id: userDoc.id, ...userDoc.data() } as UserProfile;
+          const userWithBadge = applyDeveloperBadge(userData);
+          setUser(userWithBadge);
         } else {
           // This case might happen briefly if the Firestore doc isn't created yet
           setUser({
@@ -169,7 +171,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthUser(auth.currentUser);
 
     const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-    setUser({ id: userDoc.id, ...(userDoc.data() as UserProfile) });
+    const finalUser = { id: userDoc.id, ...(userDoc.data() as UserProfile) };
+    setUser(applyDeveloperBadge(finalUser));
     
     // Create welcome chat for new user
     await createWelcomeChat({ userId: firebaseUser.uid, username: username });
