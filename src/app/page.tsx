@@ -14,7 +14,7 @@ import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, getDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, getDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
@@ -95,7 +95,8 @@ export default function Home() {
             const newChatDoc = await getDoc(newChatRef);
             if (newChatDoc.exists()){
                 const newChatData = {id: newChatDoc.id, ...newChatDoc.data()} as ChatDocument;
-                addChat(newChatData);
+                const populatedChat = await addChat(newChatData);
+                setSelectedChat(populatedChat);
             }
         }
 
@@ -181,7 +182,7 @@ export default function Home() {
           <Servers />
         </SidebarContent>
         <SidebarFooter>
-          <UserNav user={authUser} logout={logout}/>
+          <UserNav user={user} logout={logout}/>
         </SidebarFooter>
       </Sidebar>
       {selectedChat && user ? (

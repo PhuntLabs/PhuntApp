@@ -51,12 +51,14 @@ export function useChats() {
         if (prevChats.some(chat => chat.id === populated.id)) {
             return prevChats;
         }
-        const sortedChats = [populated, ...prevChats].sort((a, b) => {
-            const timeA = (a as any).lastMessageTimestamp?.toMillis() || (a as any).createdAt?.toMillis() || 0;
-            const timeB = (b as any).lastMessageTimestamp?.toMillis() || (b as any).createdAt?.toMillis() || 0;
+        // Add new chat and re-sort
+        const updatedChats = [...prevChats, populated];
+        updatedChats.sort((a, b) => {
+            const timeA = (a.lastMessageTimestamp as any)?.toMillis() || (a.createdAt as any)?.toMillis() || 0;
+            const timeB = (b.lastMessageTimestamp as any)?.toMillis() || (b.createdAt as any)?.toMillis() || 0;
             return timeB - timeA;
         });
-        return sortedChats;
+        return updatedChats;
     });
     return populated;
   }, []);
@@ -80,8 +82,8 @@ export function useChats() {
       
       // Sort by last message timestamp if available, otherwise by creation
       populatedChats.sort((a, b) => {
-        const timeA = (a as any).lastMessageTimestamp?.toMillis() || (a as any).createdAt?.toMillis() || 0;
-        const timeB = (b as any).lastMessageTimestamp?.toMillis() || (b as any).createdAt?.toMillis() || 0;
+        const timeA = (a.lastMessageTimestamp as any)?.toMillis() || (a.createdAt as any)?.toMillis() || 0;
+        const timeB = (b.lastMessageTimestamp as any)?.toMillis() || (b.createdAt as any)?.toMillis() || 0;
         return timeB - timeA;
       });
 
