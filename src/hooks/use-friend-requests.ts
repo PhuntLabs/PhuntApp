@@ -24,7 +24,7 @@ export function useFriendRequests() {
 
   // Listen for incoming friend requests
   useEffect(() => {
-    if (!user) {
+    if (!user || !user.uid) { // Add a check for user.uid
         setIncomingRequests([]);
         return;
     }
@@ -100,8 +100,15 @@ export function useFriendRequests() {
     batch.update(requestRef, { status: 'accepted' });
     
     // Add each user to the other's friends list (optional, but good for queries)
-    batch.update(userRef, { friends: [...(user.friends || []), fromUser.id] });
-    batch.update(fromUserRef, { friends: [...((await getDocs(query(collection(db, 'users'), where('uid', '==', fromUser.id)))).docs[0].data().friends || []), user.uid] });
+    // Note: This friends array logic needs a more robust implementation for a real app,
+    // for example by checking for duplicates before adding.
+    const userDoc = await getDoc(userRef);
+    const userFriends = userDoc.data()?.friends || [];
+    batch.update(userRef, { friends: [...userFriends, fromUser.id] });
+
+    const fromUserDoc = await getDoc(fromUserRef);
+    const fromUserFriends = fromUserDoc.data()?.friends || [];
+    batch.update(fromUserRef, { friends: [...fromUserFriends, user.uid] });
 
     await batch.commit();
 
