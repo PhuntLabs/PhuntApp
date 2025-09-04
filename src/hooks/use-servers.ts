@@ -55,19 +55,23 @@ export function useServers() {
   const createServer = useCallback(async (name: string) => {
     if (!authUser) throw new Error("You must be logged in to create a server.");
 
-    const batch = writeBatch(db);
-
-    // 1. Create the server document
-    const serverRef = doc(collection(db, 'servers'));
-    batch.set(serverRef, {
+    // 1. Create the server document first to get a valid ID.
+    const serverRef = await addDoc(collection(db, 'servers'), {
       name,
       ownerId: authUser.uid,
       members: [authUser.uid],
       createdAt: serverTimestamp(),
-      photoURL: `https://picsum.photos/seed/${serverRef.id}/200`,
+      photoURL: null, // Set photoURL later
     });
 
-    // 2. Create the default channels
+    // 2. Now that we have the ID, create a batch for channels and updating the photoURL.
+    const batch = writeBatch(db);
+    
+    // Update the server with the correct photoURL
+    const photoURL = `https://picsum.photos/seed/${serverRef.id}/200`;
+    batch.update(serverRef, { photoURL });
+
+    // Create the default channels
     const channelsRef = collection(db, 'servers', serverRef.id, 'channels');
     
     const generalChannelRef = doc(channelsRef);
@@ -84,6 +88,7 @@ export function useServers() {
       createdAt: serverTimestamp(),
     });
 
+    // 3. Commit the batch with the remaining operations.
     await batch.commit();
 
   }, [authUser]);
