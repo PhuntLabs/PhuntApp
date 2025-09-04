@@ -22,6 +22,7 @@ import { processEcho } from '@/ai/flows/echo-bot-flow';
 import { BOT_ID, BOT_USERNAME } from '@/ai/bots/config';
 import { Mic, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ServerSidebar } from '@/components/app/server-sidebar';
 
 export default function Home() {
   const { user, authUser, loading, logout } = useAuth();
@@ -64,7 +65,13 @@ export default function Home() {
   // When servers load, select the first one by default
   useEffect(() => {
     if (!serversLoading && servers.length > 0 && !selectedServer) {
-        setSelectedServer(servers[0]);
+        // Sort servers by creation time before selecting
+        const sortedServers = [...servers].sort((a, b) => {
+            const timeA = (a.createdAt as any)?.toMillis() || 0;
+            const timeB = (b.createdAt as any)?.toMillis() || 0;
+            return timeA - timeB; // oldest first
+        });
+        setSelectedServer(sortedServers[0]);
     }
     if (selectedServer && !servers.find(s => s.id === selectedServer.id)) {
         setSelectedServer(servers.length > 0 ? servers[0] : null);
@@ -170,62 +177,79 @@ export default function Home() {
 
   return (
     <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-           {/* Maybe a search bar or something can go here */}
-        </SidebarHeader>
-        <SidebarContent>
-           {incomingRequests.length > 0 && (
-            <PendingRequests
-                requests={incomingRequests}
-                onAccept={handleAcceptFriendRequest}
-                onDecline={handleDeclineFriendRequest}
+        <div className="flex h-screen">
+          <Sidebar>
+            {/* This is the server list rail */}
+            <Servers 
+                servers={servers}
+                loading={serversLoading} 
+                onCreateServer={handleCreateServer} 
+                selectedServer={selectedServer}
+                onSelectServer={setSelectedServer}
             />
-           )}
-          <DirectMessages
-            directMessages={chats}
-            selectedChat={selectedChat}
-            onSelectChat={setSelectedChat}
-            onAddUser={handleSendFriendRequest}
-            onAddBot={handleCreateChatWithBot}
-            onDeleteChat={handleDeleteChat}
-            loading={chatsLoading}
-          />
-          <Servers 
-            servers={servers}
-            loading={serversLoading} 
-            onCreateServer={handleCreateServer} 
-            selectedServer={selectedServer}
-            onSelectServer={setSelectedServer}
-          />
-        </SidebarContent>
-        <SidebarFooter>
-          <div className="flex items-center justify-between">
-              <UserNav user={user} logout={logout}/>
-              <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
-                  <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
-              </div>
+          </Sidebar>
+          
+          <div className="flex flex-1">
+             <div className="w-64 flex-shrink-0 bg-secondary/30">
+                 {selectedServer ? (
+                    <ServerSidebar server={selectedServer} />
+                 ) : (
+                    <Sidebar>
+                        <SidebarHeader>
+                        {/* Maybe a search bar or something can go here */}
+                        </SidebarHeader>
+                        <SidebarContent>
+                        {incomingRequests.length > 0 && (
+                            <PendingRequests
+                                requests={incomingRequests}
+                                onAccept={handleAcceptFriendRequest}
+                                onDecline={handleDeclineFriendRequest}
+                            />
+                        )}
+                        <DirectMessages
+                            directMessages={chats}
+                            selectedChat={selectedChat}
+                            onSelectChat={setSelectedChat}
+                            onAddUser={handleSendFriendRequest}
+                            onAddBot={handleCreateChatWithBot}
+                            onDeleteChat={handleDeleteChat}
+                            loading={chatsLoading}
+                        />
+                        </SidebarContent>
+                        <SidebarFooter>
+                        <div className="flex items-center justify-between">
+                            <UserNav user={user} logout={logout}/>
+                            <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
+                                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
+                            </div>
+                        </div>
+                        </SidebarFooter>
+                    </Sidebar>
+                 )}
+             </div>
+
+            <main className="flex-1 flex flex-col">
+              {selectedChat && !selectedServer && user ? (
+                <Chat
+                  chat={selectedChat}
+                  messages={messages}
+                  onSendMessage={handleSendMessage}
+                  onEditMessage={editMessage}
+                  onDeleteMessage={deleteMessage}
+                  currentUser={authUser}
+                />
+              ) : (
+                <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
+                  <div className="text-center">
+                    <h2 className="text-xl font-medium text-foreground">{selectedServer ? `Welcome to ${selectedServer.name}` : 'No Chat Selected'}</h2>
+                    <p className="text-muted-foreground">{selectedServer ? 'Select a channel to start talking.' : 'Select a conversation from the sidebar or add a friend to start chatting.'}</p>
+                  </div>
+                </div>
+              )}
+            </main>
           </div>
-        </SidebarFooter>
-      </Sidebar>
-      {selectedChat && user ? (
-        <Chat
-          chat={selectedChat}
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          onEditMessage={editMessage}
-          onDeleteMessage={deleteMessage}
-          currentUser={authUser}
-        />
-      ) : (
-        <div className="flex flex-1 items-center justify-center h-screen bg-muted/20">
-          <div className="text-center">
-            <h2 className="text-xl font-medium text-foreground">{selectedServer ? `Welcome to ${selectedServer.name}` : 'No Chat Selected'}</h2>
-            <p className="text-muted-foreground">{selectedServer ? 'Select a channel to start talking.' : 'Select a conversation from the sidebar or add a friend to start chatting.'}</p>
-          </div>
-        </div>
-      )}
+      </div>
     </SidebarProvider>
   );
 }
