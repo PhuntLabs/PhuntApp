@@ -52,7 +52,7 @@ export function useChats() {
   const [chats, setChats] = useState<PopulatedChat[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const addChat = useCallback(async (newChat: ChatDocument) => {
+  const addChat = useCallback(async (newChat: ChatDocument): Promise<PopulatedChat> => {
     const populated = await populateChat(newChat);
     setChats((prevChats) => {
         // Avoid adding duplicates
@@ -68,6 +68,7 @@ export function useChats() {
         });
         return updatedChats;
     });
+    return populated;
   }, []);
 
   const removeChat = useCallback((chatId: string) => {

@@ -18,12 +18,12 @@ import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, delete
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
-import { BOT_ID } from '@/ai/bots/config';
+import { BOT_ID, BOT_USERNAME } from '@/ai/bots/config';
 
 export default function Home() {
   const { user, authUser, loading, logout } = useAuth();
   const router = useRouter();
-  const { chats, loading: chatsLoading, removeChat } = useChats();
+  const { chats, loading: chatsLoading, addChat } = useChats();
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
   const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests();
@@ -37,6 +37,10 @@ export default function Home() {
   
   useEffect(() => {
     if (chatsLoading) return;
+
+    if (selectedChat && !chats.find(c => c.id === selectedChat.id)) {
+      setSelectedChat(null);
+    }
     
     // If there is no selected chat or the selected chat is no longer in the list
     if ((!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0) {
@@ -77,6 +81,17 @@ export default function Home() {
     }
   }
 
+  const handleCreateChatWithBot = async () => {
+    if (!user) return;
+    try {
+        await handleSendFriendRequest(BOT_USERNAME);
+    } catch (e: any) {
+        if (!e.message.includes('already sent a request')) {
+            toast({ variant: 'destructive', title: 'Error', description: e.message });
+        }
+    }
+  };
+
   const handleAcceptFriendRequest = async (requestId: string, fromUser: { id: string, displayName: string }) => {
      if (!authUser) return;
     try {
@@ -90,11 +105,15 @@ export default function Home() {
 
         if (!existingChat) {
             // Create a new chat
-            await addDoc(collection(db, 'chats'), {
+            const chatRef = await addDoc(collection(db, 'chats'), {
                 members: [authUser.uid, fromUser.id],
                 createdAt: serverTimestamp(),
                 lastMessageTimestamp: serverTimestamp()
             });
+
+            const newChat = await getDoc(chatRef);
+            await addChat({id: newChat.id, ...newChat.data()} as any);
+            setSelectedChat(await addChat({id: newChat.id, ...newChat.data()} as any));
         }
 
     } catch(e: any) {
@@ -152,6 +171,7 @@ export default function Home() {
             selectedChat={selectedChat}
             onSelectChat={setSelectedChat}
             onAddUser={handleSendFriendRequest}
+            onAddBot={handleCreateChatWithBot}
             onDeleteChat={handleDeleteChat}
             loading={chatsLoading}
           />

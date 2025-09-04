@@ -13,13 +13,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Bot } from 'lucide-react';
+import { BOT_USERNAME } from '@/ai/bots/config';
 
 interface AddUserDialogProps {
   children: React.ReactNode;
   onAddUser: (username: string) => void;
+  onAddBot: () => void;
 }
 
-export function AddUserDialog({ children, onAddUser }: AddUserDialogProps) {
+export function AddUserDialog({ children, onAddUser, onAddBot }: AddUserDialogProps) {
   const [username, setUsername] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
@@ -32,19 +36,37 @@ export function AddUserDialog({ children, onAddUser }: AddUserDialogProps) {
     }
   };
 
+  const handleAddBot = () => {
+    onAddBot();
+    setIsOpen(false);
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
-        
           <DialogHeader>
-            <DialogTitle>Add a Friend</DialogTitle>
+            <DialogTitle>Add Friends</DialogTitle>
             <DialogDescription>
-              Enter a username to send them a friend request.
+              Add friends by their username, or add a bot to chat with.
             </DialogDescription>
           </DialogHeader>
+          
+          <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-lg">
+            <div className="flex items-center gap-2">
+                <Bot className="size-5" />
+                <span className="font-medium">{BOT_USERNAME}</span>
+            </div>
+            <Button size="sm" onClick={handleAddBot}>Add</Button>
+          </div>
+          
+          <div className="relative py-2">
+            <Separator />
+            <span className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">OR</span>
+          </div>
+
           <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-4">
+              <div className="grid gap-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="username" className="text-right">
                     Username
@@ -59,8 +81,8 @@ export function AddUserDialog({ children, onAddUser }: AddUserDialogProps) {
                   />
                 </div>
               </div>
-              <DialogFooter>
-                <Button type="submit">Send Request</Button>
+              <DialogFooter className="mt-4">
+                <Button type="submit">Send Friend Request</Button>
               </DialogFooter>
           </form>
       </DialogContent>

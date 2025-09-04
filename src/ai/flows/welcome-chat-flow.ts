@@ -38,25 +38,7 @@ const createWelcomeChatFlow = ai.defineFlow(
         photoURL: BOT_PHOTO_URL
     }, { merge: true });
 
-    // Create a new chat document
-    const chatRef = await addDoc(collection(db, 'chats'), {
-      members: [userId, BOT_ID],
-      isOfficial: true,
-      name: BOT_USERNAME,
-      photoURL: BOT_PHOTO_URL,
-      createdAt: serverTimestamp(),
-    });
-
-    // Add the welcome message
-    await addDoc(collection(db, 'chats', chatRef.id, 'messages'), {
-      sender: BOT_ID,
-      text: `Hello ${username}, welcome to WhisperChat! This is the echo-bot. Send me a message and I'll repeat it back to you.`,
-      timestamp: serverTimestamp(),
-    });
-    
-    // Update the last message timestamp on the chat
-    await updateDoc(chatRef, {
-        lastMessageTimestamp: serverTimestamp(),
-    });
+    // This flow is now only responsible for ensuring the bot user exists.
+    // The chat creation will be handled client-side after a friend request.
   }
 );

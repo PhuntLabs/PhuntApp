@@ -32,7 +32,6 @@ import {
 } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { createWelcomeChat } from '@/ai/flows/welcome-chat-flow';
-import { BOT_ID } from '@/ai/bots/config';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -83,25 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               userData.badges.push('developer');
             }
           }
-
           setUser({ id: userDoc.id, ...userData });
-
-          // Check for welcome chat with bot for existing users
-          const chatQuery = query(
-            collection(db, 'chats'),
-            where('members', 'array-contains', firebaseUser.uid)
-          );
-          const chatSnapshot = await getDocs(chatQuery);
-          const hasBotChat = chatSnapshot.docs.some((d) =>
-            d.data().members.includes(BOT_ID)
-          );
-
-          if (!hasBotChat && userData.displayName) {
-            await createWelcomeChat({
-              userId: firebaseUser.uid,
-              username: userData.displayName,
-            });
-          }
         } else {
           // This case might happen briefly if the Firestore doc isn't created yet
           setUser({
