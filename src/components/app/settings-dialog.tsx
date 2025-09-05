@@ -29,12 +29,12 @@ import { GameActivitySettings } from './settings/game-activity-settings';
 import { ConnectionsSettings } from './settings/connections-settings';
 import { Separator } from '../ui/separator';
 
-type Section = 'account' | 'profiles' | 'connections' | 'security' | 'theme' | 'bugs' | 'game-activity';
+type Section = 'account' | 'profiles' | 'security' | 'theme' | 'bugs' | 'game-activity';
 
 const sections = [
   { id: 'account', label: 'My Account', icon: User },
   { id: 'profiles', label: 'Profiles', icon: Sparkles },
-  { id: 'connections', label: 'Connections', icon: Link },
+  // { id: 'connections', label: 'Connections', icon: Link }, // Temporarily disabled
   { id: 'game-activity', label: 'Game Activity', icon: Gamepad },
   { id: 'security', label: 'Security', icon: Shield },
   { id: 'theme', label: 'Theme', icon: Paintbrush },
@@ -57,8 +57,8 @@ export function SettingsDialog({ children, defaultSection = 'account', onOpenCha
         return <AccountSettings />;
       case 'profiles':
         return <ProfileSettings />;
-      case 'connections':
-        return <ConnectionsSettings />;
+      // case 'connections':
+      //   return <ConnectionsSettings />;
       case 'game-activity':
         return <GameActivitySettings />;
       case 'security':

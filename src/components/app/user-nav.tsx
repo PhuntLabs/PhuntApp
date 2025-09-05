@@ -145,14 +145,6 @@ const SpotifyIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-
-const connectionIcons: Record<Connection['type'], React.FC<any> | { src: string; alt: string; }> = {
-    github: Github,
-    spotify: SpotifyIcon,
-    youtube: Youtube,
-    steam: { src: "https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg", alt: "Steam" }
-};
-
 export function UserNav({ user, logout, as = 'button', children, serverContext }: UserNavProps) {
   const { authUser, user: currentUser, updateUserProfile, updateUserRolesInServer, updateServerProfile } = useAuth();
   const { sendFriendRequest } = useFriendRequests();
@@ -451,32 +443,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                             )}
 
                              <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
-                            
                              
-                             {user.connections && user.connections.length > 0 && (
-                                 <>
-                                <Separator className="my-2" />
-                                <div className="mb-2">
-                                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Connections</h4>
-                                    <div className="flex flex-wrap gap-2 mt-1">
-                                        {user.connections.map(conn => {
-                                            const iconInfo = connectionIcons[conn.type];
-                                            const href = conn.type === 'github' ? `https://github.com/${conn.username}` : `https://www.${conn.type}.com`;
-                                            const IconComponent = typeof iconInfo === 'function' ? iconInfo : null;
-
-                                            return (
-                                                <a key={conn.type} href={href} target="_blank" rel="noopener noreferrer">
-                                                    <Button variant="outline" size="icon" className="size-8">
-                                                        {IconComponent ? <IconComponent className="size-4" /> : <Image src={iconInfo.src} alt={iconInfo.alt} width={16} height={16} />}
-                                                    </Button>
-                                                </a>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                                </>
-                            )}
-
 
                             {serverContext && (
                             <>

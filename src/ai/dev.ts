@@ -4,3 +4,4 @@
 import './flows/welcome-chat-flow';
 import './flows/echo-bot-flow';
 import './flows/qolforu-bot-flow';
+import './flows/reaction-flow';
