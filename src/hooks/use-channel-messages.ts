@@ -16,8 +16,9 @@ import {
   where,
   getDocs,
   writeBatch,
+  arrayUnion,
 } from 'firebase/firestore';
-import type { Message, Server, Embed, Mention } from '@/lib/types';
+import type { Message, Server, Embed, Mention, Reaction } from '@/lib/types';
 import { useAuth } from './use-auth';
 import { usePermissions } from './use-permissions';
 import { useToast } from './use-toast';
@@ -79,7 +80,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
   }, [server?.id, channelId]);
 
   const sendMessage = useCallback(
-    async (text: string, imageUrl?: string, embed?: Embed, replyTo?: Message['replyTo']) => {
+    async (text: string, imageUrl?: string, embedPayload?: Embed | { embed: Embed, reactions?: string[] }, replyTo?: Message['replyTo']) => {
       if (!authUser || !server?.id || !channelId || !user) return;
 
       if (!hasPermission('sendMessages')) {
@@ -100,7 +101,23 @@ export function useChannelMessages(server: Server | null, channelId: string | un
       };
 
       if (imageUrl) messagePayload.imageUrl = imageUrl;
-      if (embed) messagePayload.embed = embed;
+      
+      let initialReactions: Reaction[] | undefined;
+      if (embedPayload) {
+        if ('reactions' in embedPayload) {
+           messagePayload.embed = { 
+                ...embedPayload.embed, 
+                footer: embedPayload.embed.footer ? { ...embedPayload.embed.footer, text: embedPayload.embed.footer.text.replace('@user', user.displayName) } : undefined 
+            };
+            if (embedPayload.reactions) {
+                initialReactions = embedPayload.reactions.map(emoji => ({ emoji, users: [] }));
+                messagePayload.reactions = initialReactions;
+            }
+        } else {
+             messagePayload.embed = embedPayload;
+        }
+      }
+
       if (replyTo) messagePayload.replyTo = replyTo;
 
 

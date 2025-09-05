@@ -80,7 +80,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                 "size-12 rounded-3xl transition-all duration-200 bg-secondary flex items-center justify-center",
                                 !selectedServer && !isDiscoveryActive && !isGamesActive ? 'rounded-2xl bg-primary' : 'group-hover:rounded-2xl group-hover:bg-primary'
                             )}>
-                                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdxcCEQJzJkyi0I_le_fiZKo41M-cSsIi0Zg&s" alt="Direct Messages" className="w-7 h-7"/>
+                                <MessageSquare className="size-7 text-white/80" />
                             </div>
                         </button>
                     </TooltipTrigger>

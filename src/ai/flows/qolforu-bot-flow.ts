@@ -53,7 +53,13 @@ ensureBotUser().catch(console.error);
 async function findServer(serverId: string): Promise<Server> {
     const serverSnap = await getDoc(doc(db, 'servers', serverId));
     if (!serverSnap.exists()) throw new Error('Server not found.');
-    return { id: serverSnap.id, ...serverSnap.data() } as Server;
+    const serverData = { id: serverSnap.id, ...serverSnap.data() } as Server;
+    
+    // Manually fetching channels as they might not be on the server object from all call sites
+    const channelsSnapshot = await getDocs(collection(db, 'servers', serverId, 'channels'));
+    serverData.channels = channelsSnapshot.docs.map(d => ({id: d.id, ...d.data()})) as any;
+
+    return serverData;
 }
 
 export const qolforuBotFlow = async ({ serverId, channelId, command, args }: SlashCommandInput): Promise<SlashCommandOutput> => {

@@ -93,7 +93,7 @@ export function ChatInput({
     const hasQolBot = serverContext?.members.some(id => id === 'qolforu-bot-id');
 
     const everyoneAndHereOption = useMemo(() => {
-        return { id: 'everyone', displayName: 'everyone', note: 'Notifies everyone in this channel.' };
+        return { uid: 'everyone', displayName: 'everyone', note: 'Notifies everyone in this channel.' };
     }, []);
 
     const handleTyping = useCallback(() => {
@@ -368,11 +368,11 @@ export function ChatInput({
                     </p>
                     {filteredMembers.map(member => (
                         <button 
-                            key={member.id} 
+                            key={member.uid} 
                             className="w-full flex items-center gap-2 p-2 rounded-md text-left hover:bg-accent"
                             onClick={() => insertAutocomplete(member.displayName!, 'mention')}
                         >
-                             {member.id === 'everyone' ? (
+                             {member.uid === 'everyone' ? (
                                 <div className="size-6 bg-muted rounded-full flex items-center justify-center">
                                     <AtSign className="size-4" />
                                 </div>

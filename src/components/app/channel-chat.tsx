@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, BadgeType } from '@/lib/types';
+import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, BadgeType, Embed } from '@/lib/types';
 import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Code, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -38,7 +38,7 @@ interface ChannelChatProps {
     currentUser: User;
     members: Partial<UserProfile>[];
     messages: Message[];
-    onSendMessage: (text: string, imageUrl?: string, embed?: any, replyTo?: Message['replyTo']) => void;
+    onSendMessage: (text: string, imageUrl?: string, embed?: Embed | { embed: Embed, reactions?: string[] }, replyTo?: Message['replyTo']) => void;
     onEditMessage: (messageId: string, newText: string) => void;
     onDeleteMessage: (messageId: string) => void;
 }
@@ -97,7 +97,7 @@ export function ChannelChat({
         handleCancelEdit();
     };
 
-    const handleSendMessageWrapper = (text: string, imageUrl?: string, embed?: any) => {
+    const handleSendMessageWrapper = (text: string, imageUrl?: string, embed?: Embed | { embed: Embed, reactions?: string[] }) => {
         let replyInfo: Message['replyTo'] | undefined = undefined;
         if (replyingTo) {
             const senderProfile = getSenderProfile(replyingTo.sender);
