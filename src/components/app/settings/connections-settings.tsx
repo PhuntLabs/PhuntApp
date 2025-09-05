@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Image from 'next/image';
 import { Link, X, Loader2, Check } from 'lucide-react';
 import type { Connection } from '@/lib/types';
-import { serverTimestamp } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,7 +70,7 @@ export function ConnectionsSettings() {
         const newConnection: Connection = {
             type: 'github',
             username: githubUsername.trim(),
-            connectedAt: serverTimestamp(),
+            connectedAt: new Date(),
         };
 
         const updatedConnections = [...existingConnections, newConnection];

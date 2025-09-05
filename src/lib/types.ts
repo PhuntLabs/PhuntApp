@@ -29,7 +29,7 @@ export interface CustomGame {
 export interface Connection {
     type: 'spotify' | 'github' | 'steam'; // Add more as needed
     username: string;
-    connectedAt: FieldValue;
+    connectedAt: FieldValue | Date;
 }
 
 export interface UserProfile {
