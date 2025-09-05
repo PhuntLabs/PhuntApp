@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { InviteDialog } from './invite-dialog';
 import { useChannelMessages } from '@/hooks/use-channel-messages';
+import Image from 'next/image';
 
 interface ServerSidebarProps {
   server: Server;
@@ -34,7 +35,7 @@ interface ServerSidebarProps {
   onUpdateServer: (serverId: string, data: Partial<Omit<Server, 'id'>>) => Promise<void>;
   onDeleteServer: (serverId: string) => Promise<void>;
   onCreateChannel: (name: string) => Promise<void>;
-  onUpdateChannel: (channelId: string, data: { name?: string, type?: ChannelType }) => Promise<void>;
+  onUpdateChannel: (channelId: string, data: Partial<Channel>) => Promise<void>;
   onDeleteChannel: (channelId: string) => Promise<void>;
 }
 
@@ -47,6 +48,7 @@ const channelIcons: Record<ChannelType, React.ElementType> = {
 
 const ChannelMenuItem = ({
     channel,
+    server,
     isOwner,
     selectedChannel,
     onSelectChannel,
@@ -54,10 +56,11 @@ const ChannelMenuItem = ({
     onDeleteChannel,
 }: {
     channel: Channel;
+    server: Server;
     isOwner: boolean;
     selectedChannel: Channel | null;
     onSelectChannel: (channel: Channel) => void;
-    onUpdateChannel: (channelId: string, data: { name?: string; type?: ChannelType; }) => Promise<void>;
+    onUpdateChannel: (channelId: string, data: Partial<Channel>) => Promise<void>;
     onDeleteChannel: (channelId: string) => Promise<void>;
 }) => {
     const { authUser } = useAuth();
@@ -99,7 +102,7 @@ const ChannelMenuItem = ({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent side="right">
-                            <EditChannelDialog channel={channel} onUpdateChannel={onUpdateChannel}>
+                            <EditChannelDialog channel={channel} server={server} onUpdateChannel={onUpdateChannel}>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                     <Pencil className="mr-2 h-4 w-4" />
                                     <span>Edit Channel</span>
@@ -165,17 +168,31 @@ export function ServerSidebar({
     }, [server.channels]);
 
     const renderHeader = () => (
-        <div className="p-0 border-b flex items-center justify-between pr-2">
-            <DropdownMenu>
+        <div className="border-b shadow-sm relative">
+            {server.bannerURL && (
+                <div className="h-24 w-full relative">
+                    <Image src={server.bannerURL} alt={`${server.name} banner`} fill style={{objectFit: 'cover'}}/>
+                </div>
+            )}
+             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className="flex flex-col items-start gap-0 p-4 w-full hover:bg-accent/50 transition-colors">
+                    <button className={cn(
+                        "p-4 w-full text-left hover:bg-accent/50 transition-colors",
+                         server.bannerURL && "absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 text-white"
+                        )}>
                         <div className="flex items-center gap-2">
-                             {server.isVerified && <BadgeCheck className="size-5 text-blue-500 shrink-0" />}
-                            <CardTitle className="truncate text-lg">{server.name}</CardTitle>
-                            <ChevronDown className="size-5 shrink-0 text-muted-foreground" />
+                             {server.isVerified && <BadgeCheck className="size-5 text-blue-400 shrink-0" />}
+                            <CardTitle className={cn("truncate text-lg", server.bannerURL && "text-shadow-md")}>{server.name}</CardTitle>
+                            <ChevronDown className={cn("size-5 shrink-0 text-muted-foreground", server.bannerURL && "text-white/80")} />
                         </div>
-                        <CardDescription className="flex items-center gap-1 text-xs ml-1">
-                            <Users className="size-3"/> {server.members?.length || 0} Members
+                        <CardDescription className={cn("flex items-center gap-1 text-xs ml-1", server.bannerURL && "text-white/70")}>
+                            {server.description ? (
+                                <span className="truncate">{server.description}</span>
+                            ) : (
+                                <>
+                                    <Users className="size-3"/> {server.members?.length || 0} Members
+                                </>
+                            )}
                         </CardDescription>
                     </button>
                 </DropdownMenuTrigger>
@@ -210,7 +227,6 @@ export function ServerSidebar({
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-            <SidebarTrigger />
         </div>
     )
 
@@ -234,6 +250,7 @@ export function ServerSidebar({
                             <ChannelMenuItem
                                 key={channel.id}
                                 channel={channel}
+                                server={server}
                                 isOwner={isOwner}
                                 selectedChannel={selectedChannel}
                                 onSelectChannel={onSelectChannel}

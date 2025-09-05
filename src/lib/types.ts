@@ -111,6 +111,7 @@ export interface Server {
     members: string[];
     memberDetails: { [userId: string]: { joinedAt: FieldValue, roles: string[], profile?: ServerProfile } };
     photoURL?: string | null;
+    bannerURL?: string | null;
     createdAt: FieldValue;
     channels?: Channel[];
     isPublic?: boolean;

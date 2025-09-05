@@ -132,6 +132,31 @@ export function ChannelChat({
         );
     }
 
+    const firstWritableChannel = useMemo(() => {
+        const currentUserRoles = server.memberDetails?.[currentUser.uid]?.roles || [];
+        return server.channels?.find(ch => {
+            if (server.ownerId === currentUser.uid) return true; // Owner can write anywhere
+            if (!ch.permissionOverwrites) {
+                 return server.roles?.some(r => currentUserRoles.includes(r.id) && r.permissions.sendMessages);
+            }
+            
+            let canWrite = false;
+            // Base roles
+             server.roles?.forEach(r => {
+                if (currentUserRoles.includes(r.id) && r.permissions.sendMessages) {
+                    canWrite = true;
+                }
+             });
+            // Overrides
+             currentUserRoles.forEach(roleId => {
+                if (ch.permissionOverwrites?.[roleId]?.sendMessages === true) canWrite = true;
+                if (ch.permissionOverwrites?.[roleId]?.sendMessages === false) canWrite = false;
+             });
+
+            return canWrite;
+        });
+    }, [server, currentUser]);
+
     return (
         <div className="flex flex-col h-full">
             <header className="p-4 border-b flex items-center gap-2 flex-shrink-0">
@@ -289,13 +314,21 @@ export function ChannelChat({
                 <ChatInput 
                     onSendMessage={handleSendMessageWrapper}
                     onTyping={handleTyping}
-                    placeholder={canSendMessages ? `Message #${displayName}` : `You do not have permission to send messages in #${displayName}`}
+                    placeholder={canSendMessages ? `Message #${displayName}` : `You do not have permission to send messages here.`}
                     members={members}
                     customEmojis={server.customEmojis}
                     disabled={!!editingMessageId || !canSendMessages}
                     serverContext={server}
                     channelId={channel.id}
                 />
+                 {!canSendMessages && firstWritableChannel && (
+                    <p className="text-xs text-center text-muted-foreground mt-2">
+                        Done reading? Check out{' '}
+                        <button className="text-primary hover:underline font-semibold">
+                            #{firstWritableChannel.name}
+                        </button>
+                    </p>
+                )}
             </div>
         </div>
     )

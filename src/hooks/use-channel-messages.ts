@@ -80,6 +80,10 @@ export function useChannelMessages(server: Server | null, channelId: string | un
     async (text: string, imageUrl?: string, replyTo?: Message['replyTo']) => {
       if (!authUser || !server?.id || !channelId) return;
 
+      if (!hasPermission('sendMessages')) {
+        throw new Error("You don't have permission to send messages in this channel.");
+      }
+
       if (text.includes('@everyone') && !hasPermission('mentionEveryone')) {
         throw new Error("You don't have permission to mention @everyone.");
       }

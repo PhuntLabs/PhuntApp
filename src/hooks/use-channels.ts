@@ -56,10 +56,10 @@ export function useChannels(serverId: string | undefined) {
 
   }, [authUser, serverId]);
 
-  const updateChannel = useCallback(async (channelId: string, data: { name?: string; type?: ChannelType; topic?: string }) => {
+  const updateChannel = useCallback(async (channelId: string, data: Partial<Channel>) => {
     if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
 
-    const updateData: { name?: string; type?: ChannelType; topic?: string } = {};
+    const updateData: Partial<Channel> = {};
 
     if (data.name) {
       const sanitizedName = data.name.trim().toLowerCase().replace(/\s+/g, '-');
@@ -71,6 +71,9 @@ export function useChannels(serverId: string | undefined) {
     }
     if (data.topic !== undefined) {
         updateData.topic = data.topic;
+    }
+     if (data.permissionOverwrites !== undefined) {
+        updateData.permissionOverwrites = data.permissionOverwrites;
     }
 
 

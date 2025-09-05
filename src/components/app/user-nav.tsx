@@ -288,19 +288,16 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       </PopoverTrigger>
       <PopoverContent className="w-80 mb-2 p-0 border-none rounded-lg overflow-hidden" side="top" align="start">
         <TooltipProvider>
-            <div className="relative">
-                {ProfileEffectComponent && (
-                    <div className="absolute inset-0 z-0">
-                        <ProfileEffectComponent />
-                    </div>
-                )}
-                <div className="relative z-10 flex flex-col">
-                    <div className="h-24 bg-accent relative">
-                        {user.bannerURL && (
-                            <Image src={user.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} />
-                        )}
-                    </div>
-                    <div className="absolute top-[70px] left-4">
+            <div className="flex flex-col">
+                <div className="h-24 bg-accent relative">
+                    {user.bannerURL && (
+                        <Image src={user.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} />
+                    )}
+                    {ProfileEffectComponent && <ProfileEffectComponent />}
+                </div>
+
+                <div className="px-4 pb-4 bg-popover rounded-b-lg">
+                    <div className="flex items-end -mt-12">
                         <div className="relative">
                             {AvatarEffectComponent && 'prototype' in AvatarEffectComponent ? (
                                 <AvatarEffectComponent>
@@ -330,16 +327,16 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                 </Tooltip>
                             </div>
                         </div>
+                         <div className="ml-auto flex justify-end gap-1">
+                            {!isCurrentUser && (
+                                <Button variant="outline" size="sm" onClick={handleAddFriend}>
+                                    <UserPlus className="mr-2 h-3.5 w-3.5"/> Add Friend
+                                </Button>
+                            )}
+                        </div>
                     </div>
-                    <div className="absolute top-4 right-4 flex justify-end gap-1">
-                        {!isCurrentUser && (
-                            <Button variant="outline" size="sm" onClick={handleAddFriend}>
-                                <UserPlus className="mr-2 h-3.5 w-3.5"/> Add Friend
-                            </Button>
-                        )}
-                    </div>
-
-                    <div className="pt-16 px-4 pb-4 bg-popover rounded-b-lg">
+                
+                    <div className="pt-4">
                     {!isEditing ? (
                     <>
                         <div className="flex items-center gap-2">
