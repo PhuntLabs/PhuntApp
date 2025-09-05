@@ -15,6 +15,7 @@ import {
   deleteDoc,
   where,
   getDocs,
+  arrayUnion,
 } from 'firebase/firestore';
 import type { Message } from '@/lib/types';
 import { useAuth } from './use-auth';
@@ -32,7 +33,7 @@ async function getMentions(text: string): Promise<string[]> {
   // Firestore `in` query is limited to 10 items per query
   for (let i = 0; i < usernames.length; i += 10) {
     const chunk = usernames.slice(i, i + 10);
-    const q = query(collection(db, 'users'), where('displayName', 'in', chunk));
+    const q = query(collection(db, 'users'), where('displayName_lowercase', 'in', chunk.map(u => u.toLowerCase())));
     const snapshot = await getDocs(q);
     snapshot.forEach(doc => mentionedUserIds.push(doc.id));
   }
@@ -84,7 +85,14 @@ export function useChannelMessages(serverId: string | undefined, channelId: stri
       const messagesRef = collection(db, 'servers', serverId, 'channels', channelId, 'messages');
       await addDoc(messagesRef, messagePayload);
 
-      // We could update a `lastMessageTimestamp` on the channel here if needed
+      // If there are mentions, update the channel document
+      if (mentionedUserIds.length > 0) {
+        const channelRef = doc(db, 'servers', serverId, 'channels', channelId);
+        // Use arrayUnion to add without duplicates. Firestore handles this atomically.
+        await updateDoc(channelRef, {
+            mentions: arrayUnion(...mentionedUserIds)
+        });
+      }
     },
     [authUser, serverId, channelId]
   );

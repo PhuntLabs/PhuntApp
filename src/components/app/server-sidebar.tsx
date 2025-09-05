@@ -25,6 +25,7 @@ import { EditChannelDialog } from './edit-channel-dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { InviteDialog } from './invite-dialog';
+import { Badge } from '../ui/badge';
 
 interface ServerSidebarProps {
   server: Server;
@@ -117,18 +118,24 @@ export function ServerSidebar({
                     <SidebarMenu>
                         {sortedChannels.map((channel) => {
                             const Icon = channelIcons[channel.type] || Hash;
+                            const hasMention = channel.mentions?.includes(authUser?.uid || '');
                             return (
                                 <SidebarMenuItem key={channel.id} className="px-2 group/channel">
-                                    <div className="flex items-center w-full">
+                                    <div className="flex items-center w-full relative">
                                         <SidebarMenuButton 
                                             isActive={selectedChannel?.id === channel.id}
                                             onClick={() => onSelectChannel(channel)}
-                                            className={cn("w-full justify-start h-8 px-2")}
+                                            className={cn(
+                                                "w-full justify-start h-8 px-2",
+                                                hasMention && ! (selectedChannel?.id === channel.id) && "text-white font-bold"
+                                            )}
                                         >
                                             <Icon className="size-4 text-muted-foreground"/>
                                             <span className="truncate">{channel.name}</span>
                                         </SidebarMenuButton>
-
+                                        
+                                        {hasMention && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2 bg-white rounded-r-full" />}
+                                        
                                         {isOwner && (
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>

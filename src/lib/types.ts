@@ -73,4 +73,5 @@ export interface Channel {
     createdAt?: FieldValue;
     position: number;
     type: ChannelType;
+    mentions?: string[];
 }

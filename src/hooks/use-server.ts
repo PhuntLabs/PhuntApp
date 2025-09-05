@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, deleteDoc, getDoc, collection, query, orderBy, getDocs, arrayUnion } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, deleteDoc, getDoc, collection, query, orderBy, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
 import type { Server, UserProfile, Channel } from '@/lib/types';
 import { useAuth } from './use-auth';
 
@@ -73,7 +73,7 @@ export function useServer(serverId: string | undefined) {
     const serverRef = doc(db, 'servers', serverIdToUpdate);
     await updateDoc(serverRef, data);
   }, [authUser]);
-
+  
   const deleteServer = useCallback(async (serverIdToDelete: string) => {
     if (!authUser) throw new Error('Not authenticated');
     const serverRef = doc(db, 'servers', serverIdToDelete);

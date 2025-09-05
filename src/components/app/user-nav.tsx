@@ -13,11 +13,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -48,6 +43,11 @@ const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType,
     dnd: { label: 'Do Not Disturb', icon: XCircle, color: 'text-red-500' },
     offline: { label: 'Offline', icon: CircleDot, color: 'text-gray-500' },
 };
+
+const badgeConfig: Record<string, { label: string; icon: React.ElementType, className: string }> = {
+    developer: { label: 'Developer', icon: Code, className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
+    bot: { label: 'Bot', icon: Bot, className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
+}
 
 export function UserNav({ user, logout, as = 'button', children }: UserNavProps) {
   const { authUser, user: currentUser, updateUserProfile } = useAuth();
@@ -156,6 +156,9 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
     }}>{children}</div>
   )
 
+  const allBadges = [...(user.badges || [])];
+  if (user.isBot) allBadges.push('bot');
+
   return (
     <Popover open={isPopoverOpen} onOpenChange={(open) => {
       setIsPopoverOpen(open);
@@ -179,7 +182,14 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
                       <AvatarFallback className="text-2xl">{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className={cn("absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-popover flex items-center justify-center", statusConfig[userStatus].color === 'text-gray-500' ? 'bg-gray-500' : `bg-${statusConfig[userStatus].color.split('-')[1]}-500`)}>
-                        <StatusIcon className="size-3 text-white"/>
+                        <Tooltip>
+                           <TooltipTrigger>
+                             <StatusIcon className="size-3 text-white"/>
+                           </TooltipTrigger>
+                           <TooltipContent side="bottom">
+                                {statusLabel}
+                           </TooltipContent>
+                        </Tooltip>
                     </div>
                 </div>
             </div>
@@ -199,30 +209,23 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
            {!isEditing ? (
              <>
                 <div className="absolute top-28 right-4 flex justify-end gap-1">
-                 {user.badges?.includes('developer') && (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                             <Badge variant="secondary" className="flex items-center justify-center h-6 p-0 px-2 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
-                                <Code className="size-3 mr-1" /> Developer
-                            </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Developer</p>
-                        </TooltipContent>
-                    </Tooltip>
-                )}
-                 {user.isBot && (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                             <Badge variant="secondary" className="flex items-center justify-center h-6 p-0 px-2 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
-                                <Bot className="size-3 mr-1" /> Bot
-                            </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Bot</p>
-                        </TooltipContent>
-                    </Tooltip>
-                )}
+                 {allBadges.map((badgeKey) => {
+                     const badgeInfo = badgeConfig[badgeKey];
+                     if (!badgeInfo) return null;
+                     const { label, icon: Icon, className } = badgeInfo;
+                     return (
+                         <Tooltip key={badgeKey}>
+                            <TooltipTrigger asChild>
+                                 <Badge variant="secondary" className={cn("flex items-center justify-center h-6 w-6 p-0", className)}>
+                                    <Icon className="size-3.5" />
+                                </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{label}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                     )
+                 })}
                 </div>
                 <h3 className="text-xl font-bold">{displayName}</h3>
                 <p className={cn("text-sm text-muted-foreground -mt-1", !user.email && 'italic')}>{user.email || 'No email provided'}</p>

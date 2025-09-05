@@ -20,7 +20,7 @@ import { useChannels } from '@/hooks/use-channels';
 import { useChannelMessages } from '@/hooks/use-channel-messages';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
@@ -86,7 +86,8 @@ export default function Home() {
       handleSelectServer(servers[0]);
       setInitialLoad(false);
     }
-  }, [servers, serversLoading, selectedServer, selectedChat, initialLoad, handleSelectServer]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servers, serversLoading, selectedServer, selectedChat, initialLoad]);
 
 
   const handleSendMessage = async (text: string) => {
@@ -179,9 +180,19 @@ export default function Home() {
     setSelectedChat(null);
     if (server && server.channels && server.channels.length > 0) {
         const generalChannel = server.channels.find(c => c.name === '!general') || server.channels[0];
-        setSelectedChannel(generalChannel);
+        handleSelectChannel(generalChannel);
     } else {
         setSelectedChannel(null);
+    }
+  }
+  
+  const handleSelectChannel = async (channel: Channel) => {
+    setSelectedChannel(channel);
+    if (channel.mentions?.includes(authUser?.uid || '')) {
+      const channelRef = doc(db, 'servers', channel.serverId, 'channels', channel.id);
+      await updateDoc(channelRef, {
+        mentions: arrayRemove(authUser?.uid)
+      });
     }
   }
 
@@ -276,7 +287,7 @@ export default function Home() {
                   <ServerSidebar 
                       server={server}
                       selectedChannel={selectedChannel}
-                      onSelectChannel={setSelectedChannel}
+                      onSelectChannel={handleSelectChannel}
                       onUpdateServer={handleUpdateServer}
                       onDeleteServer={handleDeleteServer}
                       onCreateChannel={handleCreateChannel}
