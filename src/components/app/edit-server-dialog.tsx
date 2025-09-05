@@ -39,6 +39,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 function generateRandomHexColor() {
   return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
@@ -79,6 +80,7 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
   const [customEmojis, setCustomEmojis] = useState<CustomEmoji[]>(server.customEmojis || []);
   const [roles, setRoles] = useState<Role[]>(server.roles || []);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [systemChannelId, setSystemChannelId] = useState<string | undefined>(server.systemChannelId);
   
   const [newEmojiName, setNewEmojiName] = useState('');
   const [newEmojiUrl, setNewEmojiUrl] = useState('');
@@ -102,6 +104,7 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
       setDescription(server.description || '');
       setInviteLink(server.customInviteLink || '');
       setCustomEmojis(server.customEmojis || []);
+      setSystemChannelId(server.systemChannelId);
       
       const serverRoles = [...(server.roles || [])];
       serverRoles.sort((a, b) => a.priority - b.priority);
@@ -124,7 +127,8 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
             isPublic, 
             description,
             customEmojis,
-            roles: rolesWithUpdatedPriority
+            roles: rolesWithUpdatedPriority,
+            systemChannelId,
         };
         
         await onUpdateServer(server.id, updatedData);
@@ -246,6 +250,7 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
   };
   
   const activeRoleForEditing = roles.find(r => r.id === selectedRole);
+  const textChannels = server.channels?.filter(c => c.type === 'text') || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -283,6 +288,24 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
                             <div className="space-y-1">
                                 <Label htmlFor="server-banner">Banner URL</Label>
                                 <Input id="server-banner" value={serverBanner} onChange={(e) => setServerBanner(e.target.value)} placeholder="https://image.url/banner.png"/>
+                            </div>
+                            <Separator />
+                             <div className="space-y-1">
+                                <Label htmlFor="system-channel">System Messages Channel</Label>
+                                <DialogDescription>
+                                    The channel where system messages like welcome messages will be sent.
+                                </DialogDescription>
+                                <Select value={systemChannelId} onValueChange={(value) => setSystemChannelId(value)}>
+                                    <SelectTrigger id="system-channel">
+                                        <SelectValue placeholder="Select a channel" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">None</SelectItem>
+                                        {textChannels.map(channel => (
+                                            <SelectItem key={channel.id} value={channel.id}>#{channel.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <Separator />
                             <div className="space-y-1">

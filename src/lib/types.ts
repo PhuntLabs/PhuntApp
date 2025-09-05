@@ -126,6 +126,7 @@ export interface Server {
     roles?: Role[];
     customInviteLink?: string;
     isVerified?: boolean;
+    systemChannelId?: string;
 }
 
 export type ChannelType = 'text' | 'announcement' | 'rules' | 'forum';

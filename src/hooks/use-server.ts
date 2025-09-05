@@ -3,9 +3,17 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, deleteDoc, getDoc, collection, query, orderBy, getDocs, arrayUnion, serverTimestamp } from 'firebase/firestore';
-import type { Server, UserProfile, Channel, ServerProfile } from '@/lib/types';
+import { doc, onSnapshot, updateDoc, deleteDoc, getDoc, collection, query, orderBy, getDocs, arrayUnion, serverTimestamp, addDoc } from 'firebase/firestore';
+import type { Server, UserProfile, Channel, ServerProfile, Message } from '@/lib/types';
 import { useAuth } from './use-auth';
+
+const welcomeMessages = [
+    "Welcome, {user}! We're glad to have you here.",
+    "Hey {user}, welcome to the server! Say hi!",
+    "{user} just joined. Everyone, look busy!",
+    "A wild {user} appeared!",
+    "Glad you're here, {user}. Hope you enjoy your stay.",
+];
 
 export function useServer(serverId: string | undefined) {
   const { authUser, user: currentUser } = useAuth();
@@ -98,9 +106,30 @@ export function useServer(serverId: string | undefined) {
             roles: [], // Start with no roles
         }
       });
+      
+      // Post welcome message if system channel is configured
+      const serverDoc = await getDoc(serverRef);
+      const serverData = serverDoc.data() as Server;
+      
+      if (serverData.systemChannelId && serverData.systemChannelId !== 'none') {
+        const welcomeMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)]
+            .replace('{user}', `@${currentUser.displayName}`);
+
+        const messagePayload: Omit<Message, 'id' | 'timestamp'> = {
+            text: welcomeMessage,
+            sender: 'system', // Or a dedicated bot ID
+            edited: false,
+            mentions: [authUser.uid],
+        };
+
+        const messagesRef = collection(db, 'servers', serverIdToJoin, 'channels', serverData.systemChannelId, 'messages');
+        await addDoc(messagesRef, {
+            ...messagePayload,
+            timestamp: serverTimestamp()
+        });
+      }
+
   }, [authUser, currentUser]);
 
   return { server, setServer, members, loading, updateServer, deleteServer, joinServer };
 }
-
-    
