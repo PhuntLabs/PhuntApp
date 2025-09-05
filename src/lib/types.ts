@@ -19,6 +19,13 @@ export interface Game {
   embedUrl: string;
 }
 
+export interface CustomGame {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl: string;
+}
+
 export interface UserProfile {
   id: string;
   uid: string;
@@ -37,7 +44,8 @@ export interface UserProfile {
   customStatus?: string;
   avatarEffect?: AvatarEffect;
   profileEffect?: ProfileEffect;
-  currentGame?: Game | null;
+  currentGame?: Game | CustomGame | null; // Can be a standard game or a custom one
+  customGames?: CustomGame[];
 }
 
 export interface ChatDocument {

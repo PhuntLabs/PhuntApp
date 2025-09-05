@@ -27,7 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import type { UserProfile, UserStatus, Server, BadgeType, Role, AvatarEffect, ProfileEffect, Game } from '@/lib/types';
+import type { UserProfile, UserStatus, Server, BadgeType, Role, AvatarEffect, ProfileEffect, Game, CustomGame } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { SettingsDialog } from './settings-dialog';
@@ -399,13 +399,13 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                 <div className="mb-2">
                                     <h4 className="text-xs font-bold uppercase text-muted-foreground">Playing a Game</h4>
                                     <div className="flex items-center gap-3 mt-1 bg-secondary/50 p-2 rounded-md">
-                                        <Image src={user.currentGame.logoUrl} alt={user.currentGame.name} width={40} height={40} className="rounded-md" />
+                                        <Image src={"logoUrl" in user.currentGame ? user.currentGame.logoUrl : user.currentGame.imageUrl} alt={user.currentGame.name} width={40} height={40} className="rounded-md" />
                                         <div className="overflow-hidden flex-1">
                                             <p className="font-semibold truncate">{user.currentGame.name}</p>
-                                            <p className="text-xs text-muted-foreground truncate">{user.currentGame.description}</p>
+                                            {"description" in user.currentGame && <p className="text-xs text-muted-foreground truncate">{user.currentGame.description}</p>}
                                         </div>
                                     </div>
-                                    {!isCurrentUser && (
+                                    {!isCurrentUser && "embedUrl" in user.currentGame && (
                                         <Link href={`/games/${user.currentGame.id}`} className="mt-2 w-full">
                                             <Button variant="outline" size="sm" className="w-full">
                                                 <Gamepad2 className="mr-2 size-4" />
