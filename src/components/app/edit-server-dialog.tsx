@@ -105,7 +105,8 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
             await onUpdateServer(server.id, updatedData);
             toast({ title: "Server Updated", description: "Your changes have been saved."});
         }
-        setIsOpen(false);
+        // No need to close the dialog on every save, user might want to edit multiple tabs
+        // setIsOpen(false); 
     } catch (error: any) {
         console.error("Failed to update server", error);
         toast({ variant: "destructive", title: "Error", description: error.message || "Failed to update server." });
@@ -354,8 +355,10 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
                  </Tabs>
             </div>
         </div>
-        <DialogFooter className="border-t pt-4">
-            <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+        <DialogFooter className="border-t pt-4 flex sm:justify-between">
+            <div>
+                 <Button variant="ghost" onClick={() => setIsOpen(false)}>Close</Button>
+            </div>
             <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
@@ -364,4 +367,3 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
     </Dialog>
   );
 }
-    

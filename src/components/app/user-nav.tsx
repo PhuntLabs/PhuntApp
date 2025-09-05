@@ -26,7 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import type { UserProfile, UserStatus } from '@/lib/types';
+import type { UserProfile, UserStatus, Server } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 
@@ -35,6 +35,7 @@ interface UserNavProps {
     logout?: () => void;
     as?: 'button' | 'trigger';
     children?: React.ReactNode;
+    serverContext?: Server;
 }
 
 const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType, color: string }> = {
@@ -49,7 +50,7 @@ const badgeConfig: Record<string, { label: string; icon: React.ElementType, clas
     bot: { label: 'Bot', icon: Bot, className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
 }
 
-export function UserNav({ user, logout, as = 'button', children }: UserNavProps) {
+export function UserNav({ user, logout, as = 'button', children, serverContext }: UserNavProps) {
   const { authUser, user: currentUser, updateUserProfile } = useAuth();
   const { sendFriendRequest } = useFriendRequests();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
@@ -139,7 +140,7 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
                 <AvatarImage src={user.photoURL || undefined} />
                 <AvatarFallback>{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
             </Avatar>
-            <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-sidebar-accent", statusConfig[userStatus].color === 'text-gray-500' ? 'bg-gray-500' : `bg-${statusConfig[userStatus].color.split('-')[1]}-500`)} />
+            <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background/50", statusConfig[userStatus].color === 'text-gray-500' ? 'bg-gray-500' : `bg-${statusConfig[userStatus].color.split('-')[1]}-500`)} />
         </div>
         <div className="flex flex-col -space-y-1 group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-semibold truncate">{user.displayName || user.email}</span>
@@ -158,6 +159,11 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
 
   const allBadges = [...(user.badges || [])];
   if (user.isBot) allBadges.push('bot');
+
+  const memberRoles = serverContext?.memberDetails?.[user.uid!]?.roles || [];
+  const serverRoles = serverContext?.roles
+      ?.filter(role => memberRoles.includes(role.id))
+      .sort((a, b) => a.priority - b.priority);
 
   return (
     <Popover open={isPopoverOpen} onOpenChange={(open) => {
@@ -195,9 +201,20 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
             </div>
             <div className="absolute top-4 right-4 flex justify-end gap-1">
                 {isCurrentUser ? (
-                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                        <Pencil className="mr-2 h-3.5 w-3.5"/> Edit Profile
-                    </Button>
+                    isEditing ? (
+                        <>
+                            <Button variant="secondary" size="sm" onClick={handleCancel}>
+                                Cancel
+                            </Button>
+                            <Button variant="default" size="sm" onClick={handleProfileUpdate}>
+                                <Save className="mr-2 h-3.5 w-3.5"/> Save
+                            </Button>
+                        </>
+                    ) : (
+                         <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                            <Pencil className="mr-2 h-3.5 w-3.5"/> Edit Profile
+                        </Button>
+                    )
                 ) : (
                      <Button variant="outline" size="sm" onClick={handleAddFriend}>
                         <UserPlus className="mr-2 h-3.5 w-3.5"/> Add Friend
@@ -230,6 +247,21 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
                 <h3 className="text-xl font-bold">{displayName}</h3>
                 <p className={cn("text-sm text-muted-foreground -mt-1", !user.email && 'italic')}>{user.email || 'No email provided'}</p>
                 <Separator className="my-2" />
+                 {serverContext && serverRoles && serverRoles.length > 0 && (
+                  <>
+                    <div className="mb-2">
+                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Roles</h4>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                            {serverRoles.map(role => (
+                                <Badge key={role.id} variant="outline" className="font-medium" style={{ borderColor: role.color, color: role.color, backgroundColor: `${role.color}1A`}}>
+                                    {role.name}
+                                </Badge>
+                            ))}
+                        </div>
+                    </div>
+                    <Separator className="my-2" />
+                  </>
+                )}
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{bio || 'No bio yet.'}</p>
                 
                 {isCurrentUser && (
@@ -252,10 +284,12 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
                                 ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        <Button variant="ghost" className="justify-start">
-                            <Settings className="mr-2 h-4 w-4" />
-                            <span>Settings</span>
-                        </Button>
+                         <SettingsDialog>
+                            <Button variant="ghost" className="justify-start">
+                                <Settings className="mr-2 h-4 w-4" />
+                                <span>Settings</span>
+                            </Button>
+                         </SettingsDialog>
                         <Button variant="ghost" onClick={() => logout && logout()} className="justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10">
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
@@ -282,13 +316,6 @@ export function UserNav({ user, logout, as = 'button', children }: UserNavProps)
                     <Label htmlFor="bio">Bio</Label>
                     <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us about yourself..." rows={4}/>
                 </div>
-                 <div className="flex justify-end gap-2 mt-4">
-                    <Button variant="ghost" onClick={handleCancel}>Cancel</Button>
-                    <Button onClick={handleProfileUpdate}>
-                        <Save className="mr-2 h-4 w-4" />
-                        <span>Save</span>
-                    </Button>
-                 </div>
              </div>
            )}
         </div>

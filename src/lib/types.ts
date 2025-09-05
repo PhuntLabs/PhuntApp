@@ -15,7 +15,6 @@ export interface UserProfile {
   createdAt?: FieldValue;
   badges?: string[];
   status?: UserStatus;
-  roles?: { [serverId: string]: string[] }; // e.g. { "serverId1": ["roleId1", "roleId2"] }
 }
 
 export interface ChatDocument {

@@ -51,8 +51,13 @@ export function MemberList({ members, server, loading }: MemberListProps) {
                 {members.map(member => {
                     const isOwner = member.uid === server.ownerId;
                     const status = member.status || 'offline';
+                    const memberRoles = server.memberDetails?.[member.uid!]?.roles || [];
+                    const topRole = server.roles
+                        ?.filter(role => memberRoles.includes(role.id))
+                        .sort((a,b) => a.priority - b.priority)[0];
+                    
                     return (
-                        <Popover key={member.id}>
+                        <Popover key={member.uid}>
                             <PopoverTrigger asChild>
                                 <div className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer">
                                     <div className="relative">
@@ -62,12 +67,14 @@ export function MemberList({ members, server, loading }: MemberListProps) {
                                         </Avatar>
                                         <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-secondary/30", statusConfig[status].color)} />
                                     </div>
-                                    <span className="font-medium text-sm truncate">{member.displayName}</span>
+                                    <span className="font-medium text-sm truncate" style={{ color: topRole?.color }}>
+                                        {member.displayName}
+                                    </span>
                                     {isOwner && <Crown className="size-4 text-yellow-500" />}
                                 </div>
                             </PopoverTrigger>
                              <PopoverContent className="w-80 mb-2 p-0 border-none" side="left" align="start">
-                                <UserNav user={member as UserProfile} />
+                                <UserNav user={member as UserProfile} serverContext={server}/>
                             </PopoverContent>
                         </Popover>
                     )
