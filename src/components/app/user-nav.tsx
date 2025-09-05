@@ -403,9 +403,9 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                      <div className="flex items-center gap-3 mt-1 bg-secondary/50 p-2 rounded-md">
                                         <Image src="/spotify-logo.svg" alt="Spotify" width={40} height={40} className="rounded-md" />
                                         <div className="overflow-hidden flex-1">
-                                            <p className="font-semibold truncate">Song Name</p>
-                                            <p className="text-xs text-muted-foreground truncate">by Artist Name</p>
-                                            <p className="text-xs text-muted-foreground truncate">on Album Name</p>
+                                            <p className="font-semibold truncate">Daylight</p>
+                                            <p className="text-xs text-muted-foreground truncate">by David Kushner</p>
+                                            <p className="text-xs text-muted-foreground truncate">on Daylight</p>
                                         </div>
                                     </div>
                                 </div>

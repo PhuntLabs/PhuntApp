@@ -7,9 +7,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import { Link, X } from 'lucide-react';
+import { Link, X, Loader2 } from 'lucide-react';
 import type { Connection } from '@/lib/types';
 import { serverTimestamp } from 'firebase/firestore';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const supportedConnections = [
   {
@@ -23,8 +24,35 @@ const supportedConnections = [
 export function ConnectionsSettings() {
   const { user, updateUserProfile } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [connections, setConnections] = useState<Connection[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // This effect simulates the callback from the OAuth provider
+  useEffect(() => {
+    if (searchParams.get('connected') === 'spotify') {
+      const type = 'spotify';
+      // In a real app, you'd get the username from the callback data
+      const newConnection: Connection = {
+        type,
+        username: user?.displayName || 'user', 
+        connectedAt: serverTimestamp(),
+      };
+      
+      const updatedConnections = [...connections, newConnection];
+      updateUserProfile({ connections: updatedConnections });
+      setConnections(updatedConnections);
+
+      toast({
+        title: 'Connection Successful',
+        description: `Your ${type} account has been linked.`,
+      });
+      // Clean up the URL
+      router.replace('/?settings=connections');
+    }
+  }, [searchParams, user, connections, updateUserProfile, router, toast]);
 
   useEffect(() => {
     if (user?.connections) {
@@ -33,29 +61,30 @@ export function ConnectionsSettings() {
   }, [user]);
 
   const handleConnect = async (type: 'spotify') => {
-    // In a real application, this would initiate the OAuth flow.
-    // For this prototype, we'll simulate a successful connection.
+    // In a real application, this would redirect to your backend which then redirects to Spotify
+    // For this prototype, we'll simulate the redirect flow.
     setIsUpdating(true);
-    try {
-      const newConnection: Connection = {
-        type,
-        username: user?.displayName || 'user', // Use a placeholder
-        connectedAt: serverTimestamp(),
-      };
-      
-      const updatedConnections = [...connections, newConnection];
-      await updateUserProfile({ connections: updatedConnections });
-      setConnections(updatedConnections);
+    
+    // 1. Construct a realistic-looking Spotify auth URL
+    const params = new URLSearchParams({
+        client_id: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || 'dummy_client_id', // Should be in .env.local
+        response_type: 'code',
+        redirect_uri: `${window.location.origin}/?settings=connections&connected=spotify`, // Simulate redirect back to this page
+        scope: 'user-read-currently-playing user-read-playback-state',
+        state: 'random_string_for_security'
+    });
+    const authUrl = `https://accounts.spotify.com/authorize?${params.toString()}`;
+    
+    // 2. "Redirect" the user
+    // In a real app, this would be: window.location.href = authUrl;
+    toast({
+        title: 'Redirecting to Spotify...',
+        description: "Please authorize the application."
+    });
 
-      toast({
-        title: 'Connection Successful',
-        description: `Your ${type} account has been linked.`,
-      });
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Connection Failed', description: error.message });
-    } finally {
-      setIsUpdating(false);
-    }
+    setTimeout(() => {
+        router.push(authUrl); // In a real app, this redirect happens for real.
+    }, 1500);
   };
   
   const handleDisconnect = async (type: 'spotify') => {
@@ -110,12 +139,12 @@ export function ConnectionsSettings() {
                             <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium">{existingConnection.username}</span>
                                 <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDisconnect(connInfo.id as 'spotify')} disabled={isUpdating}>
-                                    <X className="size-5" />
+                                    {isUpdating ? <Loader2 className="size-5 animate-spin" /> : <X className="size-5" />}
                                 </Button>
                             </div>
                         ) : (
                             <Button onClick={() => handleConnect(connInfo.id as 'spotify')} disabled={isUpdating}>
-                                <Link className="mr-2" /> Connect
+                                {isUpdating ? <Loader2 className="mr-2 animate-spin" /> : <Link className="mr-2" />} Connect
                             </Button>
                         )}
                     </div>
