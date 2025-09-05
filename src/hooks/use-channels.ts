@@ -12,7 +12,8 @@ import {
     deleteDoc,
     query,
     where,
-    getDocs
+    getDocs,
+    writeBatch
 } from 'firebase/firestore';
 import type { Channel, ChannelType } from '@/lib/types';
 import { useAuth } from './use-auth';
@@ -20,7 +21,7 @@ import { useAuth } from './use-auth';
 export function useChannels(serverId: string | undefined) {
   const { authUser } = useAuth();
 
-  const createChannel = useCallback(async (name: string): Promise<Channel | null> => {
+  const createChannel = useCallback(async (name: string, categoryId: string): Promise<Channel | null> => {
     if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
     
     const sanitizedName = name.trim().toLowerCase().replace(/\s+/g, '-');
@@ -28,7 +29,6 @@ export function useChannels(serverId: string | undefined) {
 
     const channelsRef = collection(db, 'servers', serverId, 'channels');
     
-    // Check if channel with same name already exists
     const q = query(channelsRef, where('name', '==', sanitizedName));
     const querySnapshot = await getDocs(q);
 
@@ -36,12 +36,14 @@ export function useChannels(serverId: string | undefined) {
       throw new Error(`A channel named #${sanitizedName} already exists.`);
     }
 
-    const currentChannelsSnapshot = await getDocs(query(channelsRef));
-    const nextPosition = currentChannelsSnapshot.size;
+    const categoryChannelsQuery = query(channelsRef, where('categoryId', '==', categoryId));
+    const categoryChannelsSnapshot = await getDocs(categoryChannelsQuery);
+    const nextPosition = categoryChannelsSnapshot.size;
     
     const channelPayload: Omit<Channel, 'id'> = {
       name: sanitizedName,
       serverId: serverId,
+      categoryId: categoryId,
       createdAt: serverTimestamp(),
       position: nextPosition,
       type: 'text' // Default type
@@ -51,10 +53,34 @@ export function useChannels(serverId: string | undefined) {
     
     return {
       id: channelRef.id,
-      ...channelPayload
-    }
+      ...channelPayload,
+      position: nextPosition
+    } as Channel;
 
   }, [authUser, serverId]);
+  
+  const updateChannelOrder = useCallback(async (channelIds: string[], categoryId: string) => {
+    if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
+
+    const batch = writeBatch(db);
+    channelIds.forEach((id, index) => {
+      const channelRef = doc(db, 'servers', serverId, 'channels', id);
+      batch.update(channelRef, { position: index, categoryId: categoryId });
+    });
+    await batch.commit();
+  }, [authUser, serverId]);
+
+  const updateCategoryOrder = useCallback(async (categoryIds: string[]) => {
+    if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
+    
+    const batch = writeBatch(db);
+    categoryIds.forEach((id, index) => {
+        const categoryRef = doc(db, 'servers', serverId, 'categories', id);
+        batch.update(categoryRef, { position: index });
+    });
+    await batch.commit();
+  }, [authUser, serverId]);
+
 
   const updateChannel = useCallback(async (channelId: string, data: Partial<Channel>) => {
     if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
@@ -80,7 +106,7 @@ export function useChannels(serverId: string | undefined) {
     if(Object.keys(updateData).length === 0) return;
 
     const channelRef = doc(db, 'servers', serverId, 'channels', channelId);
-    await updateDoc(channelRef, updateData);
+    await updateDoc(channelRef, updateData as any);
   }, [authUser, serverId]);
 
   const deleteChannel = useCallback(async (channelId: string) => {
@@ -92,5 +118,5 @@ export function useChannels(serverId: string | undefined) {
   }, [authUser, serverId]);
 
 
-  return { createChannel, updateChannel, deleteChannel };
+  return { createChannel, updateChannel, deleteChannel, updateChannelOrder, updateCategoryOrder };
 }

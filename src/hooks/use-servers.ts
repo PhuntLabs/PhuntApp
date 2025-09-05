@@ -14,7 +14,7 @@ import {
   doc,
   getDoc,
 } from 'firebase/firestore';
-import type { Server } from '@/lib/types';
+import type { Server, Category } from '@/lib/types';
 import { useAuth } from './use-auth';
 
 export function useServers(enabled: boolean = true) {
@@ -50,39 +50,54 @@ export function useServers(enabled: boolean = true) {
   const createServer = useCallback(async (name: string): Promise<Server | null> => {
     if (!authUser) throw new Error("You must be logged in to create a server.");
 
-    // 1. Create the server document first to get an ID
-    const serverPayload = {
+    const batch = writeBatch(db);
+
+    // 1. Create Server Document
+    const serverRef = doc(collection(db, 'servers'));
+    const photoURL = `https://picsum.photos/seed/${serverRef.id}/200`
+    const serverPayload: Omit<Server, 'id' | 'categories'> = {
       name,
       ownerId: authUser.uid,
       members: [authUser.uid],
+      memberDetails: {
+        [authUser.uid]: {
+          joinedAt: serverTimestamp(),
+          roles: ['owner'] // Assuming an owner role might exist or be checked by ownerId
+        }
+      },
       createdAt: serverTimestamp(),
-      photoURL: null 
+      photoURL,
+      isPublic: false,
+      roles: [
+        { id: '@everyone', name: '@everyone', color: '#808080', priority: 0, permissions: { viewChannels: true, sendMessages: true } },
+      ],
     };
-    const serverRef = await addDoc(collection(db, 'servers'), serverPayload);
-    
-    // 2. Now use the new ID to create channels and update the photoURL
-    const photoURL = `https://picsum.photos/seed/${serverRef.id}/200`
-    const batch = writeBatch(db);
+    batch.set(serverRef, serverPayload);
 
-    // Update photoURL on the server
-    batch.update(serverRef, { photoURL });
+    // 2. Create Default Category
+    const categoryRef = doc(collection(db, 'servers', serverRef.id, 'categories'));
+    const defaultCategory: Omit<Category, 'id' | 'channels'> = {
+      name: 'Text Channels',
+      position: 0,
+    };
+    batch.set(categoryRef, defaultCategory);
     
-    // Create default channels
-    const channelsRef = collection(db, 'servers', serverRef.id, 'channels');
-    
-    const generalChannelRef = doc(channelsRef);
+    // 3. Create Default Channels within that Category
+    const generalChannelRef = doc(collection(db, 'servers', serverRef.id, 'channels'));
     batch.set(generalChannelRef, {
-      name: '!general',
+      name: 'general',
       serverId: serverRef.id,
+      categoryId: categoryRef.id,
       createdAt: serverTimestamp(),
       position: 0,
       type: 'text'
     });
-
-    const rulesChannelRef = doc(channelsRef);
+    
+    const rulesChannelRef = doc(collection(db, 'servers', serverRef.id, 'channels'));
     batch.set(rulesChannelRef, {
-      name: '!rules',
+      name: 'rules',
       serverId: serverRef.id,
+      categoryId: categoryRef.id,
       createdAt: serverTimestamp(),
       position: 1,
       type: 'rules'
@@ -90,11 +105,25 @@ export function useServers(enabled: boolean = true) {
 
     await batch.commit();
     
-    // 3. Return the newly created server document
+    // 4. Return the newly created server document by fetching it again
     const newServerDoc = await getDoc(serverRef);
     if (newServerDoc.exists()) {
-        const finalServerData = newServerDoc.data();
-        return { id: newServerDoc.id, ...finalServerData, photoURL } as Server;
+        const finalServerData = { id: newServerDoc.id, ...newServerDoc.data() } as Server;
+        // Manually fetch and attach categories/channels for the immediate return
+        const categoriesSnapshot = await getDocs(collection(db, 'servers', serverRef.id, 'categories'));
+        const channelsSnapshot = await getDocs(collection(db, 'servers', serverRef.id, 'channels'));
+
+        const categories = categoriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), channels: [] } as Category));
+        const channels = channelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+
+        channels.forEach(channel => {
+            const category = categories.find(c => c.id === channel.categoryId);
+            if (category) {
+                category.channels.push(channel);
+            }
+        });
+        
+        return { ...finalServerData, categories };
     }
 
     return null;

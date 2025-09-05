@@ -119,7 +119,8 @@ export interface Server {
     photoURL?: string | null;
     bannerURL?: string | null;
     createdAt: FieldValue;
-    channels?: Channel[];
+    categories: Category[];
+    channels?: Channel[]; // Kept for potential migration, but categories is primary
     isPublic?: boolean;
     description?: string;
     customEmojis?: CustomEmoji[];
@@ -136,6 +137,7 @@ export interface Channel {
     name: string;
     topic?: string;
     serverId: string;
+    categoryId: string;
     createdAt?: FieldValue;
     position: number;
     type: ChannelType;
@@ -144,6 +146,14 @@ export interface Channel {
         [roleId: string]: Partial<Record<Permission, boolean>>;
     };
 }
+
+export interface Category {
+    id: string;
+    name: string;
+    position: number;
+    channels: Channel[];
+}
+
 
 export interface Emoji {
     name: string;

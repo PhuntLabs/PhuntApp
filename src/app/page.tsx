@@ -228,9 +228,8 @@ export default function Home() {
     }
     setSelectedServer(server);
     setSelectedChat(null); // Deselect chat when switching server context
-    if (server && server.channels && server.channels.length > 0) {
-        const generalChannel = server.channels.find(c => c.name === '!general') || server.channels[0];
-        handleSelectChannel(generalChannel);
+    if (server && server.categories?.[0]?.channels?.[0]) {
+        handleSelectChannel(server.categories[0].channels[0]);
     } else {
         setSelectedChannel(null);
     }
@@ -259,12 +258,17 @@ export default function Home() {
     }
   }
 
-  const handleCreateChannel = async (name: string) => {
+  const handleCreateChannel = async (name: string, categoryId: string) => {
     try {
-      const newChannel = await createChannel(name);
+      const newChannel = await createChannel(name, categoryId);
       if (newChannel && server) {
-        const updatedServer = { ...server, channels: [...(server.channels || []), newChannel]};
-        setServer(updatedServer);
+        const updatedCategories = server.categories.map(cat => {
+            if (cat.id === categoryId) {
+                return { ...cat, channels: [...cat.channels, newChannel]};
+            }
+            return cat;
+        });
+        setServer({ ...server, categories: updatedCategories });
         setSelectedChannel(newChannel);
         toast({ title: `#${newChannel.name} created!` });
       }
@@ -276,9 +280,12 @@ export default function Home() {
   const handleUpdateChannel = async (channelId: string, data: { name?: string, type?: ChannelType, topic?: string}) => {
     try {
       await updateChannel(channelId, data);
-      if (server && server.channels) {
-          const updatedChannels = server.channels.map(c => c.id === channelId ? {...c, ...data} : c);
-          setServer({...server, channels: updatedChannels });
+      if (server && server.categories) {
+          const updatedCategories = server.categories.map(cat => ({
+            ...cat,
+            channels: cat.channels.map(c => c.id === channelId ? {...c, ...data} : c)
+          }));
+          setServer({...server, categories: updatedCategories });
       }
       toast({ title: "Channel Updated" });
     } catch (e: any) {
@@ -289,13 +296,16 @@ export default function Home() {
   const handleDeleteChannel = async (channelId: string) => {
     try {
       await deleteChannel(channelId);
-       if (server && server.channels) {
-          const updatedChannels = server.channels.filter(c => c.id !== channelId);
-          setServer({...server, channels: updatedChannels });
+       if (server && server.categories) {
+          const updatedCategories = server.categories.map(cat => ({
+            ...cat,
+            channels: cat.channels.filter(c => c.id !== channelId)
+          }));
+          setServer({...server, categories: updatedCategories });
 
           if(selectedChannel?.id === channelId) {
-             const generalChannel = updatedChannels.find(c => c.name === '!general') || updatedChannels[0] || null;
-             setSelectedChannel(generalChannel);
+             const firstChannel = updatedCategories.find(c => c.channels.length > 0)?.channels[0];
+             setSelectedChannel(firstChannel || null);
           }
       }
       toast({ title: "Channel Deleted" });
@@ -312,12 +322,14 @@ export default function Home() {
         handleSelectChat(chat);
       }
     } else {
-      const server = servers.find(s => s.id === context.serverId);
-      if (server) {
-        const channel = server.channels?.find(c => c.id === context.channelId);
-        if (channel) {
-          handleSelectServer(server);
-          handleSelectChannel(channel);
+      const serverToSelect = servers.find(s => s.id === context.serverId);
+      if (serverToSelect) {
+        handleSelectServer(serverToSelect);
+        // The channel data will be on the server object after the state updates
+        // We select it in an effect to ensure data consistency
+        const channelToSelect = serverToSelect.categories?.flatMap(c => c.channels).find(c => c.id === context.channelId);
+        if (channelToSelect) {
+            setSelectedChannel(channelToSelect);
         }
       }
     }
@@ -355,9 +367,6 @@ export default function Home() {
                       onSelectChannel={handleSelectChannel}
                       onUpdateServer={handleUpdateServer}
                       onDeleteServer={handleDeleteServer}
-                      onCreateChannel={handleCreateChannel}
-                      onUpdateChannel={handleUpdateChannel}
-                      onDeleteChannel={handleDeleteChannel}
                   />
                   ) : (
                   <>

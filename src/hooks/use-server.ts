@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, deleteDoc, getDoc, collection, query, orderBy, getDocs, arrayUnion, serverTimestamp, addDoc } from 'firebase/firestore';
-import type { Server, UserProfile, Channel, ServerProfile, Message } from '@/lib/types';
+import type { Server, UserProfile, Channel, ServerProfile, Message, Category } from '@/lib/types';
 import { useAuth } from './use-auth';
 
 const welcomeMessages = [
@@ -59,12 +59,24 @@ export function useServer(serverId: string | undefined) {
             setMembers(memberProfiles as UserProfile[]);
         }
         
-        // Fetch channels
+        // Fetch categories and their channels
+        const categoriesQuery = query(collection(db, 'servers', serverId, 'categories'), orderBy('position', 'asc'));
         const channelsQuery = query(collection(db, 'servers', serverId, 'channels'), orderBy('position', 'asc'));
-        const channelsSnapshot = await getDocs(channelsQuery);
-        const channelDocs = channelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Channel));
-        serverData.channels = channelDocs;
 
+        const [categoriesSnapshot, channelsSnapshot] = await Promise.all([
+          getDocs(categoriesQuery),
+          getDocs(channelsQuery)
+        ]);
+
+        const categoryDocs = categoriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+        const channelDocs = channelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Channel));
+        
+        // Nest channels inside their categories
+        categoryDocs.forEach(category => {
+          category.channels = channelDocs.filter(c => c.categoryId === category.id);
+        });
+
+        serverData.categories = categoryDocs;
 
         setServer(serverData);
 
@@ -81,10 +93,10 @@ export function useServer(serverId: string | undefined) {
     return () => unsubscribe();
   }, [serverId]);
 
-  const updateServer = useCallback(async (serverIdToUpdate: string, data: Partial<Server>) => {
+  const updateServer = useCallback(async (serverIdToUpdate: string, data: Partial<Omit<Server, 'id'>>) => {
     if (!authUser) throw new Error('Not authenticated');
     const serverRef = doc(db, 'servers', serverIdToUpdate);
-    await updateDoc(serverRef, data);
+    await updateDoc(serverRef, data as any); // Use any to bypass strict type check for partial update
   }, [authUser]);
   
   const deleteServer = useCallback(async (serverIdToDelete: string) => {
