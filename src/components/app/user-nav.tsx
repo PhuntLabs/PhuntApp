@@ -29,6 +29,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import type { UserProfile, UserStatus, Server } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
+import { SettingsDialog } from './settings-dialog';
 
 interface UserNavProps {
     user: UserProfile; 
@@ -235,7 +236,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                             <TooltipTrigger asChild>
                                  <Badge variant="secondary" className={cn("flex items-center justify-center h-6 w-6 p-0", className)}>
                                     <Icon className="size-3.5" />
-                                </Badge>
+                                 </Badge>
                             </TooltipTrigger>
                             <TooltipContent>
                                 <p>{label}</p>
