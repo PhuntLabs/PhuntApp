@@ -58,49 +58,38 @@ const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, c
 };
 
 export function UserNav({ user, logout, as = 'button', children, serverContext }: UserNavProps) {
-  const { authUser, user: currentUser, updateUserProfile } = useAuth();
+  const { authUser, user: currentUser, updateUserProfile, updateServerProfile } = useAuth();
   const { sendFriendRequest } = useFriendRequests();
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
-  const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
-  const [bannerURL, setBannerURL] = useState(user?.bannerURL || '');
-  const [bio, setBio] = useState(user?.bio || '');
-  const [customStatus, setCustomStatus] = useState(user?.customStatus || '');
+
   const [isEditing, setIsEditing] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+  // Server-specific profile state
+  const [nickname, setNickname] = useState('');
+  const [serverAvatar, setServerAvatar] = useState('');
+  
   const { toast } = useToast();
 
   const isCurrentUser = authUser?.uid === user.uid;
 
+  const serverProfile = serverContext?.memberDetails?.[user.uid]?.profile;
+  const displayUser = {
+      ...user,
+      displayName: serverProfile?.nickname || user.displayName,
+      photoURL: serverProfile?.avatar || user.photoURL,
+  };
+
+
   useEffect(() => {
-    // When the popover opens or user changes, sync state
-    if (isPopoverOpen && user) {
-        setDisplayName(user.displayName || '');
-        setPhotoURL(user.photoURL || '');
-        setBannerURL(user.bannerURL || '');
-        setBio(user.bio || '');
-        setCustomStatus(user.customStatus || '');
+    // When the popover opens or user context changes, sync state
+    if (isPopoverOpen && serverContext && user) {
+        const profile = serverContext?.memberDetails?.[user.uid]?.profile;
+        setNickname(profile?.nickname || '');
+        setServerAvatar(profile?.avatar || '');
     }
-  }, [isPopoverOpen, user]);
+  }, [isPopoverOpen, user, serverContext]);
   
   if (!user) return null;
-
-  const handleProfileUpdate = async () => {
-    if (!isCurrentUser || !authUser) return;
-    try {
-        await updateUserProfile({ displayName, photoURL, bannerURL, bio, customStatus });
-        toast({
-            title: 'Profile Updated',
-            description: 'Your changes have been saved successfully.',
-        });
-        setIsEditing(false);
-    } catch(error: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Update Failed',
-            description: error.message,
-        });
-    }
-  }
 
   const handleStatusChange = async (status: UserStatus) => {
     if (!isCurrentUser || !authUser) return;
@@ -128,17 +117,33 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
     }
   };
 
+  const handleServerProfileUpdate = async () => {
+    if (!isCurrentUser || !serverContext) return;
+    try {
+        await updateServerProfile(serverContext.id, {
+            nickname: nickname.trim(),
+            avatar: serverAvatar.trim()
+        });
+        toast({ title: 'Server Profile Updated' });
+        setIsEditing(false);
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: error.message
+        });
+    }
+  }
+
   const handleCancel = () => {
-    // Reset fields to current user state
-    if (user) {
-        setDisplayName(user.displayName || '');
-        setPhotoURL(user.photoURL || '');
-        setBannerURL(user.bannerURL || '');
-        setBio(user.bio || '');
-        setCustomStatus(user.customStatus || '');
+    if (serverContext && user) {
+        const profile = serverContext?.memberDetails?.[user.uid]?.profile;
+        setNickname(profile?.nickname || '');
+        setServerAvatar(profile?.avatar || '');
     }
     setIsEditing(false);
   }
+
 
   const userStatus = user.status || 'offline';
   const { label: statusLabel, icon: StatusIcon, color: statusColor } = statusConfig[userStatus];
@@ -162,10 +167,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   ) : (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div onClick={(e) => {
-        // This prevents the click from propagating to parent elements if it's a trigger
-        if (as === 'trigger') {
-            e.stopPropagation();
-        }
+        if (as === 'trigger') e.stopPropagation();
     }}>{children}</div>
   )
 
@@ -180,9 +182,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   return (
     <Popover open={isPopoverOpen} onOpenChange={(open) => {
       setIsPopoverOpen(open);
-      if (!open) {
-        setIsEditing(false); // Reset edit mode on close
-      }
+      if (!open) setIsEditing(false);
     }}>
       <PopoverTrigger asChild>
         {TriggerComponent}
@@ -190,14 +190,14 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       <PopoverContent className="w-80 mb-2 h-auto" side="top" align="start">
       <TooltipProvider>
         <div className="relative h-24 bg-accent rounded-t-lg -mx-4 -mt-4">
-            {user.bannerURL && (
-                <Image src={user.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
+            {displayUser.bannerURL && (
+                <Image src={displayUser.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
             )}
              <div className="absolute top-16 left-4">
                  <div className="relative">
                     <Avatar className="size-20 border-4 border-popover rounded-full">
-                      <AvatarImage src={user.photoURL || undefined} />
-                      <AvatarFallback className="text-2xl">{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
+                      <AvatarImage src={displayUser.photoURL || undefined} />
+                      <AvatarFallback className="text-2xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className={cn("absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-popover flex items-center justify-center", statusConfig[userStatus].color === 'text-gray-500' ? 'bg-gray-500' : `bg-${statusConfig[userStatus].color.split('-')[1]}-500`)}>
                         <Tooltip>
@@ -212,22 +212,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                 </div>
             </div>
             <div className="absolute top-4 right-4 flex justify-end gap-1">
-                {isCurrentUser ? (
-                    isEditing ? (
-                        <>
-                            <Button variant="secondary" size="sm" onClick={handleCancel}>
-                                Cancel
-                            </Button>
-                            <Button variant="default" size="sm" onClick={handleProfileUpdate}>
-                                <Save className="mr-2 h-3.5 w-3.5"/> Save
-                            </Button>
-                        </>
-                    ) : (
-                         <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                            <Pencil className="mr-2 h-3.5 w-3.5"/> Edit Profile
-                        </Button>
-                    )
-                ) : (
+                 {!isCurrentUser && (
                      <Button variant="outline" size="sm" onClick={handleAddFriend}>
                         <UserPlus className="mr-2 h-3.5 w-3.5"/> Add Friend
                     </Button>
@@ -238,7 +223,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
            {!isEditing ? (
              <>
                 <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold">{displayName}</h3>
+                    <h3 className="text-xl font-bold">{displayUser.displayName}</h3>
                     <div className="flex items-center gap-1">
                     {allBadges.map((badgeKey) => {
                         const badgeInfo = badgeConfig[badgeKey as BadgeType];
@@ -276,15 +261,27 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                     <Separator className="my-2" />
                   </>
                 )}
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{bio || 'No bio yet.'}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
                 
                 {isCurrentUser && (
                     <>
                     <Separator className="my-4" />
                     <div className="flex flex-col gap-1">
+                        <SettingsDialog>
+                          <Button variant="outline" className="justify-start">
+                              <Pencil className="mr-2 h-4 w-4" />
+                              <span>Edit User Profile</span>
+                          </Button>
+                        </SettingsDialog>
+                        {serverContext && (
+                             <Button variant="outline" className="justify-start" onClick={() => setIsEditing(true)}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                <span>Edit Server Profile</span>
+                            </Button>
+                        )}
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                 <Button variant="outline" className="justify-start">
+                                 <Button variant="ghost" className="justify-start">
                                     <StatusIcon className={cn("mr-2 h-4 w-4", statusColor)} />
                                     <span>{statusLabel}</span>
                                 </Button>
@@ -296,25 +293,9 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                         <span>{label}</span>
                                     </DropdownMenuItem>
                                 ))}
-                                <DropdownMenuSeparator />
-                                <div className="p-2">
-                                     <Label htmlFor="custom-status-dropdown">Custom Status</Label>
-                                     <div className="flex items-center gap-2 mt-1">
-                                        <Input
-                                            id="custom-status-dropdown"
-                                            value={customStatus}
-                                            onChange={(e) => setCustomStatus(e.target.value)}
-                                            placeholder="Set a custom status"
-                                            onKeyDown={(e) => { if(e.key === 'Enter') handleProfileUpdate() }}
-                                        />
-                                        <Button size="icon" className="size-8" onClick={() => setCustomStatus('')}>
-                                            <XCircle className="size-4" />
-                                        </Button>
-                                     </div>
-                                </div>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                         <SettingsDialog>
+                        <SettingsDialog>
                             <Button variant="ghost" className="justify-start">
                                 <Settings className="mr-2 h-4 w-4" />
                                 <span>Settings</span>
@@ -330,26 +311,19 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
              </>
            ) : (
              <div className="space-y-4 h-auto max-h-[calc(100vh-20rem)] overflow-y-auto pr-2">
+                <h4 className="font-semibold">Editing Profile for <span className="text-primary">{serverContext?.name}</span></h4>
                 <div className="space-y-1">
-                    <Label htmlFor="displayName">Display Name</Label>
-                    <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+                    <Label htmlFor="nickname">Server Nickname</Label>
+                    <Input id="nickname" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder={user.displayName} />
                 </div>
                 <div className="space-y-1">
-                    <Label htmlFor="photoURL">Profile Picture URL</Label>
-                    <Input id="photoURL" value={photoURL} onChange={(e) => setPhotoURL(e.target.value)} placeholder="https://example.com/image.png"/>
+                    <Label htmlFor="server-avatar">Server Avatar URL</Label>
+                    <Input id="server-avatar" value={serverAvatar} onChange={(e) => setServerAvatar(e.target.value)} placeholder="https://..." />
                 </div>
-                 <div className="space-y-1">
-                    <Label htmlFor="bannerURL">Banner URL</Label>
-                    <Input id="bannerURL" value={bannerURL} onChange={(e) => setBannerURL(e.target.value)} placeholder="https://example.com/banner.gif"/>
-                </div>
-                 <div className="space-y-1">
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us about yourself..." rows={4}/>
-                </div>
-                 <div className="space-y-1">
-                    <Label htmlFor="custom-status">Custom Status</Label>
-                    <Input id="custom-status" value={customStatus} onChange={(e) => setCustomStatus(e.target.value)} placeholder="Doing homework..."/>
-                </div>
+                 <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={handleCancel}>Cancel</Button>
+                    <Button size="sm" onClick={handleServerProfileUpdate}>Save</Button>
+                 </div>
              </div>
            )}
         </div>
@@ -358,3 +332,5 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
     </Popover>
   );
 }
+
+    

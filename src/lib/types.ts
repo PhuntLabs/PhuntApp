@@ -55,8 +55,9 @@ export interface Message {
     text: string;
   };
   reactions?: {
-    [emoji: string]: string[]; // emoji: list of user IDs
-  };
+    emoji: string;
+    users: string[];
+  }[];
 }
 
 export interface FriendRequest {
@@ -94,7 +95,12 @@ export interface Role {
     name: string;
     color: string;
     priority: number; // Lower number = higher priority
-    permissions: Record<Permission, boolean>;
+    permissions: Partial<Record<Permission, boolean>>;
+}
+
+export interface ServerProfile {
+    nickname: string;
+    avatar: string;
 }
 
 export interface Server {
@@ -102,7 +108,7 @@ export interface Server {
     name: string;
     ownerId: string;
     members: string[];
-    memberDetails: { [userId: string]: { joinedAt: FieldValue, roles: string[] } };
+    memberDetails: { [userId: string]: { joinedAt: FieldValue, roles: string[], profile?: ServerProfile } };
     photoURL?: string | null;
     createdAt: FieldValue;
     channels?: Channel[];
@@ -135,3 +141,5 @@ export interface Emoji {
     char: string;
     keywords: string[];
 }
+
+    

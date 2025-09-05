@@ -38,7 +38,7 @@ import {
   getDocs,
   updateDoc,
 } from 'firebase/firestore';
-import type { UserProfile, BadgeType } from '@/lib/types';
+import type { UserProfile, BadgeType, ServerProfile } from '@/lib/types';
 import { createWelcomeChat } from '@/ai/flows/welcome-chat-flow';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -56,6 +56,7 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<any>;
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
+  updateServerProfile: (serverId: string, profile: ServerProfile) => Promise<void>;
   uploadFile: (file: File, path: 'avatars' | 'banners' | `server-emojis/${string}` | `chat-images/${string}`) => Promise<string>;
   sendPasswordReset: () => Promise<void>;
 }
@@ -158,6 +159,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [authUser]
   );
   
+  const updateServerProfile = useCallback(async (serverId: string, profile: ServerProfile) => {
+    if (!authUser) throw new Error('Not authenticated');
+    
+    const serverRef = doc(db, 'servers', serverId);
+    const fieldPath = `memberDetails.${authUser.uid}.profile`;
+
+    await updateDoc(serverRef, {
+        [fieldPath]: profile
+    });
+    // Note: This won't update the local state immediately. The useServer hook's listener will catch this change.
+
+  }, [authUser]);
+
   const uploadFile = useCallback(async (file: File, path: 'avatars' | 'banners' | `server-emojis/${string}` | `chat-images/${string}`): Promise<string> => {
       if (!authUser) throw new Error('Not authenticated');
       
@@ -238,7 +252,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await setDoc(doc(db, 'users', firebaseUser.uid), userPayload);
     } catch (error: any) {
         console.error("Firestore user creation failed:", error);
-        throw new Error(`Failed to create user profile in database. This is likely a security rule issue. Original error: ${error.message}`);
+        throw new Error(`Failed to create user profile in database. This is likely a security rule issue. Original error: ${e.message}`);
     }
 
     // 5. Finalize session and welcome new user
@@ -271,6 +285,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     updateUserProfile,
+    updateServerProfile,
     uploadFile,
     sendPasswordReset,
   };
@@ -285,3 +300,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    

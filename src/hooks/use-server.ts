@@ -3,8 +3,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, deleteDoc, getDoc, collection, query, orderBy, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
-import type { Server, UserProfile, Channel } from '@/lib/types';
+import { doc, onSnapshot, updateDoc, deleteDoc, getDoc, collection, query, orderBy, getDocs, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import type { Server, UserProfile, Channel, ServerProfile } from '@/lib/types';
 import { useAuth } from './use-auth';
 
 export function useServer(serverId: string | undefined) {
@@ -35,10 +35,14 @@ export function useServer(serverId: string | undefined) {
                 const userDoc = await getDoc(userRef);
                 if (userDoc.exists()) {
                      const userDocData = userDoc.data();
+                     const serverProfile = serverData.memberDetails?.[memberId]?.profile;
+
                      return {
                         id: userDoc.id,
                         uid: userDoc.id,
-                        ...userDocData
+                        ...userDocData,
+                        displayName: serverProfile?.nickname || userDocData.displayName,
+                        photoURL: serverProfile?.avatar || userDocData.photoURL,
                      } as UserProfile
                 }
                 return { id: memberId, uid: memberId, displayName: 'Unknown User' };
@@ -98,3 +102,5 @@ export function useServer(serverId: string | undefined) {
 
   return { server, setServer, members, loading, updateServer, deleteServer, joinServer };
 }
+
+    

@@ -26,14 +26,21 @@ import { Separator } from '../ui/separator';
 type Section = 'account' | 'security' | 'theme' | 'bugs';
 
 const sections = [
-  { id: 'account', label: 'Account', icon: User },
+  { id: 'account', label: 'My Account', icon: User },
   { id: 'security', label: 'Security', icon: Shield },
   { id: 'theme', label: 'Theme', icon: Paintbrush },
-  { id: 'bugs', label: 'Bugs', icon: Bug },
+  { id: 'bugs', label: 'Bugs & Feedback', icon: Bug },
 ] as const;
 
-export function SettingsDialog({ children }: { children: React.ReactNode }) {
-  const [activeSection, setActiveSection] = useState<Section>('account');
+export function SettingsDialog({ children, defaultSection = 'account', onOpenChange }: { children: React.ReactNode, defaultSection?: Section, onOpenChange?: (open: boolean) => void }) {
+  const [activeSection, setActiveSection] = useState<Section>(defaultSection);
+
+  const handleOpenChange = (open: boolean) => {
+    if (onOpenChange) onOpenChange(open);
+    if (open) {
+      setActiveSection(defaultSection);
+    }
+  }
 
   const renderSection = () => {
     switch (activeSection) {
@@ -51,7 +58,7 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <Dialog>
+    <Dialog onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-none w-full h-full sm:max-w-5xl sm:h-[90vh] sm:rounded-lg flex p-0">
         <aside className="w-56 hidden sm:flex flex-col bg-secondary/30 p-4">
@@ -87,3 +94,5 @@ export function SettingsDialog({ children }: { children: React.ReactNode }) {
     </Dialog>
   );
 }
+
+    
