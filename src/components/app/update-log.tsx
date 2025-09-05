@@ -12,31 +12,31 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Rocket, Sparkles, Bug, ShieldCheck, Wrench, Image as ImageIcon } from 'lucide-react';
+import { Rocket, Sparkles, Gamepad2, Bot, MessageCirclePlus } from 'lucide-react';
 
-const APP_VERSION = '1.0.4';
+const APP_VERSION = '1.0.5';
 const LOCAL_STORAGE_KEY = `changelog_seen_${APP_VERSION}`;
 
 const updates = [
     {
-        title: 'Stability Overhaul',
-        icon: Wrench,
-        description: 'Version 1.0.4 is a major stability release focused on fixing critical bugs to make the app more reliable and enjoyable to use.',
+        title: 'Introducing: The Game Hub!',
+        icon: Gamepad2,
+        description: 'Launch and play popular browser games directly within the app. Your status will automatically update to show what you\'re playing, and friends can even join from your profile!',
     },
     {
-        title: 'UI Layout Fixed',
-        icon: Bug,
-        description: 'Squashed a persistent bug that was breaking the main UI layout and causing elements to appear in the wrong place. The interface should now be stable.',
+        title: 'Slash Commands Are Here',
+        icon: Sparkles,
+        description: 'Moderate your server with ease using new slash commands. Use /clean, /lock, /kick, and /ban to manage your channels and members.',
     },
     {
-        title: 'Security Rules Hardened',
-        icon: ShieldCheck,
-        description: 'Completely rewrote the Firestore security rules from the ground up to be more robust and secure, fixing a wide range of permission-related errors.',
+        title: 'Say Hello to Bots',
+        icon: Bot,
+        description: 'Add our first phunt bot, @qolforu, from the Discovery page! Use its commands like /poll and /embed to add fun and utility to your server.',
     },
-     {
-        title: 'Image Host Whitelisted',
-        icon: ImageIcon,
-        description: 'Fixed a runtime crash that occurred when users had profile banners hosted on previously un-whitelisted domains like i.pinimg.com.',
+    {
+        title: 'Custom Welcome Messages',
+        icon: MessageCirclePlus,
+        description: 'Set a specific channel in your server settings to have the app automatically post a warm welcome message whenever a new member joins.',
     },
 ]
 
@@ -66,7 +66,7 @@ export function UpdateLog() {
              <div>
                 <DialogTitle className="text-2xl">What's New in phunt {APP_VERSION}?</DialogTitle>
                 <DialogDescription>
-                    We've been busy! Here are the latest updates and fixes.
+                    This is a big one! Here are the latest features.
                 </DialogDescription>
             </div>
           </div>
@@ -87,7 +87,7 @@ export function UpdateLog() {
             </div>
         </ScrollArea>
         <DialogFooter>
-          <Button onClick={handleClose}>Let's Go!</Button>
+          <Button onClick={handleClose}>Explore New Features</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
