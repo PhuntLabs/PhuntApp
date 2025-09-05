@@ -66,18 +66,29 @@ export function useChat(chatId: string | undefined) {
   }, [chatId]);
 
   const sendMessage = useCallback(
-    async (text: string, sender: string): Promise<Message | null> => {
+    async (text: string, sender: string, imageUrl?: string): Promise<Message | null> => {
       if (!chatId) return null;
       
       const mentionedUserIds = await getMentions(text);
 
-      const messagePayload = {
+      const messagePayload: {
+        text: string;
+        sender: string;
+        timestamp: any;
+        edited: boolean;
+        mentions: string[];
+        imageUrl?: string;
+      } = {
         text,
         sender,
         timestamp: serverTimestamp(),
         edited: false,
         mentions: mentionedUserIds,
       };
+
+      if (imageUrl) {
+        messagePayload.imageUrl = imageUrl;
+      }
 
       const messageDocRef = await addDoc(collection(db, 'chats', chatId, 'messages'), messagePayload);
 

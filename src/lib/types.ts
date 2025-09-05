@@ -39,6 +39,7 @@ export interface Message {
   timestamp: FieldValue;
   edited?: boolean;
   mentions?: string[];
+  imageUrl?: string;
 }
 
 export interface FriendRequest {
@@ -96,5 +97,3 @@ export interface Emoji {
     char: string;
     keywords: string[];
 }
-
-    

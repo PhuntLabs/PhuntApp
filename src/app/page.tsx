@@ -38,9 +38,10 @@ export default function Home() {
   const router = useRouter();
   
   // Only initialize hooks if auth has loaded and user exists
-  const { chats, loading: chatsLoading, addChat, removeChat } = useChats(!!authUser);
-  const { servers, setServers, loading: serversLoading, createServer } = useServers(!!authUser);
-  const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests(!!authUser);
+  const authReady = !loading && !!authUser;
+  const { chats, loading: chatsLoading, addChat, removeChat } = useChats(authReady);
+  const { servers, setServers, loading: serversLoading, createServer } = useServers(authReady);
+  const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests(authReady);
 
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
@@ -87,23 +88,25 @@ export default function Home() {
 
   useEffect(() => {
     // This effect handles the very first load of the app
-    if (serversLoading || !initialLoad) return;
+    if (serversLoading || !authReady || !initialLoad) return;
     
-    if (servers.length > 0) {
+    if (servers.length > 0 && !selectedServer) {
       handleSelectServer(servers[0]);
-      setInitialLoad(false);
     }
+    setInitialLoad(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [servers, serversLoading, initialLoad]);
+  }, [servers, serversLoading, authReady, initialLoad]);
 
 
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = async (text: string, imageUrl?: string) => {
     if (!authUser || !selectedChat) return;
-    const sentMessage = await sendMessage(text, authUser.uid);
+    const sentMessage = await sendMessage(text, authUser.uid, imageUrl);
 
-    const echoBot = selectedChat.members.find(m => m.id === BOT_ID);
-    if (echoBot && sentMessage) {
-        processEcho({ chatId: selectedChat.id, message: { id: sentMessage.id, text, sender: authUser.uid }});
+    if (!imageUrl) { // Don't echo images for now
+        const echoBot = selectedChat.members.find(m => m.id === BOT_ID);
+        if (echoBot && sentMessage) {
+            processEcho({ chatId: selectedChat.id, message: { id: sentMessage.id, text, sender: authUser.uid }});
+        }
     }
   };
   

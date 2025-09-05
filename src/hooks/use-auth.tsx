@@ -56,7 +56,7 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<any>;
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
-  uploadFile: (file: File, path: 'avatars' | 'banners' | `server-emojis/${string}`) => Promise<string>;
+  uploadFile: (file: File, path: 'avatars' | 'banners' | `server-emojis/${string}` | `chat-images/${string}`) => Promise<string>;
   sendPasswordReset: () => Promise<void>;
 }
 
@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [authUser]
   );
   
-  const uploadFile = useCallback(async (file: File, path: 'avatars' | 'banners' | `server-emojis/${string}`): Promise<string> => {
+  const uploadFile = useCallback(async (file: File, path: 'avatars' | 'banners' | `server-emojis/${string}` | `chat-images/${string}`): Promise<string> => {
       if (!authUser) throw new Error('Not authenticated');
       
       const fileId = uuidv4();
@@ -154,7 +154,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (path.startsWith('server-emojis/')) {
           const serverId = path.split('/')[1];
           storagePath = `server-assets/${serverId}/emojis/${fileId}.${fileExtension}`;
-      } else {
+      } else if (path.startsWith('chat-images/')) {
+          const chatId = path.split('/')[1];
+          storagePath = `chat-assets/${chatId}/${fileId}.${fileExtension}`;
+      }
+      else {
           storagePath = `user-assets/${authUser.uid}/${path}/${fileId}.${fileExtension}`;
       }
       

@@ -20,7 +20,7 @@ import { ChatInput } from './chat-input';
 interface ChatProps {
   chat: PopulatedChat;
   messages: Message[];
-  onSendMessage: (text: string) => void;
+  onSendMessage: (text: string, imageUrl?: string) => void;
   onEditMessage: (messageId: string, newText: string) => void;
   onDeleteMessage: (messageId: string) => void;
   currentUser: User;
@@ -147,7 +147,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                         </div>
                       ) : (
                         <div className="text-sm text-foreground/90">
-                           <MessageRenderer content={message.text} />
+                           <MessageRenderer content={message.text} imageUrl={message.imageUrl} />
                            {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
                         </div>
                       )}
@@ -171,6 +171,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
             placeholder={`Message @${chatName}`}
             members={chat.members}
             disabled={!!editingMessageId}
+            chatId={chat.id}
           />
         </div>
       </div>

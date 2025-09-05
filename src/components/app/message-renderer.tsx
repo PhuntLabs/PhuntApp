@@ -10,6 +10,7 @@ import Image from 'next/image';
 interface MessageRendererProps {
   content: string;
   customEmojis?: CustomEmoji[];
+  imageUrl?: string;
 }
 
 const combinedRegex = /(https?:\/\/[^\s]+)|(@\w+)|(:[a-zA-Z0-9_+-]+:)/g;
@@ -18,10 +19,10 @@ const inviteRegex = /\/join\/([a-zA-Z0-9]+)/;
 const mentionRegex = /@(\w+)/;
 const emojiRegex = /:([a-zA-Z0-9_+-]+):/;
 
-export function MessageRenderer({ content, customEmojis = [] }: MessageRendererProps) {
-  if (!content) return null;
+export function MessageRenderer({ content, customEmojis = [], imageUrl }: MessageRendererProps) {
+  if (!content && !imageUrl) return null;
 
-  const parts = content.split(combinedRegex);
+  const parts = content ? content.split(combinedRegex) : [''];
 
   return (
     <>
@@ -71,6 +72,17 @@ export function MessageRenderer({ content, customEmojis = [] }: MessageRendererP
 
         return <React.Fragment key={i}>{part}</React.Fragment>;
       })}
+      {imageUrl && (
+        <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="mt-2 block max-w-xs">
+          <Image
+            src={imageUrl}
+            alt="User uploaded image"
+            width={400}
+            height={300}
+            className="rounded-lg object-contain"
+          />
+        </a>
+      )}
     </>
   );
 }

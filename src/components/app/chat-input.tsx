@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, SmilePlus } from 'lucide-react';
+import { Send, SmilePlus, X } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,6 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from '../ui/scroll-area';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
 const standardEmojis: Emoji[] = [
     { name: "grinning", char: "😀", keywords: ["happy", "joy", "smile"] },
@@ -28,15 +30,20 @@ const standardEmojis: Emoji[] = [
 ];
 
 interface ChatInputProps {
-    onSendMessage: (text: string) => void;
+    onSendMessage: (text: string, imageUrl?: string) => void;
     placeholder?: string;
     members: Partial<UserProfile>[];
     customEmojis?: CustomEmoji[];
     disabled?: boolean;
+    chatId?: string;
 }
 
-export function ChatInput({ onSendMessage, placeholder, members, customEmojis = [], disabled }: ChatInputProps) {
+export function ChatInput({ onSendMessage, placeholder, members, customEmojis = [], disabled, chatId }: ChatInputProps) {
     const [text, setText] = useState('');
+    const [pastedImage, setPastedImage] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const { uploadFile } = useAuth();
+    const { toast } = useToast();
     const inputRef = useRef<HTMLTextAreaElement>(null);
     
     const [autocompleteType, setAutocompleteType] = useState<'mention' | 'emoji' | null>(null);
@@ -122,18 +129,49 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
         inputRef.current.focus();
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        const items = e.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const file = items[i].getAsFile();
+                if (file) {
+                    setPastedImage(file);
+                    e.preventDefault();
+                    break;
+                }
+            }
+        }
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (text.trim() === '') return;
-        onSendMessage(text);
+        if ((text.trim() === '' && !pastedImage) || isUploading) return;
+        
+        let imageUrl: string | undefined = undefined;
+
+        if (pastedImage) {
+            setIsUploading(true);
+            try {
+                if (!chatId) throw new Error("Chat ID is missing.");
+                imageUrl = await uploadFile(pastedImage, `chat-images/${chatId}`);
+            } catch (error) {
+                toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload image.' });
+                setIsUploading(false);
+                return;
+            }
+        }
+
+        onSendMessage(text, imageUrl);
         setText('');
+        setPastedImage(null);
+        setIsUploading(false);
         setIsAutocompleteOpen(false);
     };
     
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            handleSubmit(e);
+            handleSubmit(e as any);
         }
     };
 
@@ -180,70 +218,91 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
     )
 
     return (
-        <form onSubmit={handleSubmit} className="relative flex items-end gap-2">
+        <form onSubmit={handleSubmit} className="relative flex flex-col gap-2">
             {isAutocompleteOpen && AutocompletePopover()}
-            <Textarea
-                ref={inputRef}
-                value={text}
-                onChange={handleTextChange}
-                onKeyDown={handleKeyDown}
-                placeholder={placeholder || "Send a message..."}
-                className="flex-1 resize-none pr-20"
-                rows={1}
-                disabled={disabled}
-            />
-            <div className="absolute right-3 bottom-2 flex items-center">
-                 <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-foreground" disabled={disabled}>
-                            <SmilePlus className="size-5"/>
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-96 p-0 border-none mb-2" side="top" align="end">
-                         <Tabs defaultValue="standard">
-                             <TabsList className="w-full rounded-b-none">
-                                <TabsTrigger value="standard" className="flex-1">Standard Emojis</TabsTrigger>
-                                {customEmojis.length > 0 && <TabsTrigger value="custom" className="flex-1">Custom Emojis</TabsTrigger>}
-                            </TabsList>
-                            <TabsContent value="standard" className="mt-0">
-                                <ScrollArea className="h-64">
-                                <div className="p-2 grid grid-cols-8 gap-1">
-                                    {standardEmojis.map(emoji => (
-                                        <button 
-                                            key={emoji.name}
-                                            type="button"
-                                            onClick={() => insertEmoji(emoji)}
-                                            className="aspect-square text-2xl flex items-center justify-center rounded-md hover:bg-accent"
-                                        >
-                                            {emoji.char}
-                                        </button>
-                                    ))}
-                                </div>
-                                </ScrollArea>
-                            </TabsContent>
-                             <TabsContent value="custom" className="mt-0">
-                                <ScrollArea className="h-64">
-                                <div className="p-2 grid grid-cols-8 gap-2">
-                                     {customEmojis.map(emoji => (
-                                        <button 
-                                            key={emoji.name}
-                                            type="button"
-                                            onClick={() => insertEmoji(emoji)}
-                                            className="aspect-square flex items-center justify-center rounded-md hover:bg-accent"
-                                        >
-                                            <Image src={emoji.url} alt={emoji.name} width={32} height={32} />
-                                        </button>
-                                    ))}
-                                </div>
-                                </ScrollArea>
-                            </TabsContent>
-                         </Tabs>
-                    </PopoverContent>
-                </Popover>
+            {pastedImage && (
+                <div className="relative w-32 h-32 bg-secondary/50 rounded-md p-2">
+                    <Image
+                        src={URL.createObjectURL(pastedImage)}
+                        alt="Pasted image preview"
+                        fill
+                        className="object-contain rounded-md"
+                    />
+                    <Button 
+                        variant="destructive" 
+                        size="icon" 
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={() => setPastedImage(null)}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
+            <div className="flex items-end gap-2">
+                <Textarea
+                    ref={inputRef}
+                    value={text}
+                    onChange={handleTextChange}
+                    onPaste={handlePaste}
+                    onKeyDown={handleKeyDown}
+                    placeholder={placeholder || "Send a message..."}
+                    className="flex-1 resize-none pr-20"
+                    rows={1}
+                    disabled={disabled || isUploading}
+                />
+                <div className="absolute right-3 bottom-2 flex items-center">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-foreground" disabled={disabled || isUploading}>
+                                <SmilePlus className="size-5"/>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-96 p-0 border-none mb-2" side="top" align="end">
+                            <Tabs defaultValue="standard">
+                                <TabsList className="w-full rounded-b-none">
+                                    <TabsTrigger value="standard" className="flex-1">Standard Emojis</TabsTrigger>
+                                    {customEmojis.length > 0 && <TabsTrigger value="custom" className="flex-1">Custom Emojis</TabsTrigger>}
+                                </TabsList>
+                                <TabsContent value="standard" className="mt-0">
+                                    <ScrollArea className="h-64">
+                                    <div className="p-2 grid grid-cols-8 gap-1">
+                                        {standardEmojis.map(emoji => (
+                                            <button 
+                                                key={emoji.name}
+                                                type="button"
+                                                onClick={() => insertEmoji(emoji)}
+                                                className="aspect-square text-2xl flex items-center justify-center rounded-md hover:bg-accent"
+                                            >
+                                                {emoji.char}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    </ScrollArea>
+                                </TabsContent>
+                                <TabsContent value="custom" className="mt-0">
+                                    <ScrollArea className="h-64">
+                                    <div className="p-2 grid grid-cols-8 gap-2">
+                                        {customEmojis.map(emoji => (
+                                            <button 
+                                                key={emoji.name}
+                                                type="button"
+                                                onClick={() => insertEmoji(emoji)}
+                                                className="aspect-square flex items-center justify-center rounded-md hover:bg-accent"
+                                            >
+                                                <Image src={emoji.url} alt={emoji.name} width={32} height={32} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                    </ScrollArea>
+                                </TabsContent>
+                            </Tabs>
+                        </PopoverContent>
+                    </Popover>
 
-                <Button type="submit" size="icon" className="size-8" disabled={disabled || text.trim() === ''}>
-                    <Send className="size-4" />
-                </Button>
+                    <Button type="submit" size="icon" className="size-8" disabled={disabled || isUploading || (text.trim() === '' && !pastedImage)}>
+                        <Send className="size-4" />
+                    </Button>
+                </div>
             </div>
         </form>
     );
