@@ -15,18 +15,21 @@ import {
   Paintbrush,
   Bug,
   X,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountSettings } from './settings/account-settings';
 import { SecuritySettings } from './settings/security-settings';
 import { ThemeSettings } from './settings/theme-settings';
 import { BugReportSettings } from './settings/bug-report-settings';
+import { ProfileSettings } from './settings/profile-settings';
 import { Separator } from '../ui/separator';
 
-type Section = 'account' | 'security' | 'theme' | 'bugs';
+type Section = 'account' | 'profiles' | 'security' | 'theme' | 'bugs';
 
 const sections = [
   { id: 'account', label: 'My Account', icon: User },
+  { id: 'profiles', label: 'Profiles', icon: Sparkles },
   { id: 'security', label: 'Security', icon: Shield },
   { id: 'theme', label: 'Theme', icon: Paintbrush },
   { id: 'bugs', label: 'Bugs & Feedback', icon: Bug },
@@ -46,6 +49,8 @@ export function SettingsDialog({ children, defaultSection = 'account', onOpenCha
     switch (activeSection) {
       case 'account':
         return <AccountSettings />;
+      case 'profiles':
+        return <ProfileSettings />;
       case 'security':
         return <SecuritySettings />;
       case 'theme':
@@ -82,17 +87,14 @@ export function SettingsDialog({ children, defaultSection = 'account', onOpenCha
 
         <main className="flex-1 p-6 relative overflow-y-auto">
           {renderSection()}
-          <div className="absolute top-4 right-4">
-             <DialogClose asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                    <X className="size-5" />
-                </Button>
-            </DialogClose>
-          </div>
+          <DialogClose asChild>
+            <Button variant="ghost" size="icon" className="absolute right-4 top-4 rounded-full">
+                <X className="size-5" />
+                <span className="sr-only">Close</span>
+            </Button>
+          </DialogClose>
         </main>
       </DialogContent>
     </Dialog>
   );
 }
-
-    

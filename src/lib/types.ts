@@ -9,6 +9,9 @@ export const ALL_BADGES = ['developer', 'bot', 'beta tester', 'youtuber', 'tikto
 export const BadgeType = z.enum(ALL_BADGES);
 export type BadgeType = z.infer<typeof BadgeType>;
 
+export type AvatarEffect = 'none' | 'rage';
+export type ProfileEffect = 'none' | 'rain';
+
 export interface UserProfile {
   id: string;
   uid: string;
@@ -23,6 +26,8 @@ export interface UserProfile {
   badges?: BadgeType[];
   status?: UserStatus;
   customStatus?: string;
+  avatarEffect?: AvatarEffect;
+  profileEffect?: ProfileEffect;
 }
 
 export interface ChatDocument {
@@ -54,10 +59,6 @@ export interface Message {
     senderDisplayName: string;
     text: string;
   };
-  reactions?: {
-    emoji: string;
-    users: string[];
-  }[];
 }
 
 export interface FriendRequest {
@@ -141,5 +142,3 @@ export interface Emoji {
     char: string;
     keywords: string[];
 }
-
-    

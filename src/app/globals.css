@@ -88,3 +88,48 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Profile Effects */
+@layer components {
+  /* Rain Effect */
+  .raindrop {
+    @apply absolute top-[-50px] w-px h-[50px] bg-gradient-to-b from-transparent to-blue-300;
+    animation: fall linear infinite;
+  }
+
+  @keyframes fall {
+    to {
+      transform: translateY(calc(100vh + 50px));
+    }
+  }
+
+  /* Rage Avatar Effect */
+  .avatar-effect-rage-pulse {
+    @apply absolute inset-0 rounded-full border-2 border-red-500/80;
+    animation: pulse-red 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  }
+
+  @keyframes pulse-red {
+    from {
+      transform: scale(0.9);
+      opacity: 1;
+    }
+    to {
+      transform: scale(1.4);
+      opacity: 0;
+    }
+  }
+  
+  .avatar-effect-rage-icon {
+      @apply absolute -top-1 -right-1 text-red-500;
+      animation: angry-shake 0.5s infinite;
+  }
+
+  @keyframes angry-shake {
+    0%, 100% { transform: translate(0, 0) rotate(0); }
+    25% { transform: translate(1px, -1px) rotate(5deg); }
+    50% { transform: translate(-1px, 1px) rotate(0deg); }
+    75% { transform: translate(1px, 1px) rotate(-5deg); }
+  }
+}

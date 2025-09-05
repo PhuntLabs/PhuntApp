@@ -57,6 +57,41 @@ const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, c
     'early supporter': { label: 'Early Supporter', icon: HeartHandshake, className: 'bg-pink-500/20 text-pink-300 border-pink-500/30' },
 };
 
+const RainEffect = () => (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {Array.from({ length: 50 }).map((_, i) => (
+            <div
+                key={i}
+                className="raindrop"
+                style={{
+                    left: `${Math.random() * 100}%`,
+                    animationDuration: `${0.5 + Math.random() * 0.5}s`,
+                    animationDelay: `${Math.random() * 5}s`,
+                }}
+            />
+        ))}
+    </div>
+);
+
+const RageEffect = () => (
+    <>
+        <div className="avatar-effect-rage-pulse"></div>
+        <div className="avatar-effect-rage-pulse" style={{ animationDelay: '0.5s' }}></div>
+        <div className="avatar-effect-rage-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="avatar-effect-rage-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 9C18.5523 9 19 8.55228 19 8C19 7.44772 18.5523 7 18 7C17.4477 7 17 7.44772 17 8C17 8.55228 17.4477 9 18 9Z" fill="currentColor"/>
+                <path d="M18 13C18.5523 13 19 12.5523 19 12C19 11.4477 18.5523 11 18 11C17.4477 11 17 11.4477 17 12C17 12.5523 17.4477 13 18 13Z" fill="currentColor"/>
+                <path d="M15 15C15.5523 15 16 14.5523 16 14C16 13.4477 15.5523 13 15 13C14.4477 13 14 13.4477 14 14C14 14.5523 14.4477 15 15 15Z" fill="currentColor"/>
+                <path d="M11 15C11.5523 15 12 14.5523 12 14C12 13.4477 11.5523 13 11 13C10.4477 13 10 13.4477 10 14C10 14.5523 10.4477 15 11 15Z" fill="currentColor"/>
+                <path d="M7 13C7.55228 13 8 12.5523 8 12C8 11.4477 7.55228 11 7 11C6.44772 11 6 11.4477 6 12C6 12.5523 6.44772 13 7 13Z" fill="currentColor"/>
+                <path d="M7 9C7.55228 9 8 8.55228 8 8C8 7.44772 7.55228 7 7 7C6.44772 7 6 7.44772 6 8C6 8.55228 6.44772 9 7 9Z" fill="currentColor"/>
+            </svg>
+        </div>
+    </>
+);
+
+
 export function UserNav({ user, logout, as = 'button', children, serverContext }: UserNavProps) {
   const { authUser, user: currentUser, updateUserProfile, updateServerProfile } = useAuth();
   const { sendFriendRequest } = useFriendRequests();
@@ -206,16 +241,18 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       </PopoverTrigger>
       <PopoverContent className="w-80 mb-2 h-auto" side="top" align="start">
       <TooltipProvider>
-        <div className="relative h-24 bg-accent rounded-t-lg -mx-4 -mt-4">
+        <div className="relative h-24 bg-accent rounded-t-lg -mx-4 -mt-4 overflow-hidden">
             {user.bannerURL && (
                 <Image src={user.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
             )}
+            {user.profileEffect === 'rain' && <RainEffect />}
              <div className="absolute top-16 left-4">
                  <div className="relative">
                     <Avatar className="size-20 border-4 border-popover rounded-full">
                       <AvatarImage src={displayUser.photoURL || undefined} />
                       <AvatarFallback className="text-2xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
                     </Avatar>
+                     {user.avatarEffect === 'rage' && <RageEffect />}
                     <div className={cn("absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-popover flex items-center justify-center", statusColor.replace('text-', 'bg-'))}>
                         <Tooltip>
                            <TooltipTrigger>
@@ -284,7 +321,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                     <>
                     <Separator className="my-4" />
                     <div className="flex flex-col gap-1">
-                        <SettingsDialog defaultSection="account">
+                        <SettingsDialog defaultSection="account" onOpenChange={(open) => !open && setIsPopoverOpen(false)}>
                           <Button variant="outline" className="justify-start">
                               <Pencil className="mr-2 h-4 w-4" />
                               <span>Edit User Profile</span>
@@ -326,7 +363,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                 </div>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        <SettingsDialog>
+                        <SettingsDialog onOpenChange={(open) => !open && setIsPopoverOpen(false)}>
                             <Button variant="ghost" className="justify-start">
                                 <Settings className="mr-2 h-4 w-4" />
                                 <span>Settings</span>
