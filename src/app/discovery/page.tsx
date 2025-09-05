@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Users } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 export default function DiscoveryPage() {
     const { publicServers, loading: publicServersLoading } = usePublicServers();
@@ -40,10 +42,11 @@ export default function DiscoveryPage() {
                     {loading ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {[...Array(8)].map((_, i) => (
-                                <Card key={i} className="flex flex-col">
-                                    <CardHeader className="flex flex-row items-center gap-4">
-                                        <Skeleton className="h-12 w-12 rounded-lg" />
-                                        <div className="space-y-2">
+                                <Card key={i} className="flex flex-col overflow-hidden">
+                                    <Skeleton className="h-24 w-full" />
+                                    <CardHeader className="flex flex-row items-center gap-4 -mt-6 z-10">
+                                        <Skeleton className="h-14 w-14 rounded-lg border-4 border-background" />
+                                        <div className="space-y-2 pt-6">
                                             <Skeleton className="h-4 w-[150px]" />
                                             <Skeleton className="h-4 w-[100px]" />
                                         </div>
@@ -61,13 +64,20 @@ export default function DiscoveryPage() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {publicServers.map(server => (
-                                <Card key={server.id} className="flex flex-col">
-                                    <CardHeader className="flex flex-row items-center gap-4">
-                                        <Avatar className="h-12 w-12 rounded-lg">
+                                <Card key={server.id} className="flex flex-col overflow-hidden group">
+                                     <div className="h-24 w-full relative">
+                                        {server.bannerURL ? (
+                                            <Image src={server.bannerURL} alt={`${server.name} banner`} fill style={{ objectFit: 'cover' }} className="group-hover:scale-105 transition-transform duration-300"/>
+                                        ) : (
+                                            <div className="h-full w-full bg-accent" />
+                                        )}
+                                     </div>
+                                    <CardHeader className="flex flex-row items-center gap-4 -mt-6 z-10">
+                                        <Avatar className="h-14 w-14 rounded-lg border-4 border-background shrink-0">
                                             <AvatarImage src={server.photoURL || undefined} alt={server.name}/>
                                             <AvatarFallback>{server.name[0]}</AvatarFallback>
                                         </Avatar>
-                                        <div>
+                                        <div className="pt-6 overflow-hidden">
                                             <CardTitle className="text-lg truncate">{server.name}</CardTitle>
                                             <div className="flex items-center text-sm text-muted-foreground">
                                                 <Users className="size-4 mr-1"/> {server.members.length} Members
