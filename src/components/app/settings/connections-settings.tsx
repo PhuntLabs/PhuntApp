@@ -10,7 +10,6 @@ import Image from 'next/image';
 import { Link, X, Loader2 } from 'lucide-react';
 import type { Connection } from '@/lib/types';
 import { serverTimestamp } from 'firebase/firestore';
-import { useRouter, useSearchParams } from 'next/navigation';
 
 const supportedConnections = [
   {
@@ -24,35 +23,9 @@ const supportedConnections = [
 export function ConnectionsSettings() {
   const { user, updateUserProfile } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [connections, setConnections] = useState<Connection[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
-
-  // This effect simulates the callback from the OAuth provider
-  useEffect(() => {
-    if (searchParams.get('connected') === 'spotify') {
-      const type = 'spotify';
-      // In a real app, you'd get the username from the callback data
-      const newConnection: Connection = {
-        type,
-        username: user?.displayName || 'user', 
-        connectedAt: serverTimestamp(),
-      };
-      
-      const updatedConnections = [...connections, newConnection];
-      updateUserProfile({ connections: updatedConnections });
-      setConnections(updatedConnections);
-
-      toast({
-        title: 'Connection Successful',
-        description: `Your ${type} account has been linked.`,
-      });
-      // Clean up the URL
-      router.replace('/?settings=connections');
-    }
-  }, [searchParams, user, connections, updateUserProfile, router, toast]);
 
   useEffect(() => {
     if (user?.connections) {
@@ -61,30 +34,28 @@ export function ConnectionsSettings() {
   }, [user]);
 
   const handleConnect = async (type: 'spotify') => {
-    // In a real application, this would redirect to your backend which then redirects to Spotify
-    // For this prototype, we'll simulate the redirect flow.
+    // This is a UI simulation. In a real app, this would redirect to your backend for OAuth.
     setIsUpdating(true);
-    
-    // 1. Construct a realistic-looking Spotify auth URL
-    const params = new URLSearchParams({
-        client_id: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || 'dummy_client_id', // Should be in .env.local
-        response_type: 'code',
-        redirect_uri: `${window.location.origin}/?settings=connections&connected=spotify`, // Simulate redirect back to this page
-        scope: 'user-read-currently-playing user-read-playback-state',
-        state: 'random_string_for_security'
-    });
-    const authUrl = `https://accounts.spotify.com/authorize?${params.toString()}`;
-    
-    // 2. "Redirect" the user
-    // In a real app, this would be: window.location.href = authUrl;
-    toast({
-        title: 'Redirecting to Spotify...',
-        description: "Please authorize the application."
-    });
+    try {
+      const newConnection: Connection = {
+        type,
+        username: user?.displayName || 'user', 
+        connectedAt: serverTimestamp(),
+      };
+      
+      const updatedConnections = [...connections, newConnection];
+      await updateUserProfile({ connections: updatedConnections });
+      setConnections(updatedConnections);
 
-    setTimeout(() => {
-        router.push(authUrl); // In a real app, this redirect happens for real.
-    }, 1500);
+      toast({
+        title: 'Connection Successful',
+        description: `Your ${type} account has been linked.`,
+      });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Failed to connect', description: error.message });
+    } finally {
+      setIsUpdating(false);
+    }
   };
   
   const handleDisconnect = async (type: 'spotify') => {
