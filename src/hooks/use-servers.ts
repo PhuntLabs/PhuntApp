@@ -17,15 +17,15 @@ import {
 import type { Server } from '@/lib/types';
 import { useAuth } from './use-auth';
 
-export function useServers() {
+export function useServers(enabled: boolean = true) {
   const { authUser } = useAuth();
   const [servers, setServers] = useState<Server[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!authUser) {
+    if (!authUser || !enabled) {
       setServers([]);
-      setLoading(false);
+      setLoading(!enabled);
       return;
     }
 
@@ -45,7 +45,7 @@ export function useServers() {
     });
 
     return () => unsubscribe();
-  }, [authUser]);
+  }, [authUser, enabled]);
 
   const createServer = useCallback(async (name: string): Promise<Server | null> => {
     if (!authUser) throw new Error("You must be logged in to create a server.");

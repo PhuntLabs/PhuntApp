@@ -36,16 +36,20 @@ import { UpdateLog } from '@/components/app/update-log';
 export default function Home() {
   const { user, authUser, loading, logout } = useAuth();
   const router = useRouter();
-  const { chats, loading: chatsLoading, addChat, removeChat } = useChats();
+  
+  // Only initialize hooks if auth has loaded and user exists
+  const { chats, loading: chatsLoading, addChat, removeChat } = useChats(!!authUser);
+  const { servers, setServers, loading: serversLoading, createServer } = useServers(!!authUser);
+  const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests(!!authUser);
+
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
-  const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
-  const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests();
-  const { servers, setServers, loading: serversLoading, createServer } = useServers();
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
-  const { server, setServer, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
-  const { createChannel, updateChannel, deleteChannel } = useChannels(selectedServer?.id);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [initialLoad, setInitialLoad] = useState(true);
+
+  const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
+  const { server, setServer, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
+  const { createChannel, updateChannel, deleteChannel } = useChannels(selectedServer?.id);
   const { 
     messages: channelMessages, 
     sendMessage: sendChannelMessage,
@@ -82,14 +86,15 @@ export default function Home() {
   }, [chats, selectedChat, chatsLoading, selectedServer]);
 
   useEffect(() => {
-    if (serversLoading) return;
+    // This effect handles the very first load of the app
+    if (serversLoading || !initialLoad) return;
     
-    if (initialLoad && !selectedServer && !selectedChat && servers.length > 0) {
+    if (servers.length > 0) {
       handleSelectServer(servers[0]);
       setInitialLoad(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [servers, serversLoading, selectedServer, selectedChat, initialLoad]);
+  }, [servers, serversLoading, initialLoad]);
 
 
   const handleSendMessage = async (text: string) => {
@@ -278,7 +283,7 @@ export default function Home() {
         />
         
         <div className="flex flex-1 min-w-0">
-          <div className="w-64 flex-shrink-0 bg-secondary/30 flex flex-col">
+          <div className="w-64 flex-shrink-0 bg-secondary/30 flex-flex-col hidden md:flex">
               <div className="flex-1 overflow-y-auto">
                   {server ? (
                   <ServerSidebar 

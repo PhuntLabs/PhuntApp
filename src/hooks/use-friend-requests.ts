@@ -19,13 +19,13 @@ import type { FriendRequest } from '@/lib/types';
 import { BOT_ID } from '@/ai/bots/config';
 import { processBotFriendRequest } from '@/ai/flows/echo-bot-flow';
 
-export function useFriendRequests() {
+export function useFriendRequests(enabled: boolean = true) {
   const { user, authUser } = useAuth();
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
 
   // Listen for incoming friend requests
   useEffect(() => {
-    if (!user?.uid) { 
+    if (!user?.uid || !enabled) { 
         setIncomingRequests([]);
         return;
     }
@@ -42,7 +42,7 @@ export function useFriendRequests() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, enabled]);
 
   const sendFriendRequest = useCallback(async (toUsername: string, fromUser: { id: string, displayName: string }) => {
     if (!authUser || !fromUser.id || !fromUser.displayName) {

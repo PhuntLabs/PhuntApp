@@ -47,7 +47,7 @@ async function populateChat(chatDoc: ChatDocument): Promise<PopulatedChat> {
 }
 
 
-export function useChats() {
+export function useChats(enabled: boolean = true) {
   const { authUser } = useAuth();
   const [chats, setChats] = useState<PopulatedChat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,9 +77,9 @@ export function useChats() {
   }, []);
 
   useEffect(() => {
-    if (!authUser) {
+    if (!authUser || !enabled) {
         setChats([]);
-        setLoading(false);
+        setLoading(!enabled);
         return;
     };
 
@@ -108,7 +108,7 @@ export function useChats() {
     });
 
     return () => unsubscribe();
-  }, [authUser]);
+  }, [authUser, enabled]);
 
   return { chats, loading, addChat, removeChat };
 }
