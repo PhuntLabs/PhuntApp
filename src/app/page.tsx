@@ -286,7 +286,7 @@ export default function Home() {
         />
         
         <div className="flex flex-1 min-w-0">
-          <div className="w-64 flex-shrink-0 bg-secondary/30 flex-flex-col hidden md:flex">
+          <div className="w-64 flex-shrink-0 bg-secondary/30 flex flex-col hidden md:flex">
               <div className="flex-1 overflow-y-auto">
                   {server ? (
                   <ServerSidebar 
