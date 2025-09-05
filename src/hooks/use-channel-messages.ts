@@ -16,6 +16,9 @@ import {
   where,
   getDocs,
   runTransaction,
+  arrayUnion,
+  arrayRemove,
+  getDoc,
 } from 'firebase/firestore';
 import type { Message, Server, Reaction } from '@/lib/types';
 import { useAuth } from './use-auth';
@@ -129,41 +132,63 @@ export function useChannelMessages(server: Server | null, channelId: string | un
   );
 
   const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
-      if (!authUser || !server?.id || !channelId) return;
-
-      const messageRef = doc(db, 'servers', server.id, 'channels', channelId, 'messages', messageId);
-
-      await runTransaction(db, async (transaction) => {
-          const messageDoc = await transaction.get(messageRef);
-          if (!messageDoc.exists()) {
-              throw new Error("Message does not exist!");
-          }
-
-          const reactions = (messageDoc.data().reactions || []) as Reaction[];
-          const reactionIndex = reactions.findIndex(r => r.emoji === emoji);
-          
-          if (reactionIndex > -1) {
-              // Reaction exists, check if user has already reacted
-              const userIndex = reactions[reactionIndex].users.indexOf(authUser.uid);
-              if (userIndex > -1) {
-                  // User has reacted, so remove their reaction
-                  reactions[reactionIndex].users.splice(userIndex, 1);
-                  // If no users are left for this reaction, remove the reaction object
-                  if (reactions[reactionIndex].users.length === 0) {
-                      reactions.splice(reactionIndex, 1);
-                  }
-              } else {
-                  // User has not reacted, so add them
-                  reactions[reactionIndex].users.push(authUser.uid);
-              }
-          } else {
-              // Reaction does not exist, so create it
-              reactions.push({ emoji, users: [authUser.uid] });
-          }
-
-          transaction.update(messageRef, { reactions });
-      });
-
+    if (!authUser || !server?.id || !channelId) return;
+  
+    const messageRef = doc(db, 'servers', server.id, 'channels', channelId, 'messages', messageId);
+  
+    try {
+      const messageDoc = await getDoc(messageRef);
+      if (!messageDoc.exists()) {
+        throw new Error("Message does not exist!");
+      }
+  
+      const reactions = (messageDoc.data().reactions || []) as Reaction[];
+      const reactionIndex = reactions.findIndex(r => r.emoji === emoji);
+      let userHasReacted = false;
+  
+      if (reactionIndex > -1) {
+        userHasReacted = reactions[reactionIndex].users.includes(authUser.uid);
+      }
+  
+      if (userHasReacted) {
+        // User is removing their reaction
+        const currentReaction = reactions[reactionIndex];
+        if (currentReaction.users.length === 1) {
+          // If user is the last one, remove the whole reaction object
+          await updateDoc(messageRef, {
+            reactions: arrayRemove(currentReaction)
+          });
+        } else {
+          // Otherwise, just remove the user's ID
+          await updateDoc(messageRef, {
+            reactions: arrayRemove(currentReaction),
+          });
+          await updateDoc(messageRef, {
+             reactions: arrayUnion({ ...currentReaction, users: arrayRemove(authUser.uid) })
+          });
+        }
+      } else {
+        // User is adding a reaction
+        if (reactionIndex > -1) {
+          // Reaction object exists, add user to it
+          const currentReaction = reactions[reactionIndex];
+          await updateDoc(messageRef, {
+            reactions: arrayRemove(currentReaction)
+          });
+           await updateDoc(messageRef, {
+            reactions: arrayUnion({ ...currentReaction, users: arrayUnion(authUser.uid) })
+          });
+        } else {
+          // Reaction object doesn't exist, create it
+          await updateDoc(messageRef, {
+            reactions: arrayUnion({ emoji, users: [authUser.uid] })
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to toggle reaction:", error);
+      // Potentially show a toast to the user
+    }
   }, [authUser, server?.id, channelId]);
 
   return { messages, sendMessage, editMessage, deleteMessage, toggleReaction };

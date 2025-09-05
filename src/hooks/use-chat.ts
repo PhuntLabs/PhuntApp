@@ -17,6 +17,8 @@ import {
   where,
   getDocs,
   runTransaction,
+  arrayUnion,
+  arrayRemove,
 } from 'firebase/firestore';
 import type { Message, Reaction } from '@/lib/types';
 import { useAuth } from './use-auth';
@@ -123,36 +125,65 @@ export function useChat(chatId: string | undefined) {
   );
 
   const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
-      if (!authUser || !chatId) return;
-
-      const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
-
-      await runTransaction(db, async (transaction) => {
-          const messageDoc = await transaction.get(messageRef);
-          if (!messageDoc.exists()) {
-              throw new Error("Message does not exist!");
-          }
-
-          const reactions = (messageDoc.data().reactions || []) as Reaction[];
-          const reactionIndex = reactions.findIndex(r => r.emoji === emoji);
-          
-          if (reactionIndex > -1) {
-              const userIndex = reactions[reactionIndex].users.indexOf(authUser.uid);
-              if (userIndex > -1) {
-                  reactions[reactionIndex].users.splice(userIndex, 1);
-                  if (reactions[reactionIndex].users.length === 0) {
-                      reactions.splice(reactionIndex, 1);
-                  }
-              } else {
-                  reactions[reactionIndex].users.push(authUser.uid);
-              }
-          } else {
-              reactions.push({ emoji, users: [authUser.uid] });
-          }
-
-          transaction.update(messageRef, { reactions });
-      });
-
+    if (!authUser || !chatId) return;
+  
+    const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
+  
+    try {
+      // We need to fetch the document first to know the current state of reactions
+      const messageDoc = await getDoc(messageRef);
+      if (!messageDoc.exists()) {
+        throw new Error("Message does not exist!");
+      }
+  
+      const reactions = (messageDoc.data().reactions || []) as Reaction[];
+      const reactionIndex = reactions.findIndex(r => r.emoji === emoji);
+      let userHasReacted = false;
+  
+      if (reactionIndex > -1) {
+        userHasReacted = reactions[reactionIndex].users.includes(authUser.uid);
+      }
+  
+      if (userHasReacted) {
+        // User is removing their reaction
+        const currentReaction = reactions[reactionIndex];
+        if (currentReaction.users.length === 1) {
+          // If user is the last one, remove the whole reaction object
+          await updateDoc(messageRef, {
+            reactions: arrayRemove(currentReaction)
+          });
+        } else {
+          // Otherwise, just remove the user's ID
+          // This requires removing the old object and adding back the new one
+           await updateDoc(messageRef, {
+             reactions: arrayRemove(currentReaction)
+           });
+           await updateDoc(messageRef, {
+             reactions: arrayUnion({ ...currentReaction, users: arrayRemove(authUser.uid) })
+           });
+        }
+      } else {
+        // User is adding a reaction
+        if (reactionIndex > -1) {
+          // Reaction object exists, add user to it
+          const currentReaction = reactions[reactionIndex];
+           await updateDoc(messageRef, {
+             reactions: arrayRemove(currentReaction)
+           });
+           await updateDoc(messageRef, {
+            reactions: arrayUnion({ ...currentReaction, users: arrayUnion(authUser.uid) })
+           });
+        } else {
+          // Reaction object doesn't exist, create it
+          await updateDoc(messageRef, {
+            reactions: arrayUnion({ emoji, users: [authUser.uid] })
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to toggle reaction:", error);
+      // Potentially show a toast to the user
+    }
   }, [authUser, chatId]);
 
   return { messages, sendMessage, editMessage, deleteMessage, toggleReaction };
