@@ -274,13 +274,16 @@ export function ChannelChat({
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <>
-                                                    <div className="text-sm text-foreground/90">
-                                                    <MessageRenderer content={message.text} customEmojis={server.customEmojis} />
-                                                    {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
-                                                    </div>
-                                                </>
+                                                <MessageRenderer 
+                                                    content={message.text}
+                                                    imageUrl={message.imageUrl}
+                                                    reactions={message.reactions}
+                                                    customEmojis={server.customEmojis}
+                                                    messageId={message.id}
+                                                    messageContext={{ type: 'channel', serverId: server.id, channelId: channel.id }}
+                                                />
                                             )}
+                                            {message.edited && !isEditing && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
                                         </div>
                                     </div>
 

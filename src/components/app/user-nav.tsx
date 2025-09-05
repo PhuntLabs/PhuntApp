@@ -2,7 +2,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, MessageCircleMore, SmilePlus } from 'lucide-react';
+import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, MessageCircleMore, SmilePlus, Check } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -31,6 +31,8 @@ import type { UserProfile, UserStatus, Server, BadgeType, Role, AvatarEffect, Pr
 import { cn } from '@/lib/utils';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { SettingsDialog } from './settings-dialog';
+import { usePermissions } from '@/hooks/use-permissions';
+import { Checkbox } from '../ui/checkbox';
 
 interface UserNavProps {
     user: UserProfile; 
@@ -137,19 +139,22 @@ const avatarEffects: Record<AvatarEffect, React.FC | React.FC<{ children: React.
 
 
 export function UserNav({ user, logout, as = 'button', children, serverContext }: UserNavProps) {
-  const { authUser, user: currentUser, updateUserProfile, updateServerProfile } = useAuth();
+  const { authUser, user: currentUser, updateUserProfile, updateUserRolesInServer, updateServerProfile } = useAuth();
   const { sendFriendRequest } = useFriendRequests();
+  const { hasPermission } = usePermissions(serverContext, null);
   const { toast } = useToast();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [customStatus, setCustomStatus] = useState(user?.customStatus || '');
+  const [managedRoles, setManagedRoles] = useState<string[]>([]);
 
   // Server-specific profile state
   const [nickname, setNickname] = useState('');
   const [serverAvatar, setServerAvatar] = useState('');
   
   const isCurrentUser = authUser?.uid === user.uid;
+  const canManageRoles = hasPermission('manageRoles');
 
   const serverProfile = serverContext?.memberDetails?.[user.uid]?.profile;
   const displayUser = {
@@ -166,6 +171,9 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
         const profile = serverContext?.memberDetails?.[user.uid]?.profile;
         setNickname(profile?.nickname || '');
         setServerAvatar(profile?.avatar || '');
+
+        const userRoles = serverContext.memberDetails[user.uid]?.roles || [];
+        setManagedRoles(userRoles);
       }
       setCustomStatus(currentUser?.customStatus || '');
     }
@@ -231,6 +239,24 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
     }
   }
 
+  const handleRoleChange = async (roleId: string, checked: boolean) => {
+    if (!serverContext || !canManageRoles) return;
+    const newRoles = checked
+      ? [...managedRoles, roleId]
+      : managedRoles.filter(id => id !== roleId);
+    
+    setManagedRoles(newRoles);
+    
+    try {
+        await updateUserRolesInServer(serverContext.id, user.uid, newRoles);
+        toast({ title: "Roles Updated", description: `Successfully updated roles for ${user.displayName}.`});
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        // Revert state on failure
+        setManagedRoles(managedRoles);
+    }
+  };
+
   const handleCancel = () => {
     if (serverContext && user) {
         const profile = serverContext?.memberDetails?.[user.uid]?.profile;
@@ -274,6 +300,8 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const serverRoles = serverContext?.roles
       ?.filter(role => memberRoles.includes(role.id))
       .sort((a, b) => a.priority - b.priority);
+  
+  const allServerRoles = serverContext?.roles?.sort((a,b) => a.priority - b.priority) || [];
 
   const AvatarEffectComponent = user.avatarEffect ? avatarEffects[user.avatarEffect] : null;
   const ProfileEffectComponent = user.profileEffect ? profileEffects[user.profileEffect] : null;
@@ -288,7 +316,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       </PopoverTrigger>
       <PopoverContent className="w-80 mb-2 p-0 border-none rounded-lg overflow-hidden" side="top" align="start">
         <TooltipProvider>
-            <div className="flex flex-col">
+            <div className="flex flex-col relative rounded-lg bg-popover">
                  <div className="relative">
                     <div className="h-24 bg-accent relative">
                         {user.bannerURL && (
@@ -364,21 +392,52 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                             <p className={cn("text-sm text-muted-foreground -mt-1", !user.email && 'italic')}>{user.email || 'No email provided'}</p>
                             {user.customStatus && <p className="text-sm text-foreground mt-1">{user.customStatus}</p>}
                             <Separator className="my-2" />
-                            {serverContext && serverRoles && serverRoles.length > 0 && (
+                            
+                            {serverContext && (
                             <>
                                 <div className="mb-2">
                                     <h4 className="text-xs font-bold uppercase text-muted-foreground">Roles</h4>
                                     <div className="flex flex-wrap gap-1 mt-1">
-                                        {serverRoles.map(role => (
+                                        {serverRoles && serverRoles.length > 0 ? (
+                                            serverRoles.map(role => (
                                             <Badge key={role.id} variant="outline" className="font-medium" style={{ borderColor: role.color, color: role.color, backgroundColor: `${role.color}1A`}}>
                                                 {role.name}
                                             </Badge>
-                                        ))}
+                                        ))
+                                        ) : (
+                                            <p className="text-xs text-muted-foreground italic">No roles</p>
+                                        )}
                                     </div>
                                 </div>
                                 <Separator className="my-2" />
                             </>
                             )}
+
+                             {canManageRoles && allServerRoles.length > 0 && !isCurrentUser && (
+                                <>
+                                <div className="mb-2">
+                                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Manage Roles</h4>
+                                    <div className="space-y-1 mt-1">
+                                    {allServerRoles.map(role => (
+                                        <div key={role.id} className="flex items-center gap-2">
+                                            <Checkbox
+                                                id={`role-${role.id}`}
+                                                checked={managedRoles.includes(role.id)}
+                                                onCheckedChange={(checked) => handleRoleChange(role.id, !!checked)}
+                                            />
+                                            <Label htmlFor={`role-${role.id}`} className="flex items-center gap-2 cursor-pointer">
+                                                <div className="size-3 rounded-full" style={{ backgroundColor: role.color}} />
+                                                {role.name}
+                                            </Label>
+                                        </div>
+                                    ))}
+                                    </div>
+                                </div>
+                                <Separator className="my-2" />
+                                </>
+                            )}
+
+
                             <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
                             
                             {isCurrentUser && (

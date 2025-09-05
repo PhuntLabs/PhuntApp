@@ -8,7 +8,7 @@
  */
 import { ai } from '@/ai/genkit';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, runTransaction } from 'firebase/firestore';
 import { z } from 'zod';
 import type { Reaction } from '@/lib/types';
 
@@ -50,54 +50,39 @@ const toggleReactionFlow = ai.defineFlow(
     }
 
     try {
-      const messageDoc = await getDoc(messageRef);
-      if (!messageDoc.exists()) {
-        throw new Error("Message does not exist!");
-      }
+        await runTransaction(db, async (transaction) => {
+            const messageDoc = await transaction.get(messageRef);
+            if (!messageDoc.exists()) {
+                throw new Error("Message does not exist!");
+            }
 
-      const reactions = (messageDoc.data().reactions || []) as Reaction[];
-      const reactionIndex = reactions.findIndex(r => r.emoji === emoji);
-      let userHasReacted = false;
+            const currentReactions = (messageDoc.data().reactions || []) as Reaction[];
+            const reactionIndex = currentReactions.findIndex(r => r.emoji === emoji);
+            const newReactions = [...currentReactions];
 
-      if (reactionIndex > -1) {
-        userHasReacted = reactions[reactionIndex].users.includes(userId);
-      }
+            if (reactionIndex > -1) {
+                // Reaction object for this emoji exists
+                const reaction = newReactions[reactionIndex];
+                const userIndex = reaction.users.indexOf(userId);
 
-      if (userHasReacted) {
-        // User is removing their reaction
-        const currentReaction = reactions[reactionIndex];
-        if (currentReaction.users.length === 1) {
-          // If user is the last one, remove the whole reaction object
-          await updateDoc(messageRef, {
-            reactions: arrayRemove(currentReaction)
-          });
-        } else {
-          // Otherwise, just remove the user's ID
-          await updateDoc(messageRef, {
-            reactions: arrayRemove(currentReaction)
-          });
-          await updateDoc(messageRef, {
-             reactions: arrayUnion({ ...currentReaction, users: arrayRemove(userId) })
-          });
-        }
-      } else {
-        // User is adding a reaction
-        if (reactionIndex > -1) {
-          // Reaction object exists, add user to it
-          const currentReaction = reactions[reactionIndex];
-           await updateDoc(messageRef, {
-             reactions: arrayRemove(currentReaction)
-           });
-           await updateDoc(messageRef, {
-            reactions: arrayUnion({ ...currentReaction, users: arrayUnion(userId) })
-           });
-        } else {
-          // Reaction object doesn't exist, create it
-          await updateDoc(messageRef, {
-            reactions: arrayUnion({ emoji, users: [userId] })
-          });
-        }
-      }
+                if (userIndex > -1) {
+                    // User has already reacted, so remove their reaction
+                    reaction.users.splice(userIndex, 1);
+                    if (reaction.users.length === 0) {
+                        // If no users are left, remove the entire reaction object
+                        newReactions.splice(reactionIndex, 1);
+                    }
+                } else {
+                    // User has not reacted, so add them
+                    reaction.users.push(userId);
+                }
+            } else {
+                // Reaction object for this emoji does not exist, create it
+                newReactions.push({ emoji, users: [userId] });
+            }
+            
+            transaction.update(messageRef, { reactions: newReactions });
+        });
     } catch (error) {
       console.error("Failed to toggle reaction in flow:", error);
       throw error; // Rethrow to let the client know something went wrong.

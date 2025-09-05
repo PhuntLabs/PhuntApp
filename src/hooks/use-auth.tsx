@@ -57,6 +57,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   updateServerProfile: (serverId: string, profile: ServerProfile) => Promise<void>;
+  updateUserRolesInServer: (serverId: string, userId: string, roles: string[]) => Promise<void>;
   uploadFile: (file: File, path: string) => Promise<string>;
   sendPasswordReset: () => Promise<void>;
 }
@@ -194,6 +195,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   }, [authUser]);
 
+  const updateUserRolesInServer = useCallback(async (serverId: string, userId: string, roles: string[]) => {
+      if (!authUser) throw new Error('Not authenticated');
+      const serverRef = doc(db, 'servers', serverId);
+      const fieldPath = `memberDetails.${userId}.roles`;
+      await updateDoc(serverRef, { [fieldPath]: roles });
+  }, [authUser]);
+
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
       if (!authUser) throw new Error('Not authenticated');
       
@@ -306,6 +314,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     updateUserProfile,
     updateServerProfile,
+    updateUserRolesInServer,
     uploadFile,
     sendPasswordReset,
   };

@@ -236,13 +236,15 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                           </div>
                         </div>
                       ) : (
-                        <>
-                            <div className="text-sm text-foreground/90">
-                            <MessageRenderer content={message.text} imageUrl={message.imageUrl} />
-                            {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
-                            </div>
-                        </>
+                          <MessageRenderer 
+                            content={message.text} 
+                            imageUrl={message.imageUrl}
+                            reactions={message.reactions}
+                            messageId={message.id}
+                            messageContext={{ type: 'dm', chatId: chat.id }}
+                          />
                       )}
+                      {message.edited && !isEditing && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
                     </div>
                   </div>
 
