@@ -20,16 +20,16 @@ import {
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { QOLFORU_BOT_ID, QOLFORU_BOT_USERNAME, QOLFORU_BOT_PHOTO_URL } from '@/ai/bots/qolforu-config';
-import type { Embed, Server } from '@/lib/types';
+import type { Embed, Server, UserProfile } from '@/lib/types';
 import { SlashCommandInput, SlashCommandOutput } from './slash-command-flow';
 
 // This function runs once on server startup to ensure the bot user exists.
-async function ensureBotUser() {
+export async function ensureQolforuBotUser(): Promise<UserProfile> {
     const botUserRef = doc(db, 'users', QOLFORU_BOT_ID);
     const botUserDoc = await getDoc(botUserRef);
     if (!botUserDoc.exists()) {
         console.log(`Bot user not found. Creating '${QOLFORU_BOT_USERNAME}'...`);
-        await setDoc(botUserRef, {
+        const botData: Omit<UserProfile, 'id'> = {
             uid: QOLFORU_BOT_ID,
             displayName: QOLFORU_BOT_USERNAME,
             displayName_lowercase: QOLFORU_BOT_USERNAME.toLowerCase(),
@@ -41,13 +41,16 @@ async function ensureBotUser() {
             bio: "I'm qolforu, a bot designed to bring quality-of-life features to your server. Use my commands like /poll and /embed to spice up your conversations!",
             createdAt: serverTimestamp(),
             badges: ['bot']
-        });
+        };
+        await setDoc(botUserRef, botData);
         console.log("qolforu-bot user created in Firestore.");
+        return { id: QOLFORU_BOT_ID, ...botData };
     }
+    return { id: botUserDoc.id, ...botUserDoc.data() } as UserProfile;
 }
 
 // Immediately invoke the function to ensure the bot user exists on startup.
-ensureBotUser().catch(console.error);
+ensureQolforuBotUser().catch(console.error);
 
 
 async function findServer(serverId: string): Promise<Server> {

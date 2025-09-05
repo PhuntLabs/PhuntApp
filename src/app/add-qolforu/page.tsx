@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,38 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { QOLFORU_BOT_ID, QOLFORU_BOT_USERNAME, QOLFORU_BOT_PHOTO_URL } from '@/ai/bots/qolforu-config';
+import { ensureQolforuBotUser } from '@/ai/flows/qolforu-bot-flow';
+import { QOLFORU_BOT_PHOTO_URL } from '@/ai/bots/qolforu-config';
 import { Loader2 } from 'lucide-react';
-import type { UserProfile } from '@/lib/types';
 import Link from 'next/link';
-
-async function ensureBotUser(): Promise<UserProfile> {
-    const botUserRef = doc(db, 'users', QOLFORU_BOT_ID);
-    const botUserDoc = await getDoc(botUserRef);
-    if (!botUserDoc.exists()) {
-        console.log(`Bot user not found. Creating '${QOLFORU_BOT_USERNAME}'...`);
-        const botData: Omit<UserProfile, 'id'> = {
-            uid: QOLFORU_BOT_ID,
-            displayName: QOLFORU_BOT_USERNAME,
-            displayName_lowercase: QOLFORU_BOT_USERNAME.toLowerCase(),
-            email: 'qolforu@whisper.chat',
-            isBot: true,
-            isDiscoverable: true,
-            isVerified: true,
-            photoURL: QOLFORU_BOT_PHOTO_URL,
-            bio: "I'm qolforu, a bot designed to bring quality-of-life features to your server. Use my commands like /poll and /embed to spice up your conversations!",
-            createdAt: serverTimestamp(),
-            badges: ['bot']
-        };
-        await setDoc(botUserRef, botData);
-        console.log("qolforu-bot user created in Firestore.");
-        return { id: QOLFORU_BOT_ID, ...botData };
-    }
-    return { id: botUserDoc.id, ...botUserDoc.data() } as UserProfile;
-}
-
 
 export default function AddQolforuPage() {
     const { user, authUser, loading: authLoading } = useAuth();
@@ -62,7 +35,7 @@ export default function AddQolforuPage() {
         }
         setIsAdding(true);
         try {
-            const bot = await ensureBotUser();
+            const bot = await ensureQolforuBotUser();
             await addBotToServer(bot.uid, selectedServerId);
             toast({ title: 'Success!', description: `${bot.displayName} has been added to your server.` });
             router.push('/');
