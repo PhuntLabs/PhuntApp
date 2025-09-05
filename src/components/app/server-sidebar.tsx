@@ -193,7 +193,7 @@ export function ServerSidebar({
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-            <SidebarTrigger className="md:hidden" />
+            <SidebarTrigger />
         </div>
     )
 

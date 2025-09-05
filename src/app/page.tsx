@@ -218,7 +218,7 @@ export default function Home() {
         const updatedServer = { ...server, channels: [...(server.channels || []), newChannel]};
         setServer(updatedServer);
         setSelectedChannel(newChannel);
-        toast({ title: `Channel #${newChannel.name} created!` });
+        toast({ title: `#${newChannel.name} created!` });
       }
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error Creating Channel', description: e.message });
@@ -295,7 +295,7 @@ export default function Home() {
                   <>
                       <div className="p-4 border-b flex items-center justify-between">
                           <h2 className="font-semibold text-lg truncate">Direct Messages</h2>
-                          <SidebarTrigger className="md:hidden" />
+                          <SidebarTrigger />
                       </div>
                       <div className="py-2">
                       {incomingRequests.length > 0 && (
