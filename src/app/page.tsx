@@ -25,12 +25,13 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
 import { BOT_ID, BOT_USERNAME } from '@/ai/bots/config';
-import { Mic, Settings } from 'lucide-react';
+import { AtSign, Mic, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServerSidebar } from '@/components/app/server-sidebar';
 import { MemberList } from '@/components/app/member-list';
 import { SettingsDialog } from '@/components/app/settings-dialog';
 import { UpdateLog } from '@/components/app/update-log';
+import { MentionsDialog } from '@/components/app/mentions-dialog';
 
 
 export default function Home() {
@@ -264,6 +265,25 @@ export default function Home() {
     }
   }
 
+  const handleJumpToMessage = (context: { type: 'dm', chatId: string } | { type: 'channel', serverId: string, channelId: string }) => {
+    if (context.type === 'dm') {
+      const chat = chats.find(c => c.id === context.chatId);
+      if (chat) {
+        handleSelectServer(null);
+        setSelectedChat(chat);
+      }
+    } else {
+      const server = servers.find(s => s.id === context.serverId);
+      if (server) {
+        const channel = server.channels?.find(c => c.id === context.channelId);
+        if (channel) {
+          handleSelectServer(server);
+          handleSelectChannel(channel);
+        }
+      }
+    }
+  };
+
 
   if (loading || !authUser || !user) {
     return (
@@ -303,7 +323,12 @@ export default function Home() {
                   <>
                       <div className="p-4 border-b flex items-center justify-between">
                           <h2 className="font-semibold text-lg truncate">Direct Messages</h2>
-                          <SidebarTrigger />
+                           <div className="flex items-center">
+                                <MentionsDialog onJumpToMessage={handleJumpToMessage}>
+                                    <Button variant="ghost" size="icon" className="size-7 text-muted-foreground"><AtSign className="size-4"/></Button>
+                                </MentionsDialog>
+                                <SidebarTrigger />
+                            </div>
                       </div>
                       <div className="py-2">
                       {incomingRequests.length > 0 && (

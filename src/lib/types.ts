@@ -1,4 +1,5 @@
 
+
 import { FieldValue, Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 
@@ -52,6 +53,9 @@ export interface Message {
     senderId: string;
     senderDisplayName: string;
     text: string;
+  };
+  reactions?: {
+    [emoji: string]: string[]; // emoji: list of user IDs
   };
 }
 
