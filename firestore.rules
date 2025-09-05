@@ -3,51 +3,81 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper functions
     function isAuth() {
       return request.auth != null;
     }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
+    
+    // USERS
     match /users/{userId} {
+      // Anyone can see user profiles (for displaying names, avatars, etc.)
       allow read: if isAuth();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      // Only the user themselves can update their own profile
+      allow update: if isAuth() && request.auth.uid == userId;
+      // Users are created during signup, handled by a specific rule.
+      allow create: if isAuth() && request.auth.uid == userId;
     }
     
+    // FRIEND REQUESTS
     match /friendRequests/{requestId} {
-      allow read: if isAuth() && (request.auth.uid == resource.data.to || request.auth.uid == resource.data.from.id);
+       // A user can read a request if they are the sender or the receiver
+      allow read: if isAuth() && (request.auth.uid == resource.data.from.id || request.auth.uid == resource.data.to);
+      
+      // A user can create a request if they are the sender
       allow create: if isAuth() && request.auth.uid == request.resource.data.from.id;
+      
+      // A user can update a request (to accept/decline) ONLY if they are the recipient
       allow update: if isAuth() && request.auth.uid == resource.data.to;
     }
 
+    // CHATS
     match /chats/{chatId} {
-      allow read, delete: if isAuth() && request.auth.uid in resource.data.members;
-      allow create: if isAuth() && request.auth.uid in request.resource.data.members;
-      match /messages/{messageId} {
-        allow read, create, update, delete: if isAuth() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
-      }
-    }
-
-    match /servers/{serverId} {
-      allow read: if isAuth();
-      allow create: if isAuth() && request.auth.uid == request.resource.data.ownerId;
-      // Allow owner to update everything.
-      // Allow any authenticated user to update a server ONLY to add themselves to the members list.
-      allow update: if (isAuth() && request.auth.uid == resource.data.ownerId) || 
-                    (isAuth() && request.resource.data.members == resource.data.members.concat([request.auth.uid]));
-      allow delete: if isAuth() && request.auth.uid == resource.data.ownerId;
-
-      match /channels/{channelId} {
-        allow read: if isAuth();
-        allow create, update, delete: if isAuth() && request.auth.uid == get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId;
-
+        // Allow read/write/delete if the user is a member of the chat
+        allow read, update, delete: if isAuth() && request.auth.uid in resource.data.members;
+        // Allow create if the user is a member of the new chat
+        allow create: if isAuth() && request.auth.uid in request.resource.data.members;
+        
+        // MESSAGES (subcollection)
         match /messages/{messageId} {
-          allow read, create, update, delete: if isAuth() && request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+            allow read, create: if isAuth() && get(/databases/$(database)/documents/chats/$(chatId)).data.members.hasAny([request.auth.uid]);
+            allow update, delete: if isAuth() && request.auth.uid == resource.data.sender;
         }
-      }
+    }
+    
+    // SERVERS
+    match /servers/{serverId} {
+        // Any authenticated user can read server info (for discovery/join page)
+        allow read: if isAuth();
+
+        // Only the owner can create a server
+        allow create: if isAuth() && request.resource.data.ownerId == request.auth.uid;
+        
+        // UPDATE RULE for joining
+        allow update: if isAuth() && 
+                      (
+                        // Owner can update anything
+                        request.auth.uid == resource.data.ownerId || 
+                        // Any user can join (add themselves to members list)
+                        (
+                            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
+                            request.resource.data.members == resource.data.members.concat([request.auth.uid])
+                        )
+                      );
+                      
+        // Only the owner can delete
+        allow delete: if isAuth() && request.auth.uid == resource.data.ownerId;
+
+        // CHANNELS (subcollection)
+        match /channels/{channelId} {
+            allow read: if isAuth();
+            allow create, update, delete: if isAuth() && get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId == request.auth.uid;
+            
+            // MESSAGES (sub-subcollection)
+            match /messages/{messageId} {
+                allow read, create: if isAuth() && get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
+                allow update, delete: if isAuth() && request.auth.uid == resource.data.sender;
+            }
+        }
     }
   }
 }
