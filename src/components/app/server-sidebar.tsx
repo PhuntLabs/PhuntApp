@@ -25,7 +25,7 @@ import { EditChannelDialog } from './edit-channel-dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { InviteDialog } from './invite-dialog';
-import { Badge } from '../ui/badge';
+import { useChannelMessages } from '@/hooks/use-channel-messages';
 
 interface ServerSidebarProps {
   server: Server;
@@ -45,12 +45,108 @@ const channelIcons: Record<ChannelType, React.ElementType> = {
     forum: MessageSquare,
 };
 
+const ChannelMenuItem = ({
+    channel,
+    isOwner,
+    selectedChannel,
+    onSelectChannel,
+    onUpdateChannel,
+    onDeleteChannel,
+}: {
+    channel: Channel;
+    isOwner: boolean;
+    selectedChannel: Channel | null;
+    onSelectChannel: (channel: Channel) => void;
+    onUpdateChannel: (channelId: string, data: { name?: string; type?: ChannelType; }) => Promise<void>;
+    onDeleteChannel: (channelId: string) => Promise<void>;
+}) => {
+    const { authUser } = useAuth();
+    // This hook will fetch messages for THIS specific channel
+    const { messages } = useChannelMessages(channel.serverId, channel.id);
 
-export function ServerSidebar({ 
-    server, 
-    selectedChannel, 
-    onSelectChannel, 
-    onUpdateServer, 
+    const hasUnreadMention = useMemo(() => {
+        if (!authUser) return false;
+        // Don't show notification if we're already in the channel
+        if (selectedChannel?.id === channel.id) return false;
+        // Check if any message in this channel mentions the current user
+        return messages.some(msg => msg.mentions?.includes(authUser.uid));
+    }, [messages, authUser, selectedChannel, channel.id]);
+
+    const Icon = channelIcons[channel.type] || Hash;
+
+    return (
+        <SidebarMenuItem className="px-2 group/channel">
+            <div className="flex items-center w-full relative">
+                <SidebarMenuButton
+                    isActive={selectedChannel?.id === channel.id}
+                    onClick={() => onSelectChannel(channel)}
+                    className={cn(
+                        "w-full justify-start h-8 px-2",
+                        hasUnreadMention && "text-white font-bold"
+                    )}
+                >
+                    <Icon className="size-4 text-muted-foreground" />
+                    <span className="truncate">{channel.name}</span>
+                </SidebarMenuButton>
+
+                {hasUnreadMention && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2 bg-white rounded-r-full" />}
+
+                {isOwner && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover/channel:opacity-100">
+                                <MoreVertical className="size-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent side="right">
+                            <EditChannelDialog channel={channel} onUpdateChannel={onUpdateChannel}>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    <span>Edit Channel</span>
+                                </DropdownMenuItem>
+                            </EditChannelDialog>
+                            <DropdownMenuSeparator />
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem
+                                        className="text-destructive focus:text-destructive"
+                                        onSelect={(e) => e.preventDefault()}
+                                        disabled={channel.name === '!general'}
+                                    >
+                                        <Trash className="mr-2 h-4 w-4" />
+                                        <span>Delete Channel</span>
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete #{channel.name}?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Are you sure you want to permanently delete this channel? This cannot be undone.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => onDeleteChannel(channel.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                            Delete
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+            </div>
+        </SidebarMenuItem>
+    );
+};
+
+
+export function ServerSidebar({
+    server,
+    selectedChannel,
+    onSelectChannel,
+    onUpdateServer,
     onDeleteServer,
     onCreateChannel,
     onUpdateChannel,
@@ -62,9 +158,9 @@ export function ServerSidebar({
     const sortedChannels = useMemo(() => {
         return server.channels?.sort((a, b) => (a.position || 0) - (b.position || 0)) || [];
     }, [server.channels]);
-    
+
     const renderHeader = () => (
-         <div className="p-0 border-b">
+        <div className="p-0 border-b">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <button className="flex items-center justify-between p-4 w-full hover:bg-accent/50 transition-colors">
@@ -72,17 +168,17 @@ export function ServerSidebar({
                         <ChevronDown className="size-5 shrink-0 text-muted-foreground" />
                     </button>
                 </DropdownMenuTrigger>
-                 <DropdownMenuContent className="w-56" align="start">
+                <DropdownMenuContent className="w-56" align="start">
                     <InviteDialog serverId={server.id}>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-indigo-400 focus:bg-indigo-500/20 focus:text-indigo-300">
-                             <UserPlus className="mr-2 h-4 w-4" />
+                            <UserPlus className="mr-2 h-4 w-4" />
                             <span>Invite People</span>
                         </DropdownMenuItem>
                     </InviteDialog>
                     {isOwner && (
                         <>
                             <DropdownMenuSeparator />
-                             <EditServerDialog server={server} onUpdateServer={onUpdateServer} onDeleteServer={onDeleteServer}>
+                            <EditServerDialog server={server} onUpdateServer={onUpdateServer} onDeleteServer={onDeleteServer}>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                     <Settings className="mr-2 h-4 w-4" />
                                     <span>Server Settings</span>
@@ -102,89 +198,31 @@ export function ServerSidebar({
 
     return (
         <div className="h-full flex flex-col bg-card/40">
-           {renderHeader()}
+            {renderHeader()}
             <div className="p-0 flex-1 overflow-y-auto">
                 <SidebarGroup className="py-2">
                     <SidebarGroupLabel className="px-2 flex items-center justify-between">
-                      Text Channels
-                      {isOwner && (
-                         <AddChannelDialog onCreateChannel={onCreateChannel}>
-                            <button className="text-muted-foreground hover:text-foreground">
-                                <Plus className="size-4"/>
-                            </button>
-                         </AddChannelDialog>
-                      )}
+                        Text Channels
+                        {isOwner && (
+                            <AddChannelDialog onCreateChannel={onCreateChannel}>
+                                <button className="text-muted-foreground hover:text-foreground">
+                                    <Plus className="size-4" />
+                                </button>
+                            </AddChannelDialog>
+                        )}
                     </SidebarGroupLabel>
                     <SidebarMenu>
-                        {sortedChannels.map((channel) => {
-                            const Icon = channelIcons[channel.type] || Hash;
-                            const hasMention = channel.mentions?.includes(authUser?.uid || '');
-                            return (
-                                <SidebarMenuItem key={channel.id} className="px-2 group/channel">
-                                    <div className="flex items-center w-full relative">
-                                        <SidebarMenuButton 
-                                            isActive={selectedChannel?.id === channel.id}
-                                            onClick={() => onSelectChannel(channel)}
-                                            className={cn(
-                                                "w-full justify-start h-8 px-2",
-                                                hasMention && ! (selectedChannel?.id === channel.id) && "text-white font-bold"
-                                            )}
-                                        >
-                                            <Icon className="size-4 text-muted-foreground"/>
-                                            <span className="truncate">{channel.name}</span>
-                                        </SidebarMenuButton>
-                                        
-                                        {hasMention && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2 bg-white rounded-r-full" />}
-                                        
-                                        {isOwner && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover/channel:opacity-100">
-                                                        <MoreVertical className="size-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent side="right">
-                                                    <EditChannelDialog channel={channel} onUpdateChannel={onUpdateChannel}>
-                                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                                            <Pencil className="mr-2 h-4 w-4" />
-                                                            <span>Edit Channel</span>
-                                                        </DropdownMenuItem>
-                                                    </EditChannelDialog>
-                                                    <DropdownMenuSeparator />
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem 
-                                                                className="text-destructive focus:text-destructive" 
-                                                                onSelect={(e) => e.preventDefault()}
-                                                                disabled={channel.name === '!general'}
-                                                            >
-                                                                <Trash className="mr-2 h-4 w-4" />
-                                                                <span>Delete Channel</span>
-                                                            </DropdownMenuItem>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                            <AlertDialogTitle>Delete #{channel.name}?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Are you sure you want to permanently delete this channel? This cannot be undone.
-                                                            </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => onDeleteChannel(channel.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                                                Delete
-                                                            </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )}
-                                    </div>
-                                </SidebarMenuItem>
-                            )
-                        })}
+                        {sortedChannels.map((channel) => (
+                            <ChannelMenuItem
+                                key={channel.id}
+                                channel={channel}
+                                isOwner={isOwner}
+                                selectedChannel={selectedChannel}
+                                onSelectChannel={onSelectChannel}
+                                onUpdateChannel={onUpdateChannel}
+                                onDeleteChannel={onDeleteChannel}
+                            />
+                        ))}
                     </SidebarMenu>
                 </SidebarGroup>
             </div>

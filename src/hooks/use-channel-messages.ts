@@ -15,7 +15,6 @@ import {
   deleteDoc,
   where,
   getDocs,
-  arrayUnion,
 } from 'firebase/firestore';
 import type { Message } from '@/lib/types';
 import { useAuth } from './use-auth';
@@ -84,15 +83,6 @@ export function useChannelMessages(serverId: string | undefined, channelId: stri
 
       const messagesRef = collection(db, 'servers', serverId, 'channels', channelId, 'messages');
       await addDoc(messagesRef, messagePayload);
-
-      // If there are mentions, update the channel document
-      if (mentionedUserIds.length > 0) {
-        const channelRef = doc(db, 'servers', serverId, 'channels', channelId);
-        // Use arrayUnion to add without duplicates. Firestore handles this atomically.
-        await updateDoc(channelRef, {
-            mentions: arrayUnion(...mentionedUserIds)
-        });
-      }
     },
     [authUser, serverId, channelId]
   );
