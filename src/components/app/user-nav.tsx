@@ -413,7 +413,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                             </>
                             )}
 
-                             {canManageRoles && allServerRoles.length > 0 && !isCurrentUser && (
+                             {canManageRoles && allServerRoles.length > 0 && (
                                 <>
                                 <div className="mb-2">
                                     <h4 className="text-xs font-bold uppercase text-muted-foreground">Manage Roles</h4>
