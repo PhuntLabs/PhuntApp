@@ -17,10 +17,16 @@ import {
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
+  sendPasswordResetEmail,
   User,
   UserCredential,
 } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from 'firebase/storage';
 import {
   doc,
   setDoc,
@@ -34,6 +40,8 @@ import {
 } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { createWelcomeChat } from '@/ai/flows/welcome-chat-flow';
+import { v4 as uuidv4 } from 'uuid';
+
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -48,6 +56,8 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<any>;
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
+  uploadFile: (file: File, path: 'avatars' | 'banners') => Promise<string>;
+  sendPasswordReset: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -133,6 +143,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [authUser]
   );
+  
+  const uploadFile = useCallback(async (file: File, path: 'avatars' | 'banners'): Promise<string> => {
+      if (!authUser) throw new Error('Not authenticated');
+      
+      const fileId = uuidv4();
+      const fileExtension = file.name.split('.').pop();
+      const storageRef = ref(storage, `user-assets/${authUser.uid}/${path}/${fileId}.${fileExtension}`);
+      
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      return downloadURL;
+  }, [authUser]);
+
+  const sendPasswordReset = useCallback(async () => {
+    if (!authUser?.email) throw new Error('No email associated with this account.');
+    await sendPasswordResetEmail(auth, authUser.email);
+  }, [authUser]);
+
 
   const signup = async (email: string, pass: string, username: string) => {
     // 1. Check if username is already taken
@@ -211,6 +240,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     updateUserProfile,
+    uploadFile,
+    sendPasswordReset,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
