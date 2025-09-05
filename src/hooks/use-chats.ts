@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -103,14 +104,20 @@ export function useChats(enabled: boolean = true) {
     setLoading(true);
     const q = query(
       collection(db, 'chats'),
-      where('members', 'array-contains', authUser.uid),
-      orderBy('lastMessageTimestamp', 'desc')
+      where('members', 'array-contains', authUser.uid)
     );
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       const chatDocs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatDocument));
       
-      const populatedChats = await Promise.all(chatDocs.map(populateChat));
+      let populatedChats = await Promise.all(chatDocs.map(populateChat));
+
+      // Sort chats by lastMessageTimestamp on the client side
+      populatedChats.sort((a, b) => {
+        const timeA = (a.lastMessageTimestamp as any)?.toMillis() || (a.createdAt as any)?.toMillis() || 0;
+        const timeB = (b.lastMessageTimestamp as any)?.toMillis() || (b.createdAt as any)?.toMillis() || 0;
+        return timeB - timeA;
+      });
 
       setChats(populatedChats);
       
