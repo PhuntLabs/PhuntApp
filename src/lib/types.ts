@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export type UserStatus = 'online' | 'idle' | 'dnd' | 'offline';
 
-export const ALL_BADGES = ['developer', 'beta tester', 'youtuber', 'tiktoker', 'goat'] as const;
+export const ALL_BADGES = ['developer', 'beta tester', 'youtuber', 'tiktoker', 'goat', 'early supporter'] as const;
 export const BadgeType = z.enum(ALL_BADGES);
 export type BadgeType = z.infer<typeof BadgeType>;
 

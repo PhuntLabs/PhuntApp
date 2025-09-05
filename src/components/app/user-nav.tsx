@@ -2,7 +2,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award } from 'lucide-react';
+import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -53,6 +53,7 @@ const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, c
     youtuber: { label: 'Youtuber', icon: PlaySquare, className: 'bg-red-500/20 text-red-300 border-red-500/30' },
     tiktoker: { label: 'Tiktoker', icon: Clapperboard, className: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
     goat: { label: 'The GOAT', icon: Award, className: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+    'early supporter': { label: 'Early Supporter', icon: HeartHandshake, className: 'bg-pink-500/20 text-pink-300 border-pink-500/30' },
 };
 
 export function UserNav({ user, logout, as = 'button', children, serverContext }: UserNavProps) {
