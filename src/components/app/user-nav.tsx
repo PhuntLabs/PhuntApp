@@ -239,163 +239,168 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       <PopoverTrigger asChild>
         {TriggerComponent}
       </PopoverTrigger>
-      <PopoverContent className="w-80 mb-2 h-auto" side="top" align="start">
+      <PopoverContent className="w-80 mb-2 h-auto p-0" side="top" align="start">
       <TooltipProvider>
-        <div className="relative h-24 bg-accent rounded-t-lg -mx-4 -mt-4 overflow-hidden">
-            {user.bannerURL && (
-                <Image src={user.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
-            )}
-            {user.profileEffect === 'rain' && <RainEffect />}
-             <div className="absolute top-16 left-4">
-                 <div className="relative">
-                    <Avatar className="size-20 border-4 border-popover rounded-full">
-                      <AvatarImage src={displayUser.photoURL || undefined} />
-                      <AvatarFallback className="text-2xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                     {user.avatarEffect === 'rage' && <RageEffect />}
-                    <div className={cn("absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-popover flex items-center justify-center", statusColor.replace('text-', 'bg-'))}>
-                        <Tooltip>
-                           <TooltipTrigger>
-                             {user.customStatus ? <MessageCircleMore className="size-3 text-white"/> : <StatusIcon className="size-3 text-white"/>}
-                           </TooltipTrigger>
-                           <TooltipContent side="bottom">
-                                {statusLabel}
-                           </TooltipContent>
-                        </Tooltip>
-                    </div>
+        <div className="flex flex-col">
+            <div className="relative">
+                <div className="h-20 bg-accent relative">
+                     {user.bannerURL && (
+                        <Image src={user.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} />
+                    )}
+                    {user.profileEffect === 'rain' && <RainEffect />}
                 </div>
-            </div>
-            <div className="absolute top-4 right-4 flex justify-end gap-1">
-                 {!isCurrentUser && (
-                     <Button variant="outline" size="sm" onClick={handleAddFriend}>
-                        <UserPlus className="mr-2 h-3.5 w-3.5"/> Add Friend
-                    </Button>
-                )}
-            </div>
-        </div>
-        <div className="pt-14">
-           {!isEditing ? (
-             <>
-                <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold">{displayUser.displayName}</h3>
-                    <div className="flex items-center gap-1">
-                    {allBadges.map((badgeKey) => {
-                        const badgeInfo = badgeConfig[badgeKey as BadgeType];
-                        if (!badgeInfo) return null;
-                        const { label, icon: Icon, className } = badgeInfo;
-                        return (
-                            <Tooltip key={badgeKey}>
-                                <TooltipTrigger>
-                                    <div className={cn("flex items-center justify-center size-5 rounded-full", className.replace(/border-.*$/, ''))}>
-                                        <Icon className="size-3" />
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent><p>{label}</p></TooltipContent>
+                <div className="absolute top-12 left-4">
+                     <div className="relative">
+                        <Avatar className="size-20 border-4 border-popover rounded-full">
+                          <AvatarImage src={displayUser.photoURL || undefined} />
+                          <AvatarFallback className="text-2xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                         {user.avatarEffect === 'rage' && <RageEffect />}
+                        <div className={cn("absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-popover flex items-center justify-center", statusColor.replace('text-', 'bg-'))}>
+                            <Tooltip>
+                               <TooltipTrigger>
+                                 {user.customStatus ? <MessageCircleMore className="size-3 text-white"/> : <StatusIcon className="size-3 text-white"/>}
+                               </TooltipTrigger>
+                               <TooltipContent side="bottom">
+                                    {statusLabel}
+                               </TooltipContent>
                             </Tooltip>
-                        )
-                    })}
-                    </div>
-                </div>
-
-                <p className={cn("text-sm text-muted-foreground -mt-1", !user.email && 'italic')}>{user.email || 'No email provided'}</p>
-                 {user.customStatus && <p className="text-sm text-foreground mt-1">{user.customStatus}</p>}
-                <Separator className="my-2" />
-                 {serverContext && serverRoles && serverRoles.length > 0 && (
-                  <>
-                    <div className="mb-2">
-                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Roles</h4>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                            {serverRoles.map(role => (
-                                <Badge key={role.id} variant="outline" className="font-medium" style={{ borderColor: role.color, color: role.color, backgroundColor: `${role.color}1A`}}>
-                                    {role.name}
-                                </Badge>
-                            ))}
                         </div>
                     </div>
-                    <Separator className="my-2" />
-                  </>
-                )}
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
-                
-                {isCurrentUser && (
-                    <>
-                    <Separator className="my-4" />
-                    <div className="flex flex-col gap-1">
-                        <SettingsDialog defaultSection="account" onOpenChange={(open) => !open && setIsPopoverOpen(false)}>
-                          <Button variant="outline" className="justify-start">
-                              <Pencil className="mr-2 h-4 w-4" />
-                              <span>Edit User Profile</span>
-                          </Button>
-                        </SettingsDialog>
-                        {serverContext && (
-                             <Button variant="outline" className="justify-start" onClick={() => setIsEditing(true)}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                <span>Edit Server Profile</span>
-                            </Button>
-                        )}
-                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                 <Button variant="ghost" className="justify-start">
-                                    <StatusIcon className={cn("mr-2 h-4 w-4", statusColor)} />
-                                    <span>{statusLabel}</span>
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                {Object.entries(statusConfig).map(([key, {label, icon: Icon, color}]) => (
-                                    <DropdownMenuItem key={key} onSelect={() => handleStatusChange(key as UserStatus)}>
-                                        <Icon className={cn("mr-2 h-4 w-4", color)} />
-                                        <span>{label}</span>
-                                    </DropdownMenuItem>
-                                ))}
-                                <DropdownMenuSeparator />
-                                <div className="p-2">
-                                     <Label htmlFor="custom-status-dropdown">Custom Status</Label>
-                                     <div className="flex items-center gap-2 mt-1">
-                                        <Input
-                                            id="custom-status-dropdown"
-                                            placeholder="Set a custom status"
-                                            value={customStatus}
-                                            onChange={(e) => setCustomStatus(e.target.value)}
-                                            onKeyDown={(e) => { if(e.key === 'Enter') handleCustomStatusSave(); }}
-                                        />
-                                        <Button size="icon" className="size-8" onClick={handleCustomStatusSave}><Save/></Button>
-                                     </div>
-                                </div>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <SettingsDialog onOpenChange={(open) => !open && setIsPopoverOpen(false)}>
-                            <Button variant="ghost" className="justify-start">
-                                <Settings className="mr-2 h-4 w-4" />
-                                <span>Settings</span>
-                            </Button>
-                         </SettingsDialog>
-                        {logout && (
-                          <Button variant="ghost" onClick={logout} className="justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10">
-                              <LogOut className="mr-2 h-4 w-4" />
-                              <span>Log out</span>
-                          </Button>
-                        )}
+                </div>
+                 <div className="absolute top-4 right-4 flex justify-end gap-1">
+                     {!isCurrentUser && (
+                         <Button variant="outline" size="sm" onClick={handleAddFriend}>
+                            <UserPlus className="mr-2 h-3.5 w-3.5"/> Add Friend
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            <div className="pt-12 px-4 pb-4">
+               {!isEditing ? (
+                 <>
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-bold">{displayUser.displayName}</h3>
+                        <div className="flex items-center gap-1">
+                        {allBadges.map((badgeKey) => {
+                            const badgeInfo = badgeConfig[badgeKey as BadgeType];
+                            if (!badgeInfo) return null;
+                            const { label, icon: Icon, className } = badgeInfo;
+                            return (
+                                <Tooltip key={badgeKey}>
+                                    <TooltipTrigger>
+                                        <div className={cn("flex items-center justify-center size-5 rounded-full", className.replace(/border-.*$/, ''))}>
+                                            <Icon className="size-3" />
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>{label}</p></TooltipContent>
+                                </Tooltip>
+                            )
+                        })}
+                        </div>
                     </div>
-                    </>
-                )}
-             </>
-           ) : (
-             <div className="space-y-4 h-auto max-h-[calc(100vh-20rem)] overflow-y-auto pr-2">
-                <h4 className="font-semibold">Editing Profile for <span className="text-primary">{serverContext?.name}</span></h4>
-                <div className="space-y-1">
-                    <Label htmlFor="nickname">Server Nickname</Label>
-                    <Input id="nickname" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder={user.displayName} />
-                </div>
-                <div className="space-y-1">
-                    <Label htmlFor="server-avatar">Server Avatar URL</Label>
-                    <Input id="server-avatar" value={serverAvatar} onChange={(e) => setServerAvatar(e.target.value)} placeholder="https://..." />
-                </div>
-                 <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={handleCancel}>Cancel</Button>
-                    <Button size="sm" onClick={handleServerProfileUpdate}>Save</Button>
+
+                    <p className={cn("text-sm text-muted-foreground -mt-1", !user.email && 'italic')}>{user.email || 'No email provided'}</p>
+                     {user.customStatus && <p className="text-sm text-foreground mt-1">{user.customStatus}</p>}
+                    <Separator className="my-2" />
+                     {serverContext && serverRoles && serverRoles.length > 0 && (
+                      <>
+                        <div className="mb-2">
+                            <h4 className="text-xs font-bold uppercase text-muted-foreground">Roles</h4>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                                {serverRoles.map(role => (
+                                    <Badge key={role.id} variant="outline" className="font-medium" style={{ borderColor: role.color, color: role.color, backgroundColor: `${role.color}1A`}}>
+                                        {role.name}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+                        <Separator className="my-2" />
+                      </>
+                    )}
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
+                    
+                    {isCurrentUser && (
+                        <>
+                        <Separator className="my-4" />
+                        <div className="flex flex-col gap-1">
+                            <SettingsDialog defaultSection="account" onOpenChange={(open) => !open && setIsPopoverOpen(false)}>
+                              <Button variant="outline" className="justify-start">
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  <span>Edit User Profile</span>
+                              </Button>
+                            </SettingsDialog>
+                            {serverContext && (
+                                 <Button variant="outline" className="justify-start" onClick={() => setIsEditing(true)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    <span>Edit Server Profile</span>
+                                </Button>
+                            )}
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                     <Button variant="ghost" className="justify-start">
+                                        <StatusIcon className={cn("mr-2 h-4 w-4", statusColor)} />
+                                        <span>{statusLabel}</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    {Object.entries(statusConfig).map(([key, {label, icon: Icon, color}]) => (
+                                        <DropdownMenuItem key={key} onSelect={() => handleStatusChange(key as UserStatus)}>
+                                            <Icon className={cn("mr-2 h-4 w-4", color)} />
+                                            <span>{label}</span>
+                                        </DropdownMenuItem>
+                                    ))}
+                                    <DropdownMenuSeparator />
+                                    <div className="p-2">
+                                         <Label htmlFor="custom-status-dropdown">Custom Status</Label>
+                                         <div className="flex items-center gap-2 mt-1">
+                                            <Input
+                                                id="custom-status-dropdown"
+                                                placeholder="Set a custom status"
+                                                value={customStatus}
+                                                onChange={(e) => setCustomStatus(e.target.value)}
+                                                onKeyDown={(e) => { if(e.key === 'Enter') handleCustomStatusSave(); }}
+                                            />
+                                            <Button size="icon" className="size-8" onClick={handleCustomStatusSave}><Save/></Button>
+                                         </div>
+                                    </div>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <SettingsDialog onOpenChange={(open) => !open && setIsPopoverOpen(false)}>
+                                <Button variant="ghost" className="justify-start">
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    <span>Settings</span>
+                                </Button>
+                             </SettingsDialog>
+                            {logout && (
+                              <Button variant="ghost" onClick={logout} className="justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10">
+                                  <LogOut className="mr-2 h-4 w-4" />
+                                  <span>Log out</span>
+                              </Button>
+                            )}
+                        </div>
+                        </>
+                    )}
+                 </>
+               ) : (
+                 <div className="space-y-4 h-auto max-h-[calc(100vh-20rem)] overflow-y-auto pr-2">
+                    <h4 className="font-semibold">Editing Profile for <span className="text-primary">{serverContext?.name}</span></h4>
+                    <div className="space-y-1">
+                        <Label htmlFor="nickname">Server Nickname</Label>
+                        <Input id="nickname" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder={user.displayName} />
+                    </div>
+                    <div className="space-y-1">
+                        <Label htmlFor="server-avatar">Server Avatar URL</Label>
+                        <Input id="server-avatar" value={serverAvatar} onChange={(e) => setServerAvatar(e.target.value)} placeholder="https://..." />
+                    </div>
+                     <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={handleCancel}>Cancel</Button>
+                        <Button size="sm" onClick={handleServerProfileUpdate}>Save</Button>
+                     </div>
                  </div>
-             </div>
-           )}
+               )}
+            </div>
         </div>
         </TooltipProvider>
       </PopoverContent>
