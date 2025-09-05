@@ -56,7 +56,7 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<any>;
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
-  uploadFile: (file: File, path: 'avatars' | 'banners') => Promise<string>;
+  uploadFile: (file: File, path: 'avatars' | 'banners' | `server-emojis/${string}`) => Promise<string>;
   sendPasswordReset: () => Promise<void>;
 }
 
@@ -144,12 +144,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [authUser]
   );
   
-  const uploadFile = useCallback(async (file: File, path: 'avatars' | 'banners'): Promise<string> => {
+  const uploadFile = useCallback(async (file: File, path: 'avatars' | 'banners' | `server-emojis/${string}`): Promise<string> => {
       if (!authUser) throw new Error('Not authenticated');
       
       const fileId = uuidv4();
       const fileExtension = file.name.split('.').pop();
-      const storageRef = ref(storage, `user-assets/${authUser.uid}/${path}/${fileId}.${fileExtension}`);
+      let storagePath = '';
+
+      if (path.startsWith('server-emojis/')) {
+          const serverId = path.split('/')[1];
+          storagePath = `server-assets/${serverId}/emojis/${fileId}.${fileExtension}`;
+      } else {
+          storagePath = `user-assets/${authUser.uid}/${path}/${fileId}.${fileExtension}`;
+      }
+      
+      const storageRef = ref(storage, storagePath);
       
       await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(storageRef);

@@ -52,6 +52,11 @@ export interface FriendRequest {
     createdAt: Timestamp;
 }
 
+export interface CustomEmoji {
+    name: string;
+    url: string;
+}
+
 export interface Server {
     id:string;
     name: string;
@@ -62,6 +67,7 @@ export interface Server {
     channels?: Channel[];
     isPublic?: boolean;
     description?: string;
+    customEmojis?: CustomEmoji[];
 }
 
 export type ChannelType = 'text' | 'announcement' | 'rules' | 'forum';
