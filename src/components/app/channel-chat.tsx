@@ -2,7 +2,7 @@
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji } from '@/lib/types';
-import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X } from 'lucide-react';
+import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, BadgeCheck } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -18,6 +18,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Image from 'next/image';
+import { Badge } from '../ui/badge';
 
 const standardEmojis: Emoji[] = [
     { name: "grinning", char: "😀", keywords: ["happy", "joy", "smile"] },
@@ -201,6 +202,11 @@ export function ChannelChat({
                                                 <UserNav user={sender as UserProfile} as="trigger" serverContext={server}>
                                                     <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
                                                 </UserNav>
+                                                {sender?.displayName === 'heina' && (
+                                                    <Badge variant="outline" className="h-5 px-1.5 flex items-center gap-1 border-blue-500 text-blue-400 bg-blue-500/10">
+                                                        <BadgeCheck className="size-3" /> DEVELOPER
+                                                    </Badge>
+                                                )}
                                                 <span className="text-xs text-muted-foreground">
                                                     {message.timestamp ? format((message.timestamp as any).toDate(), 'PPpp') : 'sending...'}
                                                 </span>

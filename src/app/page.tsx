@@ -20,7 +20,7 @@ import { useChannels } from '@/hooks/use-channels';
 import { useChannelMessages } from '@/hooks/use-channel-messages';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
-import { doc, deleteDoc, updateDoc, arrayRemove } from 'firebase/firestore';
+import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
@@ -286,7 +286,7 @@ export default function Home() {
         />
         
         <div className="flex flex-1 min-w-0">
-          <div className="w-64 flex-shrink-0 bg-secondary/30 flex-flex-col hidden md:flex">
+          <div className="w-64 flex-shrink-0 bg-secondary/30 flex flex-col hidden md:flex">
               <div className="flex-1 overflow-y-auto">
                   {server ? (
                   <ServerSidebar 

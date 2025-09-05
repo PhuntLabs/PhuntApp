@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { PopulatedChat, Message, UserProfile, Emoji, CustomEmoji } from '@/lib/types';
-import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X } from 'lucide-react';
+import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, BadgeCheck } from 'lucide-react';
 import { UserNav } from './user-nav';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
@@ -188,6 +188,11 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                            <UserNav user={sender} as="trigger">
                               <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
                            </UserNav>
+                          {sender?.displayName === 'heina' && (
+                              <Badge variant="outline" className="h-5 px-1.5 flex items-center gap-1 border-blue-500 text-blue-400 bg-blue-500/10">
+                                <BadgeCheck className="size-3" /> DEVELOPER
+                              </Badge>
+                          )}
                           <span className="text-xs text-muted-foreground">
                             {message.timestamp ? format((message.timestamp as any).toDate(), 'PPpp') : 'sending...'}
                           </span>
