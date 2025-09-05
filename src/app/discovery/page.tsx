@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useEffect } from 'react';
 import { usePublicServers } from '@/hooks/use-public-servers';
 import { Servers } from '@/components/app/servers';
 import { useServers } from '@/hooks/use-servers';
@@ -17,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { usePublicBots } from '@/hooks/use-public-bots';
 import type { UserProfile } from '@/lib/types';
 import { AddBotToServerDialog } from '@/components/app/add-bot-to-server-dialog';
+import { ensureQolforuBotUser } from '@/ai/flows/qolforu-bot-flow';
 
 function ServerList() {
     const { publicServers, loading } = usePublicServers();
@@ -190,6 +192,11 @@ export default function DiscoveryPage() {
     const { servers, loading: userServersLoading, createServer } = useServers();
     
     const loading = userServersLoading;
+
+    useEffect(() => {
+        // Ensure the qolforu bot user exists so it can be discovered.
+        ensureQolforuBotUser();
+    }, []);
 
     return (
         <div className="flex h-screen bg-background/70">
