@@ -7,16 +7,37 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import { Link, X, Loader2 } from 'lucide-react';
+import { Link, X, Loader2, Check } from 'lucide-react';
 import type { Connection } from '@/lib/types';
 import { serverTimestamp } from 'firebase/firestore';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const supportedConnections = [
+  {
+    id: 'github',
+    name: 'GitHub',
+    logo: '/github-logo.svg',
+    description: 'Display your GitHub profile and contributions.',
+    type: 'input',
+  },
   {
     id: 'spotify',
     name: 'Spotify',
     logo: '/spotify-logo.svg',
-    description: 'Show what you\'re listening to as your status.'
+    description: 'Show what you\'re listening to as your status.',
+    type: 'oauth',
   }
 ];
 
@@ -26,39 +47,45 @@ export function ConnectionsSettings() {
 
   const [connections, setConnections] = useState<Connection[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [githubUsername, setGithubUsername] = useState('');
 
   useEffect(() => {
     if (user?.connections) {
       setConnections(user.connections);
+      const ghConnection = user.connections.find(c => c.type === 'github');
+      if (ghConnection) {
+        setGithubUsername(ghConnection.username);
+      }
     }
   }, [user]);
 
-  const handleConnect = async (type: 'spotify') => {
-    // This is a UI simulation. In a real app, this would redirect to your backend for OAuth.
+  const handleConnectGitHub = async () => {
+    if (!githubUsername.trim()) {
+        toast({ variant: 'destructive', title: 'Username required', description: 'Please enter your GitHub username.' });
+        return;
+    }
     setIsUpdating(true);
     try {
-      const newConnection: Connection = {
-        type,
-        username: user?.displayName || 'user', 
-        connectedAt: serverTimestamp(),
-      };
-      
-      const updatedConnections = [...connections, newConnection];
-      await updateUserProfile({ connections: updatedConnections });
-      setConnections(updatedConnections);
+        const existingConnections = connections.filter(c => c.type !== 'github');
+        const newConnection: Connection = {
+            type: 'github',
+            username: githubUsername.trim(),
+            connectedAt: serverTimestamp(),
+        };
 
-      toast({
-        title: 'Connection Successful',
-        description: `Your ${type} account has been linked.`,
-      });
+        const updatedConnections = [...existingConnections, newConnection];
+        await updateUserProfile({ connections: updatedConnections });
+        setConnections(updatedConnections);
+
+        toast({ title: 'GitHub Connected!', description: `Your profile will now show @${newConnection.username}.` });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Failed to connect', description: error.message });
+        toast({ variant: 'destructive', title: 'Failed to connect', description: error.message });
     } finally {
-      setIsUpdating(false);
+        setIsUpdating(false);
     }
   };
   
-  const handleDisconnect = async (type: 'spotify') => {
+  const handleDisconnect = async (type: 'github' | 'spotify') => {
     setIsUpdating(true);
      try {
       const updatedConnections = connections.filter(c => c.type !== type);
@@ -69,6 +96,9 @@ export function ConnectionsSettings() {
         title: 'Disconnected',
         description: `Your ${type} account has been unlinked.`,
       });
+      if (type === 'github') {
+        setGithubUsername('');
+      }
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Failed to disconnect', description: error.message });
     } finally {
@@ -97,6 +127,37 @@ export function ConnectionsSettings() {
             {supportedConnections.map(connInfo => {
                 const existingConnection = connections.find(c => c.type === connInfo.id);
 
+                if (connInfo.id === 'github') {
+                    return (
+                         <div key={connInfo.id} className="p-4 border rounded-lg">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <Image src={connInfo.logo} alt={`${connInfo.name} logo`} width={40} height={40} />
+                                    <div>
+                                        <p className="font-semibold">{connInfo.name}</p>
+                                        <p className="text-sm text-muted-foreground">{connInfo.description}</p>
+                                    </div>
+                                </div>
+                                 {existingConnection && (
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDisconnect('github')} disabled={isUpdating}>
+                                        {isUpdating ? <Loader2 className="size-5 animate-spin" /> : <X className="size-5" />}
+                                    </Button>
+                                )}
+                            </div>
+                            <div className="mt-4 flex items-end gap-2">
+                                <div className="flex-1 space-y-1.5">
+                                    <Label htmlFor="github-username">GitHub Username</Label>
+                                    <Input id="github-username" value={githubUsername} onChange={(e) => setGithubUsername(e.target.value)} placeholder="e.g., torvalds" />
+                                </div>
+                                <Button onClick={handleConnectGitHub} disabled={isUpdating}>
+                                    {isUpdating ? <Loader2 className="mr-2 animate-spin" /> : existingConnection ? <Check className="mr-2" /> : <Link className="mr-2" />}
+                                    {existingConnection ? 'Update' : 'Connect'}
+                                </Button>
+                            </div>
+                         </div>
+                    )
+                }
+
                 return (
                     <div key={connInfo.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center gap-4">
@@ -106,18 +167,9 @@ export function ConnectionsSettings() {
                                 <p className="text-sm text-muted-foreground">{connInfo.description}</p>
                             </div>
                         </div>
-                        {existingConnection ? (
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">{existingConnection.username}</span>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDisconnect(connInfo.id as 'spotify')} disabled={isUpdating}>
-                                    {isUpdating ? <Loader2 className="size-5 animate-spin" /> : <X className="size-5" />}
-                                </Button>
-                            </div>
-                        ) : (
-                            <Button onClick={() => handleConnect(connInfo.id as 'spotify')} disabled={isUpdating}>
-                                {isUpdating ? <Loader2 className="mr-2 animate-spin" /> : <Link className="mr-2" />} Connect
-                            </Button>
-                        )}
+                        <Button onClick={() => toast({ title: 'Coming Soon!', description: 'This integration is not yet available.' })} disabled>
+                            Connect
+                        </Button>
                     </div>
                 )
             })}

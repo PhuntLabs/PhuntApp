@@ -272,6 +272,8 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const { label: statusLabel, icon: StatusIcon, color: statusColor } = statusConfig[userStatus];
   
   const spotifyConnection = user.connections?.find(c => c.type === 'spotify');
+  const githubConnection = user.connections?.find(c => c.type === 'github');
+
 
   const TriggerComponent = as === 'button' ? (
      <button className="flex items-center gap-2 p-1 hover:bg-accent rounded-md cursor-pointer transition-colors w-full text-left">
@@ -409,9 +411,10 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                         </div>
                                     </div>
                                 </div>
-                                 <Separator className="my-2" />
                                 </>
                             )}
+                            
+                            {user.connections && user.connections.length > 0 && <Separator className="my-2" />}
 
                             {user.currentGame && (
                                 <>
@@ -437,8 +440,21 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                 </>
                             )}
 
+                             <div className="flex flex-wrap gap-2">
+                                {githubConnection && (
+                                    <a href={`https://github.com/${githubConnection.username}`} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="outline" size="sm">
+                                            <Image src="/github-logo.svg" alt="GitHub" width={16} height={16} className="mr-2"/>
+                                            GitHub
+                                        </Button>
+                                    </a>
+                                )}
+                            </div>
+
+
                             {serverContext && (
                             <>
+                                <Separator className="my-2" />
                                 <div className="mb-2">
                                     <h4 className="text-xs font-bold uppercase text-muted-foreground">Roles</h4>
                                     <div className="flex flex-wrap gap-1 mt-1">
@@ -453,12 +469,12 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                         )}
                                     </div>
                                 </div>
-                                <Separator className="my-2" />
                             </>
                             )}
 
                              {canManageRoles && allServerRoles.length > 0 && (
                                 <>
+                                <Separator className="my-2" />
                                 <div className="mb-2">
                                     <h4 className="text-xs font-bold uppercase text-muted-foreground">Manage Roles</h4>
                                     <div className="space-y-1 mt-1">
@@ -477,11 +493,10 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                     ))}
                                     </div>
                                 </div>
-                                <Separator className="my-2" />
                                 </>
                             )}
 
-
+                            <Separator className="my-2" />
                             <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
                             
                             {isCurrentUser && (
