@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import type { Channel, Server, Message, UserProfile } from '@/lib/types';
@@ -11,6 +10,7 @@ import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { User } from 'firebase/auth';
+import { MessageRenderer } from './message-renderer';
 
 interface ChannelChatProps {
     channel: Channel;
@@ -155,9 +155,10 @@ export function ChannelChat({
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <p className="text-sm text-foreground/90">{message.text}
-                                                {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
-                                                </p>
+                                                <div className="text-sm text-foreground/90">
+                                                   <MessageRenderer content={message.text} />
+                                                   {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
+                                                </div>
                                             )}
                                         </div>
                                     </div>

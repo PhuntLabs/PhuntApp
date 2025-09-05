@@ -13,6 +13,7 @@ import { UserNav } from './user-nav';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import { format } from 'date-fns';
+import { MessageRenderer } from './message-renderer';
 
 interface ChatProps {
   chat: PopulatedChat;
@@ -149,9 +150,10 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm text-foreground/90">{message.text}
-                          {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
-                        </p>
+                        <div className="text-sm text-foreground/90">
+                           <MessageRenderer content={message.text} />
+                           {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
+                        </div>
                       )}
                     </div>
                   </div>
