@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -37,6 +36,7 @@ import {
   where,
   getDocs,
   updateDoc,
+  onSnapshot,
 } from 'firebase/firestore';
 import type { UserProfile, BadgeType, ServerProfile } from '@/lib/types';
 import { createWelcomeChat } from '@/ai/flows/welcome-chat-flow';
@@ -121,28 +121,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
+        setAuthUser(firebaseUser);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         
         // Set user online
         await setDoc(userDocRef, { status: 'online' }, { merge: true });
         
-        setAuthUser(firebaseUser);
-        const userDoc = await getDoc(userDocRef);
+        const unsubscribeUser = onSnapshot(userDocRef, (userDoc) => {
+           if (userDoc.exists()) {
+             const userData = { id: userDoc.id, ...userDoc.data() } as UserProfile;
+             const userWithBadge = applySpecialBadges(userData);
+             setUser(userWithBadge);
+           } else {
+             setUser({
+               id: firebaseUser.uid,
+               uid: firebaseUser.uid,
+               displayName: firebaseUser.displayName || '',
+               photoURL: firebaseUser.photoURL || null,
+             });
+           }
+        });
 
-        if (userDoc.exists()) {
-          const userData = { id: userDoc.id, ...userDoc.data() } as UserProfile;
-          const userWithBadge = applySpecialBadges(userData);
-          setUser(userWithBadge);
-        } else {
-          // This case might happen briefly if the Firestore doc isn't created yet
-          setUser({
-            id: firebaseUser.uid,
-            uid: firebaseUser.uid,
-            displayName: firebaseUser.displayName || '',
-            photoURL: firebaseUser.photoURL || null,
-          });
-        }
         setLoading(false);
+        return () => unsubscribeUser();
+
       } else {
         setAuthUser(null);
         setUser(null);
@@ -161,8 +163,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Update Firebase Auth profile if display name or photo URL changed
       const profileUpdates: { displayName?: string; photoURL?: string | null } = {};
-      if (displayName !== undefined) profileUpdates.displayName = displayName;
-      if (photoURL !== undefined) profileUpdates.photoURL = photoURL;
+      if (displayName !== undefined && displayName !== authUser.displayName) profileUpdates.displayName = displayName;
+      if (photoURL !== undefined && photoURL !== authUser.photoURL) profileUpdates.photoURL = photoURL;
       
       if (Object.keys(profileUpdates).length > 0) {
         await updateProfile(authUser, profileUpdates);
@@ -172,12 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userRef = doc(db, 'users', authUser.uid);
       await setDoc(userRef, firestoreData, { merge: true });
 
-      // Update local state
-      setUser((prevProfile) => {
-        if (!prevProfile) return null;
-        const updatedProfile = { ...prevProfile, ...data };
-        return applySpecialBadges(updatedProfile);
-      });
+      // Local state update is now handled by the onSnapshot listener
     },
     [authUser]
   );
@@ -276,11 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // 5. Finalize session and welcome new user
     await firebaseUser.reload();
-    setAuthUser(auth.currentUser);
-
-    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-    const finalUser = { id: userDoc.id, ...(userDoc.data() as UserProfile) };
-    setUser(applySpecialBadges(finalUser));
+    // The onSnapshot listener will handle setting the user state.
     
     await createWelcomeChat({ userId: firebaseUser.uid, username: username });
 

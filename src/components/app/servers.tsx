@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Plus, Compass, MessageSquare } from 'lucide-react';
