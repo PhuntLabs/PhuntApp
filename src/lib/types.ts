@@ -45,12 +45,18 @@ export interface PopulatedChat extends Omit<ChatDocument, 'members'> {
   members: Partial<UserProfile>[];
 }
 
+export interface Reaction {
+  emoji: string;
+  users: string[];
+}
+
 export interface Message {
   id: string;
   sender: string;
   text: string;
   timestamp: FieldValue;
   edited?: boolean;
+  reactions?: Reaction[];
   mentions?: string[];
   imageUrl?: string;
   replyTo?: {
