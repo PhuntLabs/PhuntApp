@@ -3,14 +3,16 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, SmilePlus } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import type { UserProfile, Emoji } from '@/lib/types';
+import type { UserProfile, Emoji, CustomEmoji } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import EmojiPicker, { EmojiStyle } from 'emoji-picker-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from '../ui/scroll-area';
 
-const emojiList: Emoji[] = [
+const standardEmojis: Emoji[] = [
     { name: "grinning", char: "😀", keywords: ["happy", "joy", "smile"] },
     { name: "joy", char: "😂", keywords: ["happy", "lol", "laugh"] },
     { name: "sob", char: "😭", keywords: ["sad", "cry", "tear"] },
@@ -19,27 +21,32 @@ const emojiList: Emoji[] = [
     { name: "heart", char: "❤️", keywords: ["love", "like", "romance"] },
     { name: "fire", char: "🔥", keywords: ["hot", "lit", "burn"] },
     { name: "rocket", char: "🚀", keywords: ["launch", "space", "fast"] },
+    { name: "wave", char: "👋", keywords: ["hand", "hello", "bye"] },
+    { name: "clap", char: "👏", keywords: ["praise", "applause", "congrats"] },
+    { name: "star", char: "⭐", keywords: ["favorite", "rate", "special"] },
+    { name: "tada", char: "🎉", keywords: ["party", "celebrate", "hooray"] },
 ];
 
 interface ChatInputProps {
     onSendMessage: (text: string) => void;
     placeholder?: string;
     members: Partial<UserProfile>[];
+    customEmojis?: CustomEmoji[];
     disabled?: boolean;
 }
 
-export function ChatInput({ onSendMessage, placeholder, members, disabled }: ChatInputProps) {
+export function ChatInput({ onSendMessage, placeholder, members, customEmojis = [], disabled }: ChatInputProps) {
     const [text, setText] = useState('');
     const inputRef = useRef<HTMLTextAreaElement>(null);
     
-    // Autocomplete state
     const [autocompleteType, setAutocompleteType] = useState<'mention' | 'emoji' | null>(null);
     const [autocompleteQuery, setAutocompleteQuery] = useState('');
     const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
     
     const [filteredMembers, setFilteredMembers] = useState<Partial<UserProfile>[]>([]);
-    const [filteredEmojis, setFilteredEmojis] = useState<Emoji[]>([]);
+    const [filteredEmojis, setFilteredEmojis] = useState<(Emoji | CustomEmoji)[]>([]);
 
+    const combinedEmojis = [...standardEmojis, ...customEmojis];
 
     const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const value = e.target.value;
@@ -51,12 +58,12 @@ export function ChatInput({ onSendMessage, placeholder, members, disabled }: Cha
         const lastColon = textBeforeCursor.lastIndexOf(':');
         const lastSpace = textBeforeCursor.lastIndexOf(' ');
 
-        if (lastAt > lastSpace) {
+        if (lastAt > lastSpace && !textBeforeCursor.substring(lastAt + 1).includes(' ')) {
             const query = textBeforeCursor.substring(lastAt + 1);
             setAutocompleteType('mention');
             setAutocompleteQuery(query);
             setIsAutocompleteOpen(true);
-        } else if (lastColon > lastSpace) {
+        } else if (lastColon > lastSpace && !textBeforeCursor.substring(lastColon + 1).includes(' ')) {
             const query = textBeforeCursor.substring(lastColon + 1);
             setAutocompleteType('emoji');
             setAutocompleteQuery(query);
@@ -76,40 +83,44 @@ export function ChatInput({ onSendMessage, placeholder, members, disabled }: Cha
             );
             setFilteredMembers(filtered);
         } else if (autocompleteType === 'emoji') {
-            const filtered = emojiList.filter(emoji => 
-                emoji.name.toLowerCase().startsWith(autocompleteQuery.toLowerCase()) || 
-                emoji.keywords.some(k => k.startsWith(autocompleteQuery.toLowerCase()))
+            const filtered = combinedEmojis.filter(emoji => 
+                emoji.name.toLowerCase().startsWith(autocompleteQuery.toLowerCase())
             );
             setFilteredEmojis(filtered);
         }
-    }, [autocompleteQuery, autocompleteType, isAutocompleteOpen, members]);
+    }, [autocompleteQuery, autocompleteType, isAutocompleteOpen, members, combinedEmojis]);
 
     const insertAutocomplete = (value: string, type: 'mention' | 'emoji') => {
         if (!inputRef.current) return;
 
         const cursorPosition = inputRef.current.selectionStart;
         const textBeforeCursor = text.substring(0, cursorPosition);
-        const lastTrigger = textBeforeCursor.lastIndexOf(type === 'mention' ? '@' : ':');
         
-        const newText = 
-            text.substring(0, lastTrigger) + 
-            (type === 'mention' ? `@${value} ` : `${value} `) +
-            text.substring(cursorPosition);
+        let newText: string;
+        if(type === 'mention') {
+            const lastTrigger = textBeforeCursor.lastIndexOf('@');
+            newText = text.substring(0, lastTrigger) + `@${value} ` + text.substring(cursorPosition);
+        } else { // emoji
+            const lastTrigger = textBeforeCursor.lastIndexOf(':');
+            newText = text.substring(0, lastTrigger) + `:${value}: ` + text.substring(cursorPosition);
+        }
 
         setText(newText);
         setIsAutocompleteOpen(false);
         setAutocompleteType(null);
         inputRef.current.focus();
     };
-
-    const handleEmojiSelect = (emojiObject: { emoji: string }) => {
+    
+     const insertEmoji = (emoji: Emoji | CustomEmoji) => {
         if (!inputRef.current) return;
         const cursorPosition = inputRef.current.selectionStart;
-        const newText = text.substring(0, cursorPosition) + emojiObject.emoji + text.substring(cursorPosition);
+
+        const textToInsert = 'char' in emoji ? emoji.char : `:${emoji.name}:`;
+
+        const newText = text.substring(0, cursorPosition) + textToInsert + text.substring(cursorPosition);
         setText(newText);
         inputRef.current.focus();
     };
-
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -153,9 +164,13 @@ export function ChatInput({ onSendMessage, placeholder, members, disabled }: Cha
                         <button 
                             key={emoji.name} 
                             className="w-full flex items-center gap-2 p-2 rounded-md text-left hover:bg-accent"
-                            onClick={() => insertAutocomplete(emoji.char, 'emoji')}
+                            onClick={() => insertAutocomplete(emoji.name, 'emoji')}
                         >
-                            <span className="text-xl">{emoji.char}</span>
+                            {'char' in emoji ? (
+                                <span className="text-xl w-8 h-8 flex items-center justify-center">{emoji.char}</span>
+                            ) : (
+                                <Image src={emoji.url} alt={emoji.name} width={32} height={32} className="rounded-sm" />
+                            )}
                             <span className="text-sm">:{emoji.name}:</span>
                         </button>
                     ))}
@@ -184,13 +199,45 @@ export function ChatInput({ onSendMessage, placeholder, members, disabled }: Cha
                             <SmilePlus className="size-5"/>
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 border-none mb-2" side="top" align="end">
-                         <EmojiPicker 
-                            onEmojiClick={handleEmojiSelect}
-                            emojiStyle={EmojiStyle.NATIVE}
-                            theme="dark"
-                            lazyLoadEmojis
-                         />
+                    <PopoverContent className="w-96 p-0 border-none mb-2" side="top" align="end">
+                         <Tabs defaultValue="standard">
+                             <TabsList className="w-full rounded-b-none">
+                                <TabsTrigger value="standard" className="flex-1">Standard Emojis</TabsTrigger>
+                                {customEmojis.length > 0 && <TabsTrigger value="custom" className="flex-1">Custom Emojis</TabsTrigger>}
+                            </TabsList>
+                            <TabsContent value="standard" className="mt-0">
+                                <ScrollArea className="h-64">
+                                <div className="p-2 grid grid-cols-8 gap-1">
+                                    {standardEmojis.map(emoji => (
+                                        <button 
+                                            key={emoji.name}
+                                            type="button"
+                                            onClick={() => insertEmoji(emoji)}
+                                            className="aspect-square text-2xl flex items-center justify-center rounded-md hover:bg-accent"
+                                        >
+                                            {emoji.char}
+                                        </button>
+                                    ))}
+                                </div>
+                                </ScrollArea>
+                            </TabsContent>
+                             <TabsContent value="custom" className="mt-0">
+                                <ScrollArea className="h-64">
+                                <div className="p-2 grid grid-cols-8 gap-2">
+                                     {customEmojis.map(emoji => (
+                                        <button 
+                                            key={emoji.name}
+                                            type="button"
+                                            onClick={() => insertEmoji(emoji)}
+                                            className="aspect-square flex items-center justify-center rounded-md hover:bg-accent"
+                                        >
+                                            <Image src={emoji.url} alt={emoji.name} width={32} height={32} />
+                                        </button>
+                                    ))}
+                                </div>
+                                </ScrollArea>
+                            </TabsContent>
+                         </Tabs>
                     </PopoverContent>
                 </Popover>
 
@@ -201,4 +248,3 @@ export function ChatInput({ onSendMessage, placeholder, members, disabled }: Cha
         </form>
     );
 }
-

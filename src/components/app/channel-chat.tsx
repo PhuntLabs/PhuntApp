@@ -153,7 +153,7 @@ export function ChannelChat({
                                                 </div>
                                             ) : (
                                                 <div className="text-sm text-foreground/90">
-                                                   <MessageRenderer content={message.text} />
+                                                   <MessageRenderer content={message.text} customEmojis={server.customEmojis} />
                                                    {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
                                                 </div>
                                             )}
@@ -178,6 +178,7 @@ export function ChannelChat({
                     onSendMessage={onSendMessage}
                     placeholder={`Message #${displayName}`}
                     members={members}
+                    customEmojis={server.customEmojis}
                     disabled={!!editingMessageId}
                 />
             </div>
