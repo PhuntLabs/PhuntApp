@@ -1,25 +1,10 @@
 
 'use client';
 
-import React, { useMemo } from 'react';
 import {
-    DndContext,
-    closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    DragEndEvent,
-} from '@dnd-kit/core';
-import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    useSortable,
-    verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { CardTitle, CardDescription } from '@/components/ui/card';
+  CardTitle,
+  CardDescription
+} from '@/components/ui/card';
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
@@ -33,8 +18,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import type { Server, Channel, ChannelType, Category } from '@/lib/types';
-import { Hash, ChevronDown, Settings, Trash, Plus, MoreVertical, Pencil, Megaphone, ScrollText, MessageSquare, UserPlus, BadgeCheck, Users, GripVertical } from 'lucide-react';
+
+import type { Server, Channel, ChannelType } from '@/lib/types';
+import { Hash, ChevronDown, Settings, Trash, Plus, MoreVertical, Pencil, Megaphone, ScrollText, MessageSquare, UserPlus, BadgeCheck, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { EditServerDialog } from './edit-server-dialog';
 import { AddChannelDialog } from './add-channel-dialog';
@@ -44,10 +30,6 @@ import { cn } from '@/lib/utils';
 import { InviteDialog } from './invite-dialog';
 import { useChannelMessages } from '@/hooks/use-channel-messages';
 import Image from 'next/image';
-import { useChannels } from '@/hooks/use-channels';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
-import { useToast } from '@/hooks/use-toast';
-
 
 const channelIcons: Record<ChannelType, React.ElementType> = {
     text: Hash,
@@ -56,149 +38,29 @@ const channelIcons: Record<ChannelType, React.ElementType> = {
     forum: MessageSquare,
 };
 
-const SortableChannelItem = ({ channel, server, isOwner, selectedChannel, onSelectChannel, onUpdateChannel, onDeleteChannel }: {
-    channel: Channel;
-    server: Server;
-    isOwner: boolean;
-    selectedChannel: Channel | null;
-    onSelectChannel: (channel: Channel) => void;
-    onUpdateChannel: (channelId: string, data: Partial<Channel>) => Promise<void>;
-    onDeleteChannel: (channelId: string) => Promise<void>;
-}) => {
-    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: channel.id });
-    const { authUser } = useAuth();
-    const { messages } = useChannelMessages(channel.serverId, channel.id);
+interface ServerSidebarProps {
+  server: Server;
+  channels: Channel[];
+  selectedChannel: Channel | null;
+  onSelectChannel: (channel: Channel) => void;
+  onCreateChannel: (name: string) => Promise<void>;
+  onUpdateChannel: (channelId: string, data: Partial<Channel>) => Promise<void>;
+  onDeleteChannel: (channelId: string) => Promise<void>;
+  onUpdateServer: (serverId: string, data: Partial<Omit<Server, 'id'>>) => Promise<void>;
+  onDeleteServer: (serverId: string) => Promise<void>;
+}
 
-    const hasUnreadMention = useMemo(() => {
-        if (!authUser) return false;
-        if (selectedChannel?.id === channel.id) return false;
-        return messages.some(msg => msg.mentions?.includes(authUser.uid));
-    }, [messages, authUser, selectedChannel, channel.id]);
+export function ServerSidebar({ server, channels, selectedChannel, onSelectChannel, onCreateChannel, onUpdateChannel, onDeleteChannel, onUpdateServer, onDeleteServer }: ServerSidebarProps) {
+  const { user, authUser } = useAuth();
+  const isOwner = user?.uid === server.ownerId;
+  const isHeina = user?.displayName === 'heina';
 
-    const Icon = channelIcons[channel.type] || Hash;
-    
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-    };
+  const handleToggleVerify = () => {
+    onUpdateServer(server.id, { isVerified: !server.isVerified });
+  }
 
-    return (
-        <SidebarMenuItem ref={setNodeRef} style={style} className="px-2 group/channel flex items-center gap-1">
-             {isOwner && <button {...attributes} {...listeners} className="cursor-grab p-1 text-muted-foreground/50"><GripVertical className="size-4" /></button>}
-            <SidebarMenuButton
-                isActive={selectedChannel?.id === channel.id}
-                onClick={() => onSelectChannel(channel)}
-                className={cn(
-                    "w-full justify-start h-8 px-2",
-                    hasUnreadMention && "text-white font-bold",
-                    !isOwner && 'ml-6' // Indent if not owner (no drag handle)
-                )}
-            >
-                <Icon className="size-4 text-muted-foreground" />
-                <span className="truncate">{channel.name}</span>
-            </SidebarMenuButton>
-
-            {hasUnreadMention && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2 bg-white rounded-r-full" />}
-
-            {isOwner && (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover/channel:opacity-100">
-                            <MoreVertical className="size-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent side="right">
-                        <EditChannelDialog channel={channel} server={server} onUpdateChannel={onUpdateChannel}>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                <span>Edit Channel</span>
-                            </DropdownMenuItem>
-                        </EditChannelDialog>
-                        <DropdownMenuSeparator />
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive"
-                                    onSelect={(e) => e.preventDefault()}
-                                    disabled={channel.name === 'general'}
-                                >
-                                    <Trash className="mr-2 h-4 w-4" />
-                                    <span>Delete Channel</span>
-                                </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete #{channel.name}?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Are you sure you want to permanently delete this channel? This cannot be undone.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => onDeleteChannel(channel.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                        Delete
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            )}
-        </SidebarMenuItem>
-    );
-};
-
-
-export function ServerSidebar({ server, selectedChannel, onSelectChannel, onUpdateServer, onDeleteServer }: ServerSidebarProps) {
-    const { user: currentUser } = useAuth();
-    const { createChannel, updateChannel, deleteChannel, updateChannelOrder, updateCategoryOrder } = useChannels(server.id);
-    const { toast } = useToast();
-    const isOwner = currentUser?.uid === server.ownerId;
-    const isHeina = currentUser?.displayName === 'heina';
-
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-    );
-
-    const handleToggleVerify = () => {
-        onUpdateServer(server.id, { isVerified: !server.isVerified });
-    }
-
-    const handleChannelDragEnd = async (event: DragEndEvent, categoryId: string) => {
-        const { active, over } = event;
-        if (over && active.id !== over.id) {
-            const category = server.categories.find(c => c.id === categoryId);
-            if (!category) return;
-            const oldIndex = category.channels.findIndex(c => c.id === active.id);
-            const newIndex = category.channels.findIndex(c => c.id === over.id);
-            const reorderedChannels = arrayMove(category.channels, oldIndex, newIndex);
-            
-            toast({ title: "Reordering channels...", description: "Please wait." });
-            await updateChannelOrder(reorderedChannels.map(c => c.id), categoryId);
-            toast({ title: "Success", description: "Channel order updated." });
-        }
-    };
-    
-    const handleCategoryDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (over && active.id !== over.id) {
-            const oldIndex = server.categories.findIndex(c => c.id === active.id);
-            const newIndex = server.categories.findIndex(c => c.id === over.id);
-            const reorderedCategories = arrayMove(server.categories, oldIndex, newIndex);
-            
-            toast({ title: "Reordering categories...", description: "Please wait." });
-            await updateCategoryOrder(reorderedCategories.map(c => c.id));
-            toast({ title: "Success", description: "Category order updated." });
-        }
-    }
-
-    const sortedCategories = useMemo(() => {
-        return [...(server.categories || [])].sort((a, b) => (a.position || 0) - (b.position || 0));
-    }, [server.categories]);
-
-
-    const renderHeader = () => (
+  return (
+    <div className="h-full flex flex-col bg-card/40">
         <div className="border-b shadow-sm relative">
             {server.bannerURL && (
                 <div className="h-24 w-full relative">
@@ -243,6 +105,12 @@ export function ServerSidebar({ server, selectedChannel, onSelectChannel, onUpda
                     {isOwner && (
                         <>
                             <DropdownMenuSeparator />
+                            <AddChannelDialog onCreateChannel={onCreateChannel}>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                <span>Create Channel</span>
+                                </DropdownMenuItem>
+                            </AddChannelDialog>
                             <EditServerDialog server={server} onUpdateServer={onUpdateServer} onDeleteServer={onDeleteServer}>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                     <Settings className="mr-2 h-4 w-4" />
@@ -259,106 +127,73 @@ export function ServerSidebar({ server, selectedChannel, onSelectChannel, onUpda
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
-    )
+      <SidebarGroup>
+        <SidebarGroupLabel>Channels</SidebarGroupLabel>
+        <SidebarMenu>
+          {channels.map((channel) => {
+             const { messages } = useChannelMessages(channel.serverId, channel.id);
+             const hasUnreadMention = messages.some(msg => msg.mentions?.includes(authUser?.uid || ''));
 
-    return (
-        <div className="h-full flex flex-col bg-card/40">
-            {renderHeader()}
-            <div className="p-0 flex-1 overflow-y-auto">
-                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
-                    <SortableContext items={sortedCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
-                        {sortedCategories.map((category) => (
-                           <SortableCategoryItem 
-                             key={category.id} 
-                             category={category}
-                             server={server}
-                             isOwner={isOwner}
-                             selectedChannel={selectedChannel}
-                             onSelectChannel={onSelectChannel}
-                             onUpdateChannel={updateChannel}
-                             onDeleteChannel={deleteChannel}
-                             onCreateChannel={createChannel}
-                             onChannelDragEnd={handleChannelDragEnd}
-                             sensors={sensors}
-                           />
-                        ))}
-                    </SortableContext>
-                </DndContext>
-            </div>
-        </div>
-    );
+             const Icon = channelIcons[channel.type] || Hash;
+             return (
+              <SidebarMenuItem key={channel.id} className="group/item">
+                {hasUnreadMention && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-1 bg-white rounded-r-full" />}
+                <SidebarMenuButton
+                    isActive={selectedChannel?.id === channel.id}
+                    onClick={() => onSelectChannel(channel)}
+                    className={cn(hasUnreadMention && "text-white font-bold")}
+                >
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <span>{channel.name}</span>
+                </SidebarMenuButton>
+
+                {isOwner && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 absolute right-1 top-1.5 opacity-0 group-hover/item:opacity-100">
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                             <EditChannelDialog channel={channel} server={server} onUpdateChannel={onUpdateChannel}>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    <span>Edit Channel</span>
+                                </DropdownMenuItem>
+                             </EditChannelDialog>
+                             <DropdownMenuSeparator/>
+                             <AlertDialog>
+                                 <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem
+                                        className="text-destructive focus:text-destructive"
+                                        onSelect={(e) => e.preventDefault()}
+                                        disabled={channel.name === 'general'}
+                                    >
+                                        <Trash className="mr-2 h-4 w-4" />
+                                        <span>Delete Channel</span>
+                                    </DropdownMenuItem>
+                                 </AlertDialogTrigger>
+                                 <AlertDialogContent>
+                                     <AlertDialogHeader>
+                                         <AlertDialogTitle>Delete #{channel.name}?</AlertDialogTitle>
+                                         <AlertDialogDescription>
+                                             Are you sure you want to permanently delete this channel? This cannot be undone.
+                                         </AlertDialogDescription>
+                                     </AlertDialogHeader>
+                                     <AlertDialogFooter>
+                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                         <AlertDialogAction onClick={() => onDeleteChannel(channel.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                     </AlertDialogFooter>
+                                 </AlertDialogContent>
+                             </AlertDialog>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+              </SidebarMenuItem>
+             )
+          })}
+        </SidebarMenu>
+      </SidebarGroup>
+    </div>
+  );
 }
-
-
-const SortableCategoryItem = ({ category, server, isOwner, selectedChannel, onSelectChannel, onUpdateChannel, onDeleteChannel, onCreateChannel, onChannelDragEnd, sensors }: {
-    category: Category;
-    server: Server;
-    isOwner: boolean;
-    selectedChannel: Channel | null;
-    onSelectChannel: (channel: Channel) => void;
-    onUpdateChannel: (channelId: string, data: Partial<Channel>) => Promise<void>;
-    onDeleteChannel: (channelId: string) => Promise<void>;
-    onCreateChannel: (name: string, categoryId: string) => Promise<void>;
-    onChannelDragEnd: (event: DragEndEvent, categoryId: string) => void;
-    sensors: any;
-}) => {
-    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: category.id, disabled: !isOwner });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-    };
-    
-    const sortedChannels = useMemo(() => {
-        return [...(category.channels || [])].sort((a, b) => (a.position || 0) - (b.position || 0));
-    }, [category.channels]);
-
-    return (
-        <div ref={setNodeRef} style={style}>
-            <Collapsible defaultOpen={true}>
-                <SidebarGroup className="py-2">
-                    <div className="flex items-center group/category">
-                        {isOwner && (
-                            <button {...attributes} {...listeners} className="cursor-grab p-1 text-muted-foreground/50">
-                                <GripVertical className="size-4" />
-                            </button>
-                        )}
-                        <CollapsibleTrigger asChild>
-                            <SidebarGroupLabel className={cn("flex-1", !isOwner && 'ml-6')}>
-                                <ChevronDown className="size-3 mr-1 transition-transform group-data-[state=open]/category:rotate-0 -rotate-90"/>
-                                {category.name}
-                            </SidebarGroupLabel>
-                        </CollapsibleTrigger>
-                        {isOwner && (
-                            <AddChannelDialog categoryId={category.id} onCreateChannel={onCreateChannel}>
-                                <button className="text-muted-foreground hover:text-foreground opacity-0 group-hover/category:opacity-100 mr-2">
-                                    <Plus className="size-4" />
-                                </button>
-                            </AddChannelDialog>
-                        )}
-                    </div>
-                     <CollapsibleContent>
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => onChannelDragEnd(e, category.id)}>
-                            <SortableContext items={sortedChannels.map(c => c.id)} strategy={verticalListSortingStrategy}>
-                                <SidebarMenu>
-                                {sortedChannels.map((channel) => (
-                                    <SortableChannelItem
-                                        key={channel.id}
-                                        channel={channel}
-                                        server={server}
-                                        isOwner={isOwner}
-                                        selectedChannel={selectedChannel}
-                                        onSelectChannel={onSelectChannel}
-                                        onUpdateChannel={onUpdateChannel}
-                                        onDeleteChannel={onDeleteChannel}
-                                    />
-                                ))}
-                                </SidebarMenu>
-                            </SortableContext>
-                        </DndContext>
-                    </CollapsibleContent>
-                </SidebarGroup>
-            </Collapsible>
-        </div>
-    );
-};

@@ -17,9 +17,12 @@ import {
   query,
   updateDoc,
   writeBatch,
+  where,
+  addDoc,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { z } from 'zod';
-import type { Permission, Server } from '@/lib/types';
+import type { Permission, Server, UserProfile, Message } from '@/lib/types';
 import { findUserByUsername } from '@/lib/firebase-utils';
 
 // Helper function to check permissions
@@ -43,6 +46,7 @@ function hasPermission(
 
 const SlashCommandInputSchema = z.object({
   executorId: z.string(),
+  botId: z.string().optional(),
   serverId: z.string(),
   channelId: z.string(),
   command: z.string(),
@@ -51,42 +55,68 @@ const SlashCommandInputSchema = z.object({
 
 export type SlashCommandInput = z.infer<typeof SlashCommandInputSchema>;
 
-export async function executeSlashCommand(input: SlashCommandInput): Promise<string> {
+const SlashCommandOutputSchema = z.union([
+  z.object({
+    type: z.literal('message'),
+    content: z.string(),
+  }),
+  z.object({
+    type: z.literal('embed'),
+    payload: z.any(),
+  }),
+  z.object({
+    type: z.literal('silent'),
+  }),
+]);
+
+export type SlashCommandOutput = z.infer<typeof SlashCommandOutputSchema>;
+
+export async function executeSlashCommand(input: SlashCommandInput): Promise<SlashCommandOutput> {
   return slashCommandFlow(input);
+}
+
+// Bot specific flows
+import { qolforuBotFlow } from './qolforu-bot-flow';
+import { QOLFORU_BOT_ID } from '@/ai/bots/qolforu-config';
+
+async function findServer(serverId: string): Promise<Server> {
+    const serverSnap = await getDoc(doc(db, 'servers', serverId));
+    if (!serverSnap.exists()) throw new Error('Server not found.');
+    return { id: serverSnap.id, ...serverSnap.data() } as Server;
 }
 
 const slashCommandFlow = ai.defineFlow(
   {
     name: 'slashCommandFlow',
     inputSchema: SlashCommandInputSchema,
-    outputSchema: z.string(),
+    outputSchema: SlashCommandOutputSchema,
   },
-  async ({ executorId, serverId, channelId, command, args }) => {
-    const serverRef = doc(db, 'servers', serverId);
-    const serverSnap = await getDocs(query(collection(db, 'servers'), where('__name__', '==', serverId)));
-    if (serverSnap.empty) throw new Error('Server not found.');
+  async ({ executorId, botId, serverId, channelId, command, args }) => {
     
-    const server = { id: serverSnap.docs[0].id, ...serverSnap.docs[0].data() } as Server;
+    // Route to bot-specific command handler if a bot is invoked
+    if (botId === QOLFORU_BOT_ID) {
+      return qolforuBotFlow({ executorId, serverId, channelId, command, args });
+    }
 
+    // --- Standard Moderation Commands ---
+    const server = await findServer(serverId);
+    if (!hasPermission(server, executorId, 'manageChannels')) {
+      throw new Error("You don't have permission to use moderation commands.");
+    }
+    
     switch (command) {
       case 'clean': {
-        if (!hasPermission(server, executorId, 'manageChannels')) {
-          throw new Error("You don't have permission to clean this channel.");
-        }
         const messagesRef = collection(db, 'servers', serverId, 'channels', channelId, 'messages');
         const q = query(messagesRef, limit(100));
         const messagesSnapshot = await getDocs(q);
         const batch = writeBatch(db);
         messagesSnapshot.forEach((doc) => batch.delete(doc.ref));
         await batch.commit();
-        return `Deleted last ${messagesSnapshot.size} messages.`;
+        return { type: 'message', content: `Deleted last ${messagesSnapshot.size} messages.` };
       }
 
       case 'lock': {
-        if (!hasPermission(server, executorId, 'manageChannels')) {
-          throw new Error("You don't have permission to lock this channel.");
-        }
-        const lockValue = args[0] === 'true';
+        const lockValue = args[0] !== 'false';
         const everyoneRole = server.roles?.find(r => r.name === '@everyone');
         if (!everyoneRole) throw new Error('@everyone role not found.');
         
@@ -94,7 +124,7 @@ const slashCommandFlow = ai.defineFlow(
         const overwritePath = `permissionOverwrites.${everyoneRole.id}.sendMessages`;
 
         await updateDoc(channelRef, { [overwritePath]: !lockValue });
-        return `Channel has been ${lockValue ? 'locked' : 'unlocked'}.`;
+        return { type: 'message', content: `Channel has been ${lockValue ? 'locked' : 'unlocked'}.` };
       }
 
       case 'kick': {
@@ -108,16 +138,15 @@ const slashCommandFlow = ai.defineFlow(
         if (!userToKick) throw new Error(`User @${username} not found.`);
         if (userToKick.id === server.ownerId) throw new Error("You cannot kick the server owner.");
         
-        // Remove user from members list and memberDetails
         const memberPath = `memberDetails.${userToKick.id}`;
         const updatedMembers = server.members.filter(id => id !== userToKick.id);
         
-        await updateDoc(serverRef, {
+        await updateDoc(doc(db, 'servers', serverId), {
             members: updatedMembers,
-            [memberPath]: undefined // Firestore doesn't have a direct way to delete a map key, set to undefined
+            [memberPath]: undefined
         });
 
-        return `@${username} has been kicked from the server.`;
+        return { type: 'message', content: `@${username} has been kicked from the server.` };
       }
       
       case 'ban': {
@@ -131,17 +160,15 @@ const slashCommandFlow = ai.defineFlow(
         if (!userToBan) throw new Error(`User @${username} not found.`);
         if (userToBan.id === server.ownerId) throw new Error("You cannot ban the server owner.");
         
-        // In a real app, you'd add this user to a "bans" subcollection.
-        // For now, we'll just kick them.
         const memberPath = `memberDetails.${userToBan.id}`;
         const updatedMembers = server.members.filter(id => id !== userToBan.id);
         
-        await updateDoc(serverRef, {
+        await updateDoc(doc(db, 'servers', serverId), {
             members: updatedMembers,
             [memberPath]: undefined
         });
         
-        return `@${username} has been banned from the server. (Note: True ban list not implemented, user was kicked).`;
+        return { type: 'message', content: `@${username} has been banned from the server. (Note: True ban list not implemented, user was kicked).` };
       }
 
       default:
@@ -149,5 +176,3 @@ const slashCommandFlow = ai.defineFlow(
     }
   }
 );
-
-    

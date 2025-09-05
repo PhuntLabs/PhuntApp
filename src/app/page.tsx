@@ -51,7 +51,7 @@ export default function Home() {
 
   const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat);
   const { server, setServer, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
-  const { createChannel, updateChannel, deleteChannel } = useChannels(selectedServer?.id);
+  const { channels, createChannel, updateChannel, deleteChannel } = useChannels(selectedServer?.id);
   const { 
     messages: channelMessages, 
     sendMessage: sendChannelMessage,
@@ -228,8 +228,8 @@ export default function Home() {
     }
     setSelectedServer(server);
     setSelectedChat(null); // Deselect chat when switching server context
-    if (server && server.categories?.[0]?.channels?.[0]) {
-        handleSelectChannel(server.categories[0].channels[0]);
+    if (server && channels?.[0]) {
+        handleSelectChannel(channels[0]);
     } else {
         setSelectedChannel(null);
     }
@@ -258,18 +258,11 @@ export default function Home() {
     }
   }
 
-  const handleCreateChannel = async (name: string, categoryId: string) => {
+  const handleCreateChannel = async (name: string) => {
     try {
-      const newChannel = await createChannel(name, categoryId);
-      if (newChannel && server) {
-        const updatedCategories = server.categories.map(cat => {
-            if (cat.id === categoryId) {
-                return { ...cat, channels: [...cat.channels, newChannel]};
-            }
-            return cat;
-        });
-        setServer({ ...server, categories: updatedCategories });
-        setSelectedChannel(newChannel);
+      const newChannel = await createChannel(name);
+      if (newChannel) {
+        // Local state update can be removed if using snapshots effectively
         toast({ title: `#${newChannel.name} created!` });
       }
     } catch (e: any) {
@@ -280,13 +273,6 @@ export default function Home() {
   const handleUpdateChannel = async (channelId: string, data: { name?: string, type?: ChannelType, topic?: string}) => {
     try {
       await updateChannel(channelId, data);
-      if (server && server.categories) {
-          const updatedCategories = server.categories.map(cat => ({
-            ...cat,
-            channels: cat.channels.map(c => c.id === channelId ? {...c, ...data} : c)
-          }));
-          setServer({...server, categories: updatedCategories });
-      }
       toast({ title: "Channel Updated" });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error Updating Channel', description: e.message });
@@ -296,17 +282,8 @@ export default function Home() {
   const handleDeleteChannel = async (channelId: string) => {
     try {
       await deleteChannel(channelId);
-       if (server && server.categories) {
-          const updatedCategories = server.categories.map(cat => ({
-            ...cat,
-            channels: cat.channels.filter(c => c.id !== channelId)
-          }));
-          setServer({...server, categories: updatedCategories });
-
-          if(selectedChannel?.id === channelId) {
-             const firstChannel = updatedCategories.find(c => c.channels.length > 0)?.channels[0];
-             setSelectedChannel(firstChannel || null);
-          }
+      if (selectedChannel?.id === channelId) {
+        setSelectedChannel(channels?.[0] || null);
       }
       toast({ title: "Channel Deleted" });
     } catch (e: any) {
@@ -327,7 +304,7 @@ export default function Home() {
         handleSelectServer(serverToSelect);
         // The channel data will be on the server object after the state updates
         // We select it in an effect to ensure data consistency
-        const channelToSelect = serverToSelect.categories?.flatMap(c => c.channels).find(c => c.id === context.channelId);
+        const channelToSelect = serverToSelect.channels?.find(c => c.id === context.channelId);
         if (channelToSelect) {
             setSelectedChannel(channelToSelect);
         }
@@ -363,8 +340,12 @@ export default function Home() {
                   {server ? (
                   <ServerSidebar 
                       server={server}
+                      channels={channels}
                       selectedChannel={selectedChannel}
                       onSelectChannel={handleSelectChannel}
+                      onCreateChannel={handleCreateChannel}
+                      onUpdateChannel={handleUpdateChannel}
+                      onDeleteChannel={handleDeleteChannel}
                       onUpdateServer={handleUpdateServer}
                       onDeleteServer={handleDeleteServer}
                   />

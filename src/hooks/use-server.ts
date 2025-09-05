@@ -3,8 +3,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, deleteDoc, getDoc, collection, query, orderBy, getDocs, arrayUnion, serverTimestamp, addDoc } from 'firebase/firestore';
-import type { Server, UserProfile, Channel, ServerProfile, Message, Category } from '@/lib/types';
+import { doc, onSnapshot, updateDoc, deleteDoc, getDoc, collection, query, orderBy, getDocs, arrayUnion, serverTimestamp, addDoc, writeBatch } from 'firebase/firestore';
+import type { Server, UserProfile, Channel, ServerProfile, Message, Role } from '@/lib/types';
 import { useAuth } from './use-auth';
 
 const welcomeMessages = [
@@ -37,7 +37,7 @@ export function useServer(serverId: string | undefined) {
         const serverData = { id: docSnapshot.id, ...docSnapshot.data() } as Server;
         
         // Fetch members
-        if (serverData.members) {
+        if (serverData.members && serverData.members.length > 0) {
             const memberPromises = serverData.members.map(async (memberId) => {
                 const userRef = doc(db, 'users', memberId);
                 const userDoc = await getDoc(userRef);
@@ -57,27 +57,14 @@ export function useServer(serverId: string | undefined) {
             });
             const memberProfiles = await Promise.all(memberPromises);
             setMembers(memberProfiles as UserProfile[]);
+        } else {
+             setMembers([]);
         }
+
+        const channelsQuery = query(collection(db, 'servers', serverId, 'channels'), orderBy('name', 'asc'));
+        const channelsSnapshot = await getDocs(channelsQuery);
+        serverData.channels = channelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Channel));
         
-        // Fetch categories and their channels
-        const categoriesQuery = query(collection(db, 'servers', serverId, 'categories'), orderBy('position', 'asc'));
-        const channelsQuery = query(collection(db, 'servers', serverId, 'channels'), orderBy('position', 'asc'));
-
-        const [categoriesSnapshot, channelsSnapshot] = await Promise.all([
-          getDocs(categoriesQuery),
-          getDocs(channelsQuery)
-        ]);
-
-        const categoryDocs = categoriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
-        const channelDocs = channelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Channel));
-        
-        // Nest channels inside their categories
-        categoryDocs.forEach(category => {
-          category.channels = channelDocs.filter(c => c.categoryId === category.id);
-        });
-
-        serverData.categories = categoryDocs;
-
         setServer(serverData);
 
       } else {
@@ -96,7 +83,7 @@ export function useServer(serverId: string | undefined) {
   const updateServer = useCallback(async (serverIdToUpdate: string, data: Partial<Omit<Server, 'id'>>) => {
     if (!authUser) throw new Error('Not authenticated');
     const serverRef = doc(db, 'servers', serverIdToUpdate);
-    await updateDoc(serverRef, data as any); // Use any to bypass strict type check for partial update
+    await updateDoc(serverRef, data as any);
   }, [authUser]);
   
   const deleteServer = useCallback(async (serverIdToDelete: string) => {
@@ -111,17 +98,17 @@ export function useServer(serverId: string | undefined) {
       
       const memberDetailPath = `memberDetails.${authUser.uid}`;
 
+      const serverDoc = await getDoc(serverRef);
+      const serverData = serverDoc.data() as Server;
+      const everyoneRole = serverData.roles?.find(r => r.name === '@everyone');
+
       await updateDoc(serverRef, {
         members: arrayUnion(authUser.uid),
         [memberDetailPath]: {
             joinedAt: serverTimestamp(),
-            roles: [], // Start with no roles
+            roles: everyoneRole ? [everyoneRole.id] : [],
         }
       });
-      
-      // Post welcome message if system channel is configured
-      const serverDoc = await getDoc(serverRef);
-      const serverData = serverDoc.data() as Server;
       
       if (serverData.systemChannelId && serverData.systemChannelId !== 'none') {
         const welcomeMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)]
@@ -129,7 +116,7 @@ export function useServer(serverId: string | undefined) {
 
         const messagePayload: Omit<Message, 'id' | 'timestamp'> = {
             text: welcomeMessage,
-            sender: 'system', // Or a dedicated bot ID
+            sender: 'system',
             edited: false,
             mentions: [authUser.uid],
         };
@@ -143,5 +130,39 @@ export function useServer(serverId: string | undefined) {
 
   }, [authUser, currentUser]);
 
-  return { server, setServer, members, loading, updateServer, deleteServer, joinServer };
+  const addBotToServer = useCallback(async (botId: string, serverId: string) => {
+    if (!authUser) throw new Error('Not authenticated');
+
+    const serverRef = doc(db, 'servers', serverId);
+    const serverDoc = await getDoc(serverRef);
+    if (!serverDoc.exists()) throw new Error("Server not found");
+    
+    const serverData = serverDoc.data() as Server;
+    if (serverData.ownerId !== authUser.uid) {
+        throw new Error("Only the server owner can add bots.");
+    }
+
+    const botRole: Role = {
+        id: `bot-role-${botId}`,
+        name: 'Bot',
+        color: '#808080',
+        priority: 99, // Low priority
+        permissions: { viewChannels: true, sendMessages: true }
+    }
+
+    const memberDetailPath = `memberDetails.${botId}`;
+    const newRoles = serverData.roles ? [...serverData.roles, botRole] : [botRole];
+
+    await updateDoc(serverRef, {
+        members: arrayUnion(botId),
+        roles: newRoles,
+        [memberDetailPath]: {
+            joinedAt: serverTimestamp(),
+            roles: [botRole.id]
+        }
+    });
+
+  }, [authUser]);
+
+  return { server, setServer, members, loading, updateServer, deleteServer, joinServer, addBotToServer };
 }

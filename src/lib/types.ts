@@ -21,6 +21,8 @@ export interface UserProfile {
   bannerURL?: string | null;
   bio?: string;
   isBot?: boolean;
+  isDiscoverable?: boolean;
+  isVerified?: boolean;
   createdAt?: FieldValue;
   badges?: BadgeType[];
   status?: UserStatus;
@@ -50,6 +52,17 @@ export interface Reaction {
   users: string[];
 }
 
+export interface Embed {
+    title?: string;
+    description?: string;
+    color?: string;
+    fields?: { name: string; value: string; inline?: boolean }[];
+    thumbnail?: string;
+    image?: string;
+    author?: { name: string; url?: string; icon_url?: string };
+    footer?: { text: string; icon_url?: string };
+}
+
 export interface Message {
   id: string;
   sender: string;
@@ -59,6 +72,7 @@ export interface Message {
   reactions?: Reaction[];
   mentions?: string[];
   imageUrl?: string;
+  embed?: Embed;
   replyTo?: {
     messageId: string;
     senderId: string;
@@ -119,8 +133,7 @@ export interface Server {
     photoURL?: string | null;
     bannerURL?: string | null;
     createdAt: FieldValue;
-    categories: Category[];
-    channels?: Channel[]; // Kept for potential migration, but categories is primary
+    channels: Channel[];
     isPublic?: boolean;
     description?: string;
     customEmojis?: CustomEmoji[];
@@ -137,9 +150,7 @@ export interface Channel {
     name: string;
     topic?: string;
     serverId: string;
-    categoryId: string;
     createdAt?: FieldValue;
-    position: number;
     type: ChannelType;
     typing?: { [userId: string]: true };
     permissionOverwrites?: {

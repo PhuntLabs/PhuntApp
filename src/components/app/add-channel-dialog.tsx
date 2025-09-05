@@ -17,11 +17,10 @@ import { Label } from '@/components/ui/label';
 
 interface AddChannelDialogProps {
   children: React.ReactNode;
-  categoryId: string;
-  onCreateChannel: (name: string, categoryId: string) => Promise<void>;
+  onCreateChannel: (name: string) => Promise<void>;
 }
 
-export function AddChannelDialog({ children, categoryId, onCreateChannel }: AddChannelDialogProps) {
+export function AddChannelDialog({ children, onCreateChannel }: AddChannelDialogProps) {
   const [channelName, setChannelName] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +30,7 @@ export function AddChannelDialog({ children, categoryId, onCreateChannel }: AddC
     if (channelName.trim()) {
       setIsLoading(true);
       try {
-        await onCreateChannel(channelName.trim(), categoryId);
+        await onCreateChannel(channelName.trim());
         setChannelName('');
         setIsOpen(false);
       } catch (error) {

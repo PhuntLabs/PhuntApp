@@ -13,8 +13,9 @@ import {
   writeBatch,
   doc,
   getDoc,
+  getDocs,
 } from 'firebase/firestore';
-import type { Server, Category } from '@/lib/types';
+import type { Server, Channel } from '@/lib/types';
 import { useAuth } from './use-auth';
 
 export function useServers(enabled: boolean = true) {
@@ -55,7 +56,7 @@ export function useServers(enabled: boolean = true) {
     // 1. Create Server Document
     const serverRef = doc(collection(db, 'servers'));
     const photoURL = `https://picsum.photos/seed/${serverRef.id}/200`
-    const serverPayload: Omit<Server, 'id' | 'categories'> = {
+    const serverPayload: Omit<Server, 'id' | 'channels'> = {
       name,
       ownerId: authUser.uid,
       members: [authUser.uid],
@@ -74,22 +75,12 @@ export function useServers(enabled: boolean = true) {
     };
     batch.set(serverRef, serverPayload);
 
-    // 2. Create Default Category
-    const categoryRef = doc(collection(db, 'servers', serverRef.id, 'categories'));
-    const defaultCategory: Omit<Category, 'id' | 'channels'> = {
-      name: 'Text Channels',
-      position: 0,
-    };
-    batch.set(categoryRef, defaultCategory);
-    
-    // 3. Create Default Channels within that Category
+    // 2. Create Default Channels
     const generalChannelRef = doc(collection(db, 'servers', serverRef.id, 'channels'));
     batch.set(generalChannelRef, {
       name: 'general',
       serverId: serverRef.id,
-      categoryId: categoryRef.id,
       createdAt: serverTimestamp(),
-      position: 0,
       type: 'text'
     });
     
@@ -97,33 +88,19 @@ export function useServers(enabled: boolean = true) {
     batch.set(rulesChannelRef, {
       name: 'rules',
       serverId: serverRef.id,
-      categoryId: categoryRef.id,
       createdAt: serverTimestamp(),
-      position: 1,
       type: 'rules'
     });
 
     await batch.commit();
     
-    // 4. Return the newly created server document by fetching it again
+    // 3. Return the newly created server document by fetching it again
     const newServerDoc = await getDoc(serverRef);
     if (newServerDoc.exists()) {
         const finalServerData = { id: newServerDoc.id, ...newServerDoc.data() } as Server;
-        // Manually fetch and attach categories/channels for the immediate return
-        const categoriesSnapshot = await getDocs(collection(db, 'servers', serverRef.id, 'categories'));
         const channelsSnapshot = await getDocs(collection(db, 'servers', serverRef.id, 'channels'));
-
-        const categories = categoriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), channels: [] } as Category));
-        const channels = channelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
-
-        channels.forEach(channel => {
-            const category = categories.find(c => c.id === channel.categoryId);
-            if (category) {
-                category.channels.push(channel);
-            }
-        });
-        
-        return { ...finalServerData, categories };
+        finalServerData.channels = channelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Channel));
+        return finalServerData;
     }
 
     return null;

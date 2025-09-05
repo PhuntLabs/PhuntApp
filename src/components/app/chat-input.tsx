@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Send, SmilePlus, X, AtSign, Slash, Bot, Trash, Lock } from 'lucide-react';
+import { Send, SmilePlus, X, AtSign, Slash, Bot, Trash, Lock, Vote, MessageSquare, Pipette, Shuffle } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,7 +15,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Server } from '@/lib/types';
-import { executeSlashCommand } from '@/ai/flows/slash-command-flow';
+import { executeSlashCommand, SlashCommandOutput } from '@/ai/flows/slash-command-flow';
 
 const standardEmojis: Emoji[] = [
     { name: "grinning", char: "😀", keywords: ["happy", "joy", "smile"] },
@@ -32,15 +32,23 @@ const standardEmojis: Emoji[] = [
     { name: "tada", char: "🎉", keywords: ["party", "celebrate", "hooray"] },
 ];
 
-const slashCommands = [
+const modCommands = [
     { name: 'clean', description: 'Deletes the last 100 messages in the channel.', icon: Trash, permission: 'manageChannels' },
     { name: 'lock', description: 'Lock the channel to prevent members from sending messages.', icon: Lock, permission: 'manageChannels' },
     { name: 'kick', description: 'Kick a member from the server.', icon: Bot, permission: 'kickMembers' },
     { name: 'ban', description: 'Ban a member from the server.', icon: Bot, permission: 'banMembers' },
 ];
 
+const qolforuCommands = [
+    { name: 'poll', description: 'Create a poll with multiple choices.', icon: Vote, args: '"Question" "Option A" "Option B" ...' },
+    { name: 'embed', description: 'Create a custom embed message.', icon: MessageSquare, args: '"Title" "Description" #color' },
+    { name: 'suggest', description: 'Create a suggestion embed for voting.', icon: Pipette, args: '"Your idea"' },
+    { name: 'random-user', description: 'Pick a random user from the channel.', icon: Shuffle, args: '' },
+];
+
+
 interface ChatInputProps {
-    onSendMessage: (text: string, imageUrl?: string) => void;
+    onSendMessage: (text: string, imageUrl?: string, embed?: any) => void;
     onTyping: (isTyping: boolean) => void;
     placeholder?: string;
     members: Partial<UserProfile>[];
@@ -76,12 +84,13 @@ export function ChatInput({
     
     const [filteredMembers, setFilteredMembers] = useState<Partial<UserProfile>[]>([]);
     const [filteredEmojis, setFilteredEmojis] = useState<(Emoji | CustomEmoji)[]>([]);
-    const [filteredCommands, setFilteredCommands] = useState<typeof slashCommands>([]);
+    const [filteredCommands, setFilteredCommands] = useState<(typeof modCommands[0] | typeof qolforuCommands[0])[]>([]);
    
     const combinedEmojis = [...standardEmojis, ...customEmojis];
 
     const { hasPermission } = usePermissions(serverContext || null, channelId || null);
     const canMentionEveryone = hasPermission('mentionEveryone');
+    const hasQolBot = serverContext?.members.some(id => id === 'qolforu-bot-id');
 
     const everyoneAndHereOption = useMemo(() => {
         return { id: 'everyone', displayName: 'everyone', note: 'Notifies everyone in this channel.' };
@@ -143,9 +152,12 @@ export function ChatInput({
         if (!isAutocompleteOpen || !autocompleteType) return;
 
         if (autocompleteType === 'command') {
-            const matches = slashCommands.filter(cmd => 
+            const allCommands = [...modCommands];
+            if(hasQolBot) allCommands.push(...qolforuCommands);
+
+            const matches = allCommands.filter(cmd => 
                 cmd.name.toLowerCase().startsWith(autocompleteQuery.toLowerCase()) &&
-                hasPermission(cmd.permission as any)
+                ('permission' in cmd ? hasPermission(cmd.permission as any) : true)
             );
             setFilteredCommands(matches);
         } else if (autocompleteType === 'mention') {
@@ -163,7 +175,7 @@ export function ChatInput({
             setFilteredEmojis(filtered);
         }
 
-    }, [autocompleteQuery, autocompleteType, isAutocompleteOpen, members, combinedEmojis, canMentionEveryone, everyoneAndHereOption, hasPermission]);
+    }, [autocompleteQuery, autocompleteType, isAutocompleteOpen, members, combinedEmojis, canMentionEveryone, everyoneAndHereOption, hasPermission, hasQolBot]);
 
     const insertAutocomplete = (value: string, type: 'mention' | 'emoji' | 'command') => {
         if (!inputRef.current) return;
@@ -222,7 +234,43 @@ export function ChatInput({
         
         // Handle slash commands
         if (text.startsWith('/') && serverContext && channelId && authUser) {
-            const [command, ...args] = text.substring(1).split(' ');
+            const [command, ...rawArgs] = text.substring(1).split(' ');
+            
+            // Check which bot owns the command
+            const qolCommand = qolforuCommands.find(c => c.name === command);
+            const modCommand = modCommands.find(c => c.name === command);
+
+            let botId: string | undefined = undefined;
+            if (qolCommand && hasQolBot) {
+                botId = 'qolforu-bot-id';
+            } else if (!modCommand) {
+                 toast({ variant: 'destructive', title: 'Unknown Command', description: `The command /${command} does not exist.` });
+                 return;
+            }
+
+            // Simple arg parsing: treat anything in quotes as a single argument
+            const args: string[] = [];
+            let currentArg = '';
+            let inQuote = false;
+            text.substring(1).split(' ').slice(1).join(' ').split('').forEach(char => {
+                if (char === '"') {
+                    if (inQuote) {
+                        if (currentArg) args.push(currentArg);
+                        currentArg = '';
+                        inQuote = false;
+                    } else {
+                        inQuote = true;
+                    }
+                } else if (char === ' ' && !inQuote) {
+                     if (currentArg) args.push(currentArg);
+                     currentArg = '';
+                } else {
+                    currentArg += char;
+                }
+            });
+            if(currentArg) args.push(currentArg);
+
+
             setIsUploading(true);
             try {
                 const result = await executeSlashCommand({
@@ -231,8 +279,15 @@ export function ChatInput({
                     channelId,
                     command,
                     args,
+                    botId,
                 });
-                toast({ title: `Command Executed: /${command}`, description: result });
+
+                if (result.type === 'message') {
+                     toast({ title: `Command Executed: /${command}`, description: result.content });
+                } else if (result.type === 'embed') {
+                    onSendMessage('', undefined, result.payload);
+                }
+               
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Command Failed', description: error.message });
             } finally {
@@ -287,6 +342,7 @@ export function ChatInput({
                     </p>
                      {filteredCommands.map(cmd => {
                         const Icon = cmd.icon;
+                        const hasArgs = 'args' in cmd && cmd.args;
                         return (
                             <button
                                 key={cmd.name}
@@ -297,7 +353,7 @@ export function ChatInput({
                                     <Icon className="size-5" />
                                 </div>
                                 <div>
-                                    <p className="font-medium">{cmd.name}</p>
+                                    <p className="font-medium flex items-center gap-2">{cmd.name} {hasArgs && <span className="text-xs text-muted-foreground">{cmd.args}</span>}</p>
                                     <p className="text-sm text-muted-foreground">{cmd.description}</p>
                                 </div>
                             </button>
@@ -446,5 +502,3 @@ export function ChatInput({
         </form>
     );
 }
-
-    

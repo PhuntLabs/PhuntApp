@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { 
     collection, 
@@ -13,15 +13,42 @@ import {
     query,
     where,
     getDocs,
-    writeBatch
+    onSnapshot,
+    orderBy,
 } from 'firebase/firestore';
 import type { Channel, ChannelType } from '@/lib/types';
 import { useAuth } from './use-auth';
 
 export function useChannels(serverId: string | undefined) {
   const { authUser } = useAuth();
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const createChannel = useCallback(async (name: string, categoryId: string): Promise<Channel | null> => {
+  useEffect(() => {
+    if (!serverId) {
+        setChannels([]);
+        setLoading(false);
+        return;
+    };
+    
+    setLoading(true);
+    const channelsRef = collection(db, 'servers', serverId, 'channels');
+    const q = query(channelsRef, orderBy('name', 'asc'));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const channelDocs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Channel));
+        setChannels(channelDocs);
+        setLoading(false);
+    }, (error) => {
+        console.error("Error fetching channels:", error);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [serverId]);
+
+
+  const createChannel = useCallback(async (name: string): Promise<Channel | null> => {
     if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
     
     const sanitizedName = name.trim().toLowerCase().replace(/\s+/g, '-');
@@ -35,17 +62,11 @@ export function useChannels(serverId: string | undefined) {
     if (!querySnapshot.empty) {
       throw new Error(`A channel named #${sanitizedName} already exists.`);
     }
-
-    const categoryChannelsQuery = query(channelsRef, where('categoryId', '==', categoryId));
-    const categoryChannelsSnapshot = await getDocs(categoryChannelsQuery);
-    const nextPosition = categoryChannelsSnapshot.size;
     
     const channelPayload: Omit<Channel, 'id'> = {
       name: sanitizedName,
       serverId: serverId,
-      categoryId: categoryId,
       createdAt: serverTimestamp(),
-      position: nextPosition,
       type: 'text' // Default type
     };
     
@@ -54,33 +75,9 @@ export function useChannels(serverId: string | undefined) {
     return {
       id: channelRef.id,
       ...channelPayload,
-      position: nextPosition
     } as Channel;
 
   }, [authUser, serverId]);
-  
-  const updateChannelOrder = useCallback(async (channelIds: string[], categoryId: string) => {
-    if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
-
-    const batch = writeBatch(db);
-    channelIds.forEach((id, index) => {
-      const channelRef = doc(db, 'servers', serverId, 'channels', id);
-      batch.update(channelRef, { position: index, categoryId: categoryId });
-    });
-    await batch.commit();
-  }, [authUser, serverId]);
-
-  const updateCategoryOrder = useCallback(async (categoryIds: string[]) => {
-    if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
-    
-    const batch = writeBatch(db);
-    categoryIds.forEach((id, index) => {
-        const categoryRef = doc(db, 'servers', serverId, 'categories', id);
-        batch.update(categoryRef, { position: index });
-    });
-    await batch.commit();
-  }, [authUser, serverId]);
-
 
   const updateChannel = useCallback(async (channelId: string, data: Partial<Channel>) => {
     if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
@@ -118,5 +115,5 @@ export function useChannels(serverId: string | undefined) {
   }, [authUser, serverId]);
 
 
-  return { createChannel, updateChannel, deleteChannel, updateChannelOrder, updateCategoryOrder };
+  return { channels, loading, createChannel, updateChannel, deleteChannel };
 }

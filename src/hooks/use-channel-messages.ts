@@ -16,7 +16,7 @@ import {
   where,
   getDocs,
 } from 'firebase/firestore';
-import type { Message, Server } from '@/lib/types';
+import type { Message, Server, Embed } from '@/lib/types';
 import { useAuth } from './use-auth';
 import { usePermissions } from './use-permissions';
 import { useToast } from './use-toast';
@@ -77,7 +77,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
   }, [server?.id, channelId]);
 
   const sendMessage = useCallback(
-    async (text: string, imageUrl?: string, replyTo?: Message['replyTo']) => {
+    async (text: string, imageUrl?: string, embed?: Embed, replyTo?: Message['replyTo']) => {
       if (!authUser || !server?.id || !channelId) return;
 
       if (!hasPermission('sendMessages')) {
@@ -98,6 +98,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
       };
 
       if (imageUrl) messagePayload.imageUrl = imageUrl;
+      if (embed) messagePayload.embed = embed;
       if (replyTo) messagePayload.replyTo = replyTo;
 
 
