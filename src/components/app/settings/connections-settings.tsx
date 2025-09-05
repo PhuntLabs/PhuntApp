@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import { Link, X, Loader2, Check } from 'lucide-react';
+import { Link, X, Loader2, Check, Github, Youtube } from 'lucide-react';
 import type { Connection } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
 import {
@@ -28,15 +28,29 @@ const supportedConnections = [
   {
     id: 'github',
     name: 'GitHub',
-    logo: '/github-logo.svg',
+    icon: Github,
     description: 'Display your GitHub profile and contributions.',
     type: 'input',
   },
   {
     id: 'spotify',
     name: 'Spotify',
-    logo: '/spotify-logo.svg',
+    icon: () => <Image src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_Green.png" alt="Spotify" width={24} height={24}/>,
     description: 'Show what you\'re listening to as your status.',
+    type: 'oauth',
+  },
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    icon: Youtube,
+    description: 'Display your YouTube channel on your profile.',
+    type: 'oauth',
+  },
+  {
+    id: 'steam',
+    name: 'Steam',
+    icon: () => <Image src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg" alt="Steam" width={24} height={24}/>,
+    description: 'Show off your Steam profile and game library.',
     type: 'oauth',
   }
 ];
@@ -70,7 +84,7 @@ export function ConnectionsSettings() {
         const newConnection: Connection = {
             type: 'github',
             username: githubUsername.trim(),
-            connectedAt: new Date(),
+            connectedAt: new Date(), // Changed from serverTimestamp
         };
 
         const updatedConnections = [...existingConnections, newConnection];
@@ -85,7 +99,7 @@ export function ConnectionsSettings() {
     }
   };
   
-  const handleDisconnect = async (type: 'github' | 'spotify') => {
+  const handleDisconnect = async (type: 'github' | 'spotify' | 'steam' | 'youtube') => {
     setIsUpdating(true);
      try {
       const updatedConnections = connections.filter(c => c.type !== type);
@@ -126,13 +140,14 @@ export function ConnectionsSettings() {
           <div className="space-y-4">
             {supportedConnections.map(connInfo => {
                 const existingConnection = connections.find(c => c.type === connInfo.id);
+                const Icon = connInfo.icon;
 
-                if (connInfo.id === 'github') {
+                if (connInfo.type === 'input' && connInfo.id === 'github') {
                     return (
                          <div key={connInfo.id} className="p-4 border rounded-lg">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
-                                    <Image src={connInfo.logo} alt={`${connInfo.name} logo`} width={40} height={40} />
+                                    <Icon className="size-10"/>
                                     <div>
                                         <p className="font-semibold">{connInfo.name}</p>
                                         <p className="text-sm text-muted-foreground">{connInfo.description}</p>
@@ -158,16 +173,17 @@ export function ConnectionsSettings() {
                     )
                 }
 
+                // Render other types as "Coming Soon"
                 return (
                     <div key={connInfo.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center gap-4">
-                            <Image src={connInfo.logo} alt={`${connInfo.name} logo`} width={40} height={40} />
+                            <Icon className="size-10"/>
                             <div>
                                 <p className="font-semibold">{connInfo.name}</p>
                                 <p className="text-sm text-muted-foreground">{connInfo.description}</p>
                             </div>
                         </div>
-                        <Button onClick={() => toast({ title: 'Coming Soon!', description: 'This integration is not yet available.' })} disabled>
+                        <Button onClick={() => toast({ title: 'Coming Soon!', description: 'This integration is not yet available.' })}>
                             Connect
                         </Button>
                     </div>

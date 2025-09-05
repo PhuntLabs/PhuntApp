@@ -2,7 +2,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, MessageCircleMore, SmilePlus, Check, Gamepad2, Link as LinkIcon } from 'lucide-react';
+import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, MessageCircleMore, SmilePlus, Check, Gamepad2, Link as LinkIcon, Github } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -403,7 +403,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                 <div className="mb-2">
                                     <h4 className="text-xs font-bold uppercase text-muted-foreground">Listening to Spotify</h4>
                                      <div className="flex items-center gap-3 mt-1 bg-secondary/50 p-2 rounded-md">
-                                        <Image src="/spotify-logo.svg" alt="Spotify" width={40} height={40} className="rounded-md" />
+                                        <Image src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_Green.png" alt="Spotify" width={40} height={40} className="rounded-md" />
                                         <div className="overflow-hidden flex-1">
                                             <p className="font-semibold truncate">Daylight</p>
                                             <p className="text-xs text-muted-foreground truncate">by David Kushner</p>
@@ -411,11 +411,10 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                         </div>
                                     </div>
                                 </div>
+                                <Separator className="my-2" />
                                 </>
                             )}
                             
-                            {user.connections && user.connections.length > 0 && <Separator className="my-2" />}
-
                             {user.currentGame && (
                                 <>
                                 <div className="mb-2">
@@ -436,20 +435,30 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                         </Link>
                                     )}
                                 </div>
-                                 <Separator className="my-2" />
+                                <Separator className="my-2" />
                                 </>
                             )}
 
-                             <div className="flex flex-wrap gap-2">
-                                {githubConnection && (
-                                    <a href={`https://github.com/${githubConnection.username}`} target="_blank" rel="noopener noreferrer">
-                                        <Button variant="outline" size="sm">
-                                            <Image src="/github-logo.svg" alt="GitHub" width={16} height={16} className="mr-2"/>
-                                            GitHub
-                                        </Button>
-                                    </a>
-                                )}
-                            </div>
+                             <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
+                             
+                             {user.connections && user.connections.length > 0 && (
+                                 <>
+                                <Separator className="my-2" />
+                                <div className="mb-2">
+                                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Connections</h4>
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                        {githubConnection && (
+                                            <a href={`https://github.com/${githubConnection.username}`} target="_blank" rel="noopener noreferrer">
+                                                <Button variant="outline" size="sm" className="bg-[#181717] hover:bg-[#181717]/80 text-white">
+                                                    <Github className="mr-2"/>
+                                                    GitHub
+                                                </Button>
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                                </>
+                            )}
 
 
                             {serverContext && (
@@ -496,9 +505,6 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                 </>
                             )}
 
-                            <Separator className="my-2" />
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
-                            
                             {isCurrentUser && (
                                 <>
                                 <Separator className="my-4" />

@@ -1,3 +1,4 @@
+
 import { FieldValue, Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 
@@ -27,7 +28,7 @@ export interface CustomGame {
 }
 
 export interface Connection {
-    type: 'spotify' | 'github' | 'steam'; // Add more as needed
+    type: 'spotify' | 'github' | 'steam' | 'youtube'; // Add more as needed
     username: string;
     connectedAt: FieldValue | Date;
 }
