@@ -302,7 +302,7 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
                                                     id={`perm-${perm.id}`}
                                                     checked={activeRoleForEditing.permissions?.[perm.id] || false}
                                                     onCheckedChange={(checked) => handlePermissionChange(roleIndex, perm.id, !!checked)}
-                                                    disabled={activeRoleForEditing.permissions.administrator && perm.id !== 'administrator'}
+                                                    disabled={activeRoleForEditing.permissions?.administrator && perm.id !== 'administrator'}
                                                 />
                                             </div>
                                         )})}

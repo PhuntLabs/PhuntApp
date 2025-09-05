@@ -136,14 +136,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { displayName, photoURL, ...firestoreData } = data;
 
       // Update Firebase Auth profile if display name or photo URL changed
-      const profileUpdates: { displayName?: string; photoURL?: string } = {};
-      if (displayName) profileUpdates.displayName = displayName;
-      if (photoURL) profileUpdates.photoURL = photoURL;
+      const profileUpdates: { displayName?: string; photoURL?: string | null } = {};
+      if (displayName !== undefined) profileUpdates.displayName = displayName;
+      if (photoURL !== undefined) profileUpdates.photoURL = photoURL;
       
       if (Object.keys(profileUpdates).length > 0) {
         await updateProfile(authUser, profileUpdates);
       }
-
 
       // Update Firestore document
       const userRef = doc(db, 'users', authUser.uid);
@@ -300,5 +299,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    
