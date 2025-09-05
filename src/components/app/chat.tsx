@@ -38,11 +38,10 @@ interface ChatProps {
   onSendMessage: (text: string, imageUrl?: string, replyTo?: Message['replyTo']) => void;
   onEditMessage: (messageId: string, newText: string) => void;
   onDeleteMessage: (messageId: string) => void;
-  onToggleReaction: (messageId: string, emoji: string) => void;
   currentUser: User;
 }
 
-export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMessage, onToggleReaction, currentUser }: ChatProps) {
+export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMessage, currentUser }: ChatProps) {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
@@ -98,11 +97,6 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
     }
     onSendMessage(text, imageUrl, replyInfo);
     setReplyingTo(null);
-  }
-
-  const insertReaction = (messageId: string, emoji: Emoji | CustomEmoji) => {
-    const emojiIdentifier = 'char' in emoji ? emoji.char : `:${emoji.name}:`;
-    onToggleReaction(messageId, emojiIdentifier);
   }
 
   const otherMember = chat.members.find(m => m.id !== currentUser.uid);
@@ -224,24 +218,6 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                             <MessageRenderer content={message.text} imageUrl={message.imageUrl} />
                             {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
                             </div>
-                            {message.reactions && message.reactions.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                    {message.reactions.map(reaction => (
-                                        <Button 
-                                            key={reaction.emoji} 
-                                            variant="secondary"
-                                            className={cn(
-                                                "h-7 px-2.5 rounded-full flex items-center gap-1.5 text-xs",
-                                                reaction.users.includes(currentUser.uid) && "bg-primary/20 border border-primary/50 text-primary-foreground"
-                                            )}
-                                            onClick={() => onToggleReaction(message.id, reaction.emoji)}
-                                        >
-                                            <MessageRenderer content={reaction.emoji} />
-                                            <span className="font-semibold">{reaction.users.length}</span>
-                                        </Button>
-                                    ))}
-                                </div>
-                            )}
                         </>
                       )}
                     </div>
@@ -249,20 +225,6 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
 
                   {!isEditing && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md border p-0.5">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-6"><SmilePlus className="size-3.5" /></Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80 p-0 border-none mb-1" side="top" align="end">
-                                <ScrollArea className="h-48">
-                                <div className="p-2 grid grid-cols-8 gap-1">
-                                    {standardEmojis.map(emoji => (
-                                        <button key={emoji.name} type="button" onClick={() => insertReaction(message.id, emoji)} className="aspect-square text-xl flex items-center justify-center rounded-md hover:bg-accent">{emoji.char}</button>
-                                    ))}
-                                </div>
-                                </ScrollArea>
-                            </PopoverContent>
-                        </Popover>
                       <Button variant="ghost" size="icon" className="size-6" onClick={() => setReplyingTo(message)}><Reply className="size-3.5" /></Button>
                       {isCurrentUser && <>
                         <Button variant="ghost" size="icon" className="size-6" onClick={() => handleEdit(message)}><Pencil className="size-3.5" /></Button>

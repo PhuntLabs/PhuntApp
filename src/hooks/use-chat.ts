@@ -19,7 +19,6 @@ import {
 } from 'firebase/firestore';
 import type { Message } from '@/lib/types';
 import { useAuth } from './use-auth';
-import { toggleReaction as toggleReactionFlow } from '@/ai/flows/reaction-flow';
 import { useToast } from './use-toast';
 
 // Function to find mentioned user IDs from message text
@@ -124,28 +123,5 @@ export function useChat(chatId: string | undefined) {
     [chatId]
   );
 
-  const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
-    if (!authUser || !chatId) return;
-  
-    try {
-        await toggleReactionFlow({
-            userId: authUser.uid,
-            messageId,
-            emoji,
-            context: {
-                type: 'dm',
-                chatId,
-            }
-        });
-    } catch(error: any) {
-        console.error("Failed to toggle reaction:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Reaction Failed',
-            description: error.message || 'Could not update reaction.',
-        });
-    }
-  }, [authUser, chatId, toast]);
-
-  return { messages, sendMessage, editMessage, deleteMessage, toggleReaction };
+  return { messages, sendMessage, editMessage, deleteMessage };
 }

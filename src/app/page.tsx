@@ -48,7 +48,7 @@ export default function Home() {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [initialLoad, setInitialLoad] = useState(true);
 
-  const { messages, sendMessage, editMessage, deleteMessage, toggleReaction: toggleDmReaction } = useChat(selectedChat?.id);
+  const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
   const { server, setServer, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
   const { createChannel, updateChannel, deleteChannel } = useChannels(selectedServer?.id);
   const { 
@@ -56,7 +56,6 @@ export default function Home() {
     sendMessage: sendChannelMessage,
     editMessage: editChannelMessage,
     deleteMessage: deleteChannelMessage,
-    toggleReaction: toggleChannelReaction,
   } = useChannelMessages(selectedServer, selectedChannel?.id);
 
 
@@ -287,7 +286,7 @@ export default function Home() {
         />
         
         <div className="flex flex-1 min-w-0">
-          <div className="w-64 flex-shrink-0 bg-secondary/30 flex flex-col hidden md:flex">
+          <div className="w-64 flex-shrink-0 bg-secondary/30 flex-flex-col hidden md:flex">
               <div className="flex-1 overflow-y-auto">
                   {server ? (
                   <ServerSidebar 
@@ -351,7 +350,6 @@ export default function Home() {
                 onSendMessage={sendChannelMessage}
                 onEditMessage={editChannelMessage}
                 onDeleteMessage={deleteChannelMessage}
-                onToggleReaction={toggleChannelReaction}
               />
               ) : server ? (
               <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
@@ -367,7 +365,6 @@ export default function Home() {
                   onSendMessage={handleSendMessage}
                   onEditMessage={editMessage}
                   onDeleteMessage={deleteMessage}
-                  onToggleReaction={toggleDmReaction}
                   currentUser={authUser}
               />
               ) : (

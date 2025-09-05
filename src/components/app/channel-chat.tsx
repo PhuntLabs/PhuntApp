@@ -39,7 +39,6 @@ interface ChannelChatProps {
     onSendMessage: (text: string, imageUrl?: string, replyTo?: Message['replyTo']) => void;
     onEditMessage: (messageId: string, newText: string) => void;
     onDeleteMessage: (messageId: string) => void;
-    onToggleReaction: (messageId: string, emoji: string) => void;
 }
 
 export function ChannelChat({ 
@@ -51,7 +50,6 @@ export function ChannelChat({
     onSendMessage,
     onEditMessage,
     onDeleteMessage,
-    onToggleReaction,
 }: ChannelChatProps) {
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingText, setEditingText] = useState('');
@@ -112,11 +110,6 @@ export function ChannelChat({
         setReplyingTo(null);
     }
     
-    const insertReaction = (messageId: string, emoji: Emoji | CustomEmoji) => {
-        const emojiIdentifier = 'char' in emoji ? emoji.char : `:${emoji.name}:`;
-        onToggleReaction(messageId, emojiIdentifier);
-    }
-
     const displayName = channel.name.replace(/-/g, ' ');
 
     const getSenderProfile = (senderId: string) => {
@@ -238,24 +231,6 @@ export function ChannelChat({
                                                     <MessageRenderer content={message.text} customEmojis={server.customEmojis} />
                                                     {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
                                                     </div>
-                                                     {message.reactions && message.reactions.length > 0 && (
-                                                        <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                                            {message.reactions.map(reaction => (
-                                                                <Button 
-                                                                    key={reaction.emoji} 
-                                                                    variant="secondary"
-                                                                    className={cn(
-                                                                        "h-7 px-2.5 rounded-full flex items-center gap-1.5 text-xs",
-                                                                        reaction.users.includes(currentUser.uid) && "bg-primary/20 border border-primary/50 text-primary-foreground"
-                                                                    )}
-                                                                    onClick={() => onToggleReaction(message.id, reaction.emoji)}
-                                                                >
-                                                                    <MessageRenderer content={reaction.emoji} customEmojis={server.customEmojis} />
-                                                                    <span className="font-semibold">{reaction.users.length}</span>
-                                                                </Button>
-                                                            ))}
-                                                        </div>
-                                                    )}
                                                 </>
                                             )}
                                         </div>
@@ -263,39 +238,6 @@ export function ChannelChat({
 
                                     {!isEditing && (
                                         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md border p-0.5">
-                                             <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="size-6"><SmilePlus className="size-3.5" /></Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-80 p-0 border-none mb-1" side="top" align="end">
-                                                    <Tabs defaultValue="standard">
-                                                        <TabsList className="w-full rounded-b-none">
-                                                            <TabsTrigger value="standard" className="flex-1">Standard</TabsTrigger>
-                                                            {server.customEmojis && server.customEmojis.length > 0 && <TabsTrigger value="custom" className="flex-1">Custom</TabsTrigger>}
-                                                        </TabsList>
-                                                        <TabsContent value="standard" className="mt-0">
-                                                            <ScrollArea className="h-48">
-                                                            <div className="p-2 grid grid-cols-8 gap-1">
-                                                                {standardEmojis.map(emoji => (
-                                                                    <button key={emoji.name} type="button" onClick={() => insertReaction(message.id, emoji)} className="aspect-square text-xl flex items-center justify-center rounded-md hover:bg-accent">{emoji.char}</button>
-                                                                ))}
-                                                            </div>
-                                                            </ScrollArea>
-                                                        </TabsContent>
-                                                        <TabsContent value="custom" className="mt-0">
-                                                             <ScrollArea className="h-48">
-                                                                <div className="p-2 grid grid-cols-8 gap-2">
-                                                                    {server.customEmojis?.map(emoji => (
-                                                                        <button key={emoji.name} type="button" onClick={() => insertReaction(message.id, emoji)} className="aspect-square flex items-center justify-center rounded-md hover:bg-accent">
-                                                                            <Image src={emoji.url} alt={emoji.name} width={28} height={28} />
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
-                                                            </ScrollArea>
-                                                        </TabsContent>
-                                                    </Tabs>
-                                                </PopoverContent>
-                                            </Popover>
                                             <Button variant="ghost" size="icon" className="size-6" onClick={() => setReplyingTo(message)}><Reply className="size-3.5" /></Button>
                                             {isCurrentUser && <>
                                                 <Button variant="ghost" size="icon" className="size-6" onClick={() => handleEdit(message)}><Pencil className="size-3.5" /></Button>

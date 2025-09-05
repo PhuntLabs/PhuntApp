@@ -19,7 +19,6 @@ import {
 import type { Message, Server } from '@/lib/types';
 import { useAuth } from './use-auth';
 import { usePermissions } from './use-permissions';
-import { toggleReaction as toggleReactionFlow } from '@/ai/flows/reaction-flow';
 import { useToast } from './use-toast';
 
 // Function to find mentioned user IDs from message text
@@ -130,30 +129,5 @@ export function useChannelMessages(server: Server | null, channelId: string | un
     [server?.id, channelId]
   );
 
-  const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
-    if (!authUser || !server?.id || !channelId) return;
-
-    try {
-        await toggleReactionFlow({
-            userId: authUser.uid,
-            messageId,
-            emoji,
-            context: {
-                type: 'channel',
-                serverId: server.id,
-                channelId,
-            }
-        });
-    } catch(error: any) {
-        console.error("Failed to toggle reaction:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Reaction Failed',
-            description: error.message || 'Could not update reaction.',
-        });
-    }
-
-  }, [authUser, server?.id, channelId, toast]);
-
-  return { messages, sendMessage, editMessage, deleteMessage, toggleReaction };
+  return { messages, sendMessage, editMessage, deleteMessage };
 }

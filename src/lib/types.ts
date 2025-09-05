@@ -1,3 +1,4 @@
+
 import { FieldValue, Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 
@@ -38,11 +39,6 @@ export interface PopulatedChat extends Omit<ChatDocument, 'members'> {
   members: Partial<UserProfile>[];
 }
 
-export interface Reaction {
-  emoji: string;
-  users: string[]; // array of user IDs
-}
-
 export interface Message {
   id: string;
   sender: string;
@@ -51,7 +47,6 @@ export interface Message {
   edited?: boolean;
   mentions?: string[];
   imageUrl?: string;
-  reactions?: Reaction[];
   replyTo?: {
     messageId: string;
     senderId: string;
