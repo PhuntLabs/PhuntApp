@@ -5,9 +5,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { Servers } from '@/components/app/servers';
 import { useServers } from '@/hooks/use-servers';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Fullscreen } from 'lucide-react';
+import { ExternalLink, Fullscreen, X } from 'lucide-react';
 import type { Game } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
+import { useState } from 'react';
 
 // This should match the list in /app/games/page.tsx
 const mockGames: Game[] = [
@@ -73,7 +74,8 @@ export default function GameViewerPage() {
     const { servers, loading: userServersLoading, createServer } = useServers();
     const params = useParams();
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, updateUserProfile } = useAuth();
+    const [isExiting, setIsExiting] = useState(false);
 
     const gameId = params.gameId as string;
     const game = mockGames.find(g => g.id === gameId);
@@ -82,6 +84,22 @@ export default function GameViewerPage() {
         const iframe = document.getElementById('game-iframe') as HTMLIFrameElement;
         if (iframe && iframe.requestFullscreen) {
             iframe.requestFullscreen();
+        }
+    };
+    
+    const handleExitGame = async () => {
+        if (!user) return;
+        setIsExiting(true);
+        try {
+            await updateUserProfile({
+                customStatus: '',
+                currentGame: null,
+            });
+            router.push('/');
+        } catch (error) {
+            console.error('Failed to exit game:', error);
+        } finally {
+            setIsExiting(false);
         }
     };
 
@@ -125,6 +143,10 @@ export default function GameViewerPage() {
                                 Open in New Tab
                             </Button>
                         </a>
+                        <Button variant="destructive" onClick={handleExitGame} disabled={isExiting}>
+                            <X className="mr-2" />
+                            {isExiting ? 'Exiting...' : 'Exit Game'}
+                        </Button>
                     </div>
                 </header>
                 <main className="flex-1 bg-black">
