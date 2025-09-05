@@ -7,7 +7,7 @@ body {
 }
 
 @layer base {
-  :root {
+  :root, .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
     --card: 240 5.9% 10%;
@@ -33,24 +33,36 @@ body {
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
     --radius: 0.8rem;
-
-    /* Glassmorphism additions */
-    --sidebar-background: hsl(240 5.9% 10% / 0.8);
-    --sidebar-foreground: 240 5% 64.9%;
-    --sidebar-primary: 263.4 99.3% 62.5%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: hsl(240 3.7% 15.9% / 0.8);
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: hsl(240 3.7% 15.9% / 0.5);
-    --sidebar-ring: 263.4 99.3% 62.5%;
   }
 
-  .dark {
-    --background: 240 10% 3.9%;
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 96.1%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 263.4 99.3% 62.5%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 94.1%;
+    --secondary-foreground: 240 10% 3.9%;
+    --muted: 0 0% 94.1%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 0 0% 94.1%;
+    --accent-foreground: 240 10% 3.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 263.4 99.3% 62.5%;
+  }
+
+  .full-dark {
+    --background: 0 0% 0%;
     --foreground: 0 0% 98%;
     --card: 240 5.9% 10%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+    --popover: 0 0% 0%;
     --popover-foreground: 0 0% 98%;
     --primary: 263.4 99.3% 62.5%;
     --primary-foreground: 0 0% 98%;
@@ -65,22 +77,6 @@ body {
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 263.4 99.3% 62.5%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --radius: 0.8rem;
-
-    /* Glassmorphism additions */
-    --sidebar-background: hsl(240 5.9% 10% / 0.8);
-    --sidebar-foreground: 240 5% 64.9%;
-    --sidebar-primary: 263.4 99.3% 62.5%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: hsl(240 3.7% 15.9% / 0.8);
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: hsl(240 3.7% 15.9% / 0.5);
-    --sidebar-ring: 263.4 99.3% 62.5%;
   }
 }
 
@@ -90,12 +86,8 @@ body {
   }
   body {
     @apply bg-background text-foreground;
-    background-image: radial-gradient(circle at 1px 1px, hsl(240 3.7% 15.9% / 0.5) 1px, transparent 0);
+    background-image: radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0);
     background-size: 2rem 2rem;
     backdrop-filter: blur(8px);
   }
-}
-
-[data-sidebar='sidebar'][data-variant='floating'] {
-    backdrop-filter: blur(16px);
 }
