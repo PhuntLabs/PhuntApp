@@ -3,16 +3,25 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Server, UserProfile } from "@/lib/types";
-import { Crown } from "lucide-react";
+import type { Server, UserProfile, UserStatus } from "@/lib/types";
+import { Crown, CircleDot, Moon, XCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { UserNav } from "./user-nav";
+import { cn } from "@/lib/utils";
 
 interface MemberListProps {
     members: Partial<UserProfile>[];
     server: Server;
     loading: boolean;
 }
+
+const statusConfig: Record<UserStatus, { color: string }> = {
+    online: { color: 'bg-green-500' },
+    idle: { color: 'bg-yellow-500' },
+    dnd: { color: 'bg-red-500' },
+    offline: { color: 'bg-gray-500' },
+};
+
 
 export function MemberList({ members, server, loading }: MemberListProps) {
     if (loading) {
@@ -41,6 +50,7 @@ export function MemberList({ members, server, loading }: MemberListProps) {
             <div className="space-y-1">
                 {members.map(member => {
                     const isOwner = member.uid === server.ownerId;
+                    const status = member.status || 'offline';
                     return (
                         <Popover key={member.id}>
                             <PopoverTrigger asChild>
@@ -50,7 +60,7 @@ export function MemberList({ members, server, loading }: MemberListProps) {
                                             <AvatarImage src={member.photoURL || undefined} />
                                             <AvatarFallback>{member.displayName?.[0]}</AvatarFallback>
                                         </Avatar>
-                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-secondary/30" />
+                                        <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-secondary/30", statusConfig[status].color)} />
                                     </div>
                                     <span className="font-medium text-sm truncate">{member.displayName}</span>
                                     {isOwner && <Crown className="size-4 text-yellow-500" />}

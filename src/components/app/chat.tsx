@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -95,6 +96,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
               const sender = chat.members.find(m => m.id === message.sender) as UserProfile;
               const isCurrentUser = message.sender === currentUser?.uid;
               const isEditing = editingMessageId === message.id;
+              const isMentioned = message.mentions?.includes(currentUser.uid);
 
               const prevMessage = messages[index - 1];
               const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender;
@@ -103,8 +105,9 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                 <div
                   key={message.id}
                   className={cn(
-                    "group relative flex items-start gap-3 hover:bg-foreground/5 py-0.5 px-2 rounded-md",
-                    isFirstInGroup ? "mt-3" : "mt-0"
+                    "group relative flex items-start gap-3 py-0.5 px-2 rounded-md",
+                    isFirstInGroup ? "mt-3" : "mt-0",
+                    isMentioned ? "bg-yellow-500/10 hover:bg-yellow-500/20" : "hover:bg-foreground/5"
                   )}
                 >
                   <div className="flex-1 flex gap-3 items-start">

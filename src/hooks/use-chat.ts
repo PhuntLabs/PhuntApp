@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -13,8 +14,31 @@ import {
   updateDoc,
   deleteDoc,
   getDoc,
+  where,
+  getDocs,
 } from 'firebase/firestore';
 import type { Message } from '@/lib/types';
+
+// Function to find mentioned user IDs from message text
+async function getMentions(text: string): Promise<string[]> {
+  const mentionRegex = /@(\w+)/g;
+  const mentions = text.match(mentionRegex);
+  if (!mentions) return [];
+
+  const usernames = mentions.map(m => m.substring(1));
+  const mentionedUserIds: string[] = [];
+
+  // Batch queries for usernames to be efficient
+  // Firestore `in` query is limited to 10 items per query
+  for (let i = 0; i < usernames.length; i += 10) {
+    const chunk = usernames.slice(i, i + 10);
+    const q = query(collection(db, 'users'), where('displayName', 'in', chunk));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => mentionedUserIds.push(doc.id));
+  }
+
+  return mentionedUserIds;
+}
 
 export function useChat(chatId: string | undefined) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -45,11 +69,14 @@ export function useChat(chatId: string | undefined) {
     async (text: string, sender: string): Promise<Message | null> => {
       if (!chatId) return null;
       
+      const mentionedUserIds = await getMentions(text);
+
       const messagePayload = {
         text,
         sender,
         timestamp: serverTimestamp(),
         edited: false,
+        mentions: mentionedUserIds,
       };
 
       const messageDocRef = await addDoc(collection(db, 'chats', chatId, 'messages'), messagePayload);
@@ -67,10 +94,12 @@ export function useChat(chatId: string | undefined) {
   const editMessage = useCallback(
     async (messageId: string, newText: string) => {
         if (!chatId) return;
+        const mentionedUserIds = await getMentions(newText);
         const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
         await updateDoc(messageRef, {
             text: newText,
             edited: true,
+            mentions: mentionedUserIds,
         });
     },
     [chatId]

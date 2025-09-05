@@ -1,6 +1,8 @@
 
 import { FieldValue, Timestamp } from "firebase/firestore";
 
+export type UserStatus = 'online' | 'idle' | 'dnd' | 'offline';
+
 export interface UserProfile {
   id: string;
   uid: string;
@@ -13,6 +15,7 @@ export interface UserProfile {
   isBot?: boolean;
   createdAt?: FieldValue;
   badges?: string[];
+  status?: UserStatus;
 }
 
 export interface ChatDocument {
@@ -35,6 +38,7 @@ export interface Message {
   text: string;
   timestamp: FieldValue;
   edited?: boolean;
+  mentions?: string[];
 }
 
 export interface FriendRequest {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -52,7 +53,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const developerEmails = ['raidensch0@gmail.com'];
-const developerUsernames = ['testacc', 'aura farmer'];
+const developerUsernames = ['testacc', 'aura farmer', 'heina', 'thatguy123'];
 
 function applyDeveloperBadge(profile: UserProfile): UserProfile {
     if (
@@ -170,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       createdAt: serverTimestamp(),
       photoURL: photoURL,
       uid: firebaseUser.uid,
+      status: 'online',
     };
 
     try {
