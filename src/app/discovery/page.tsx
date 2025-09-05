@@ -150,8 +150,9 @@ function BotList() {
 
 function BotCard({ bot }: { bot: UserProfile }) {
     const { servers } = useServers(true);
+    const { user } = useAuth();
     
-    const serversWithoutBot = servers.filter(s => !s.members.includes(bot.uid));
+    const availableServers = servers.filter(s => s.ownerId === user?.uid && !s.members.includes(bot.uid));
 
     return (
         <Card className="flex flex-col">
@@ -174,7 +175,7 @@ function BotCard({ bot }: { bot: UserProfile }) {
                  </p>
             </CardContent>
             <CardFooter>
-                <AddBotToServerDialog bot={bot} availableServers={serversWithoutBot}>
+                <AddBotToServerDialog bot={bot} availableServers={availableServers}>
                     <Button className="w-full">
                         <Bot className="mr-2 size-4" />
                         Add Bot

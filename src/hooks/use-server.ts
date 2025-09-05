@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -129,10 +130,10 @@ export function useServer(serverId: string | undefined) {
 
   }, [authUser, currentUser]);
 
-  const addBotToServer = useCallback(async (botId: string, serverId: string) => {
+  const addBotToServer = useCallback(async (botId: string, serverIdToAdd: string) => {
     if (!authUser) throw new Error('Not authenticated');
 
-    const serverRef = doc(db, 'servers', serverId);
+    const serverRef = doc(db, 'servers', serverIdToAdd);
     const serverDoc = await getDoc(serverRef);
     if (!serverDoc.exists()) throw new Error("Server not found");
     
@@ -140,13 +141,17 @@ export function useServer(serverId: string | undefined) {
     if (serverData.ownerId !== authUser.uid) {
         throw new Error("Only the server owner can add bots.");
     }
+    
+    if (serverData.members.includes(botId)) {
+        throw new Error("This bot is already a member of the server.");
+    }
 
     const botRole: Role = {
-        id: `bot-role-${botId}`,
+        id: `bot-role-${botId.slice(0, 5)}`,
         name: 'Bot',
         color: '#808080',
         priority: 99, // Low priority
-        permissions: { viewChannels: true, sendMessages: true }
+        permissions: { viewChannels: true, sendMessages: true, mentionEveryone: true }
     }
 
     const memberDetailPath = `memberDetails.${botId}`;
@@ -154,7 +159,7 @@ export function useServer(serverId: string | undefined) {
 
     await updateDoc(serverRef, {
         members: arrayUnion(botId),
-        roles: newRoles,
+        roles: arrayUnion(botRole),
         [memberDetailPath]: {
             joinedAt: serverTimestamp(),
             roles: [botRole.id]
