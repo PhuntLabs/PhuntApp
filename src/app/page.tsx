@@ -40,7 +40,7 @@ export default function Home() {
   
   // Only initialize hooks if auth has loaded and user exists
   const authReady = !loading && !!authUser;
-  const { chats, loading: chatsLoading, addChat, removeChat, totalUnreadCount } = useChats(authReady);
+  const { chats, loading: chatsLoading, addChat, removeChat } = useChats(authReady);
   const { servers, setServers, loading: serversLoading, createServer } = useServers(authReady);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests(authReady);
 
@@ -211,15 +211,23 @@ export default function Home() {
   }
 
   function handleSelectServer(server: Server | null) {
+    if (server === null && !selectedServer) {
+      // If we are already in DMs, and we click DM root, do nothing.
+      return;
+    }
+    
     if (server === null) {
-      // If navigating to DMs
+      // If navigating to DMs from a server
       const mostRecentUnread = getMostRecentUnreadChat;
       if (mostRecentUnread) {
         handleSelectChat(mostRecentUnread);
+      } else if (chats.length > 0) {
+        // Select the most recent chat if none are unread
+        handleSelectChat(chats[0]);
       }
     }
     setSelectedServer(server);
-    setSelectedChat(null);
+    setSelectedChat(null); // Deselect chat when switching server context
     if (server && server.channels && server.channels.length > 0) {
         const generalChannel = server.channels.find(c => c.name === '!general') || server.channels[0];
         handleSelectChannel(generalChannel);
@@ -334,7 +342,7 @@ export default function Home() {
           onCreateServer={handleCreateServer} 
           selectedServer={selectedServer}
           onSelectServer={handleSelectServer}
-          totalUnreadCount={totalUnreadCount}
+          onSelectChat={handleSelectChat}
         />
         
         <div className="flex flex-1 min-w-0">

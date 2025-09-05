@@ -1,7 +1,8 @@
+
 'use client';
 
 import { Plus, Compass, MessageSquare } from 'lucide-react';
-import type { Server } from '@/lib/types';
+import type { Server, PopulatedChat } from '@/lib/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { AddServerDialog } from './add-server-dialog';
 import { cn } from '@/lib/utils';
@@ -9,6 +10,8 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { Separator } from '../ui/separator';
 import { usePathname, useRouter } from 'next/navigation';
 import { Badge } from '../ui/badge';
+import { useAuth } from '@/hooks/use-auth';
+import { useChats } from '@/hooks/use-chats';
 
 interface ServersProps {
     servers: Server[];
@@ -16,13 +19,31 @@ interface ServersProps {
     onCreateServer: (name: string) => Promise<void>;
     selectedServer: Server | null;
     onSelectServer: (server: Server | null) => void;
-    totalUnreadCount: number;
+    onSelectChat: (chat: PopulatedChat) => void;
 }
 
-export function Servers({ servers, loading, onCreateServer, selectedServer, onSelectServer, totalUnreadCount }: ServersProps) {
+export function Servers({ servers, loading, onCreateServer, selectedServer, onSelectServer, onSelectChat }: ServersProps) {
     const router = useRouter();
     const pathname = usePathname();
+    const { user, authUser } = useAuth();
     const isDiscoveryActive = pathname === '/discovery';
+
+    const { chats } = useChats(!!authUser);
+
+    const unreadChats = chats.filter(chat => 
+        chat.unreadCount && user && (chat.unreadCount[user.uid] || 0) > 0
+    );
+
+    const handleSelectDMRoot = () => {
+        if (pathname !== '/') router.push('/');
+        onSelectServer(null);
+    }
+    
+    const handleSelectUnreadChat = (chat: PopulatedChat) => {
+        if (pathname !== '/') router.push('/');
+        onSelectServer(null);
+        onSelectChat(chat);
+    }
 
     const handleSelectServer = (server: Server | null) => {
         if (pathname !== '/') router.push('/');
@@ -46,7 +67,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                 {/* Direct Messages Button */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                         <button onClick={() => handleSelectServer(null)} className="relative group">
+                         <button onClick={handleSelectDMRoot} className="relative group">
                             <div 
                                 className={cn(
                                     "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
@@ -61,17 +82,49 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                     <MessageSquare />
                                 </AvatarFallback>
                             </Avatar>
-                            {totalUnreadCount > 0 && (
-                                <Badge className="absolute -top-1 -right-2 bg-red-500 text-white h-5 px-1.5 border-2 border-background/80">
-                                    {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                                </Badge>
-                            )}
                         </button>
                     </TooltipTrigger>
                     <TooltipContent side="right">
                         <p>Direct Messages</p>
                     </TooltipContent>
                 </Tooltip>
+
+                {unreadChats.length > 0 && <Separator className="w-8 bg-border/50" />}
+
+                 {/* Unread DM Notifications */}
+                {unreadChats.map((chat) => {
+                    const otherMember = chat.members.find(m => m.id !== user?.uid);
+                    if (!otherMember) return null;
+
+                    return (
+                        <Tooltip key={chat.id}>
+                            <TooltipTrigger asChild>
+                                <button onClick={() => handleSelectUnreadChat(chat)} className="relative group">
+                                     <div 
+                                        className={cn(
+                                            "absolute -left-3 top-1/2 -translate-y-1/2 h-2 w-1 bg-white rounded-r-full transition-all duration-200 group-hover:h-5"
+                                        )} 
+                                    />
+                                    <Avatar className={cn(
+                                        "size-12 rounded-full transition-all duration-200 bg-secondary group-hover:rounded-2xl"
+                                    )}>
+                                        <AvatarImage src={otherMember.photoURL || undefined} alt={otherMember.displayName} />
+                                        <AvatarFallback className="font-bold text-lg bg-transparent">
+                                            {otherMember.displayName?.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                     <Badge className="absolute -bottom-1 -right-2 bg-red-500 text-white h-5 px-1.5 border-2 border-background/80">
+                                        {chat.unreadCount?.[user?.uid || ''] > 9 ? '9+' : chat.unreadCount?.[user?.uid || '']}
+                                    </Badge>
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                                <p>Message from {otherMember.displayName}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    );
+                })}
+
 
                 <Separator className="w-8 bg-border/50" />
                 
