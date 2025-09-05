@@ -2,7 +2,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot } from 'lucide-react';
+import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -26,7 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import type { UserProfile, UserStatus, Server } from '@/lib/types';
+import type { UserProfile, UserStatus, Server, BadgeType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { SettingsDialog } from './settings-dialog';
@@ -46,10 +46,14 @@ const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType,
     offline: { label: 'Offline', icon: CircleDot, color: 'text-gray-500' },
 };
 
-const badgeConfig: Record<string, { label: string; icon: React.ElementType, className: string }> = {
+const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, className: string }> = {
     developer: { label: 'Developer', icon: Code, className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
     bot: { label: 'Bot', icon: Bot, className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
-}
+    'beta tester': { label: 'Beta Tester', icon: Beaker, className: 'bg-teal-500/20 text-teal-300 border-teal-500/30' },
+    youtuber: { label: 'Youtuber', icon: PlaySquare, className: 'bg-red-500/20 text-red-300 border-red-500/30' },
+    tiktoker: { label: 'Tiktoker', icon: Clapperboard, className: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
+    goat: { label: 'The GOAT', icon: Award, className: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+};
 
 export function UserNav({ user, logout, as = 'button', children, serverContext }: UserNavProps) {
   const { authUser, user: currentUser, updateUserProfile } = useAuth();
@@ -228,7 +232,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
              <>
                 <div className="absolute top-28 right-4 flex justify-end gap-1">
                  {allBadges.map((badgeKey) => {
-                     const badgeInfo = badgeConfig[badgeKey];
+                     const badgeInfo = badgeConfig[badgeKey as BadgeType];
                      if (!badgeInfo) return null;
                      const { label, icon: Icon, className } = badgeInfo;
                      return (

@@ -1,6 +1,11 @@
 import { FieldValue, Timestamp } from "firebase/firestore";
+import { z } from 'zod';
 
 export type UserStatus = 'online' | 'idle' | 'dnd' | 'offline';
+
+export const ALL_BADGES = ['developer', 'beta tester', 'youtuber', 'tiktoker', 'goat'] as const;
+export const BadgeType = z.enum(ALL_BADGES);
+export type BadgeType = z.infer<typeof BadgeType>;
 
 export interface UserProfile {
   id: string;
@@ -13,7 +18,7 @@ export interface UserProfile {
   bio?: string;
   isBot?: boolean;
   createdAt?: FieldValue;
-  badges?: string[];
+  badges?: BadgeType[];
   status?: UserStatus;
 }
 

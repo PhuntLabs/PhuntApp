@@ -2,17 +2,19 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, SmilePlus, X } from 'lucide-react';
+import { Send, SmilePlus, X, Award, Beaker, Code, Clapperboard, PlaySquare, Hash } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import type { UserProfile, Emoji, CustomEmoji } from '@/lib/types';
+import type { UserProfile, Emoji, CustomEmoji, BadgeType } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from '../ui/scroll-area';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { giveBadge } from '@/ai/flows/give-badge-flow';
+import { ALL_BADGES } from '@/lib/types';
 
 const standardEmojis: Emoji[] = [
     { name: "grinning", char: "😀", keywords: ["happy", "joy", "smile"] },
@@ -29,6 +31,15 @@ const standardEmojis: Emoji[] = [
     { name: "tada", char: "🎉", keywords: ["party", "celebrate", "hooray"] },
 ];
 
+const badgeIcons: Record<BadgeType, React.ElementType> = {
+    developer: Code,
+    'beta tester': Beaker,
+    youtuber: PlaySquare,
+    tiktoker: Clapperboard,
+    goat: Award,
+};
+
+
 interface ChatInputProps {
     onSendMessage: (text: string, imageUrl?: string) => void;
     placeholder?: string;
@@ -42,16 +53,17 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
     const [text, setText] = useState('');
     const [pastedImage, setPastedImage] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
-    const { uploadFile } = useAuth();
+    const { user, uploadFile } = useAuth();
     const { toast } = useToast();
     const inputRef = useRef<HTMLTextAreaElement>(null);
     
-    const [autocompleteType, setAutocompleteType] = useState<'mention' | 'emoji' | null>(null);
+    const [autocompleteType, setAutocompleteType] = useState<'mention' | 'emoji' | 'command' | 'badge' | null>(null);
     const [autocompleteQuery, setAutocompleteQuery] = useState('');
     const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
     
     const [filteredMembers, setFilteredMembers] = useState<Partial<UserProfile>[]>([]);
     const [filteredEmojis, setFilteredEmojis] = useState<(Emoji | CustomEmoji)[]>([]);
+    const [filteredBadges, setFilteredBadges] = useState<BadgeType[]>([]);
 
     const combinedEmojis = [...standardEmojis, ...customEmojis];
 
@@ -61,6 +73,25 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
 
         const cursorPosition = e.target.selectionStart;
         const textBeforeCursor = value.substring(0, cursorPosition);
+        
+        const isCommand = textBeforeCursor.startsWith('/givebadge');
+
+        if (isCommand) {
+            const parts = textBeforeCursor.split(' ');
+            if (parts.length === 2 && parts[1].startsWith('@')) {
+                 setAutocompleteType('command');
+                 setAutocompleteQuery(parts[1].substring(1));
+                 setIsAutocompleteOpen(true);
+            } else if (parts.length === 3) {
+                 setAutocompleteType('badge');
+                 setAutocompleteQuery(parts[2]);
+                 setIsAutocompleteOpen(true);
+            } else {
+                 setIsAutocompleteOpen(false);
+            }
+            return;
+        }
+
         const lastAt = textBeforeCursor.lastIndexOf('@');
         const lastColon = textBeforeCursor.lastIndexOf(':');
         const lastSpace = textBeforeCursor.lastIndexOf(' ');
@@ -84,7 +115,7 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
     useEffect(() => {
         if (!isAutocompleteOpen || !autocompleteType) return;
 
-        if (autocompleteType === 'mention') {
+        if (autocompleteType === 'mention' || autocompleteType === 'command') {
             const filtered = members.filter(member => 
                 member.displayName?.toLowerCase().startsWith(autocompleteQuery.toLowerCase())
             );
@@ -94,10 +125,16 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
                 emoji.name.toLowerCase().startsWith(autocompleteQuery.toLowerCase())
             );
             setFilteredEmojis(filtered);
+        } else if (autocompleteType === 'badge') {
+             const filtered = ALL_BADGES.filter(badge =>
+                badge.toLowerCase().startsWith(autocompleteQuery.toLowerCase())
+             );
+             setFilteredBadges(filtered);
         }
+
     }, [autocompleteQuery, autocompleteType, isAutocompleteOpen, members, combinedEmojis]);
 
-    const insertAutocomplete = (value: string, type: 'mention' | 'emoji') => {
+    const insertAutocomplete = (value: string, type: 'mention' | 'emoji' | 'command' | 'badge') => {
         if (!inputRef.current) return;
 
         const cursorPosition = inputRef.current.selectionStart;
@@ -107,15 +144,25 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
         if(type === 'mention') {
             const lastTrigger = textBeforeCursor.lastIndexOf('@');
             newText = text.substring(0, lastTrigger) + `@${value} ` + text.substring(cursorPosition);
-        } else { // emoji
+        } else if (type === 'emoji') {
             const lastTrigger = textBeforeCursor.lastIndexOf(':');
             newText = text.substring(0, lastTrigger) + `:${value}: ` + text.substring(cursorPosition);
+        } else if (type === 'command') {
+             const parts = text.split(' ');
+             parts[1] = `@${value}`;
+             newText = parts.join(' ') + (parts.length < 3 ? ' ' : '');
+        } else { // badge
+             const parts = text.split(' ');
+             parts[2] = `"${value}"`;
+             newText = parts.join(' ');
         }
+
 
         setText(newText);
         setIsAutocompleteOpen(false);
         setAutocompleteType(null);
-        inputRef.current.focus();
+        // Timeout to allow state to update before focusing
+        setTimeout(() => inputRef.current?.focus(), 0);
     };
     
      const insertEmoji = (emoji: Emoji | CustomEmoji) => {
@@ -142,9 +189,43 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
             }
         }
     }
+    
+    const handleCommand = async (commandText: string) => {
+        if (!user?.displayName) return;
+
+        const parts = commandText.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+        const command = parts[0];
+        
+        if (command === '/givebadge') {
+            if (parts.length !== 3) {
+                toast({ variant: 'destructive', title: 'Invalid Command', description: 'Usage: /givebadge @username "badge-name"' });
+                return;
+            }
+            const targetUsername = parts[1].startsWith('@') ? parts[1].substring(1) : parts[1];
+            const badge = parts[2].replace(/"/g, '') as BadgeType;
+
+            try {
+                const result = await giveBadge({
+                    callerUsername: user.displayName,
+                    targetUsername,
+                    badge,
+                });
+                toast({ title: 'Command Success', description: result.message });
+            } catch (e: any) {
+                toast({ variant: 'destructive', title: 'Command Error', description: e.message });
+            }
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (text.startsWith('/')) {
+            await handleCommand(text.trim());
+            setText('');
+            return;
+        }
+        
         if ((text.trim() === '' && !pastedImage) || isUploading) return;
         
         let imageUrl: string | undefined = undefined;
@@ -177,14 +258,16 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
 
     const AutocompletePopover = () => (
         <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border rounded-lg shadow-lg p-2 max-h-60 overflow-y-auto">
-            {autocompleteType === 'mention' && filteredMembers.length > 0 && (
+            {(autocompleteType === 'mention' || autocompleteType === 'command') && filteredMembers.length > 0 && (
                 <div className="space-y-1">
-                    <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">Members matching "@"{autocompleteQuery}</p>
+                    <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">
+                        {autocompleteType === 'mention' ? `Members matching "@${autocompleteQuery}"` : `Grant badge to @${autocompleteQuery}`}
+                    </p>
                     {filteredMembers.map(member => (
                         <button 
                             key={member.id} 
                             className="w-full flex items-center gap-2 p-2 rounded-md text-left hover:bg-accent"
-                            onClick={() => insertAutocomplete(member.displayName!, 'mention')}
+                            onClick={() => insertAutocomplete(member.displayName!, autocompleteType === 'mention' ? 'mention' : 'command')}
                         >
                             <Avatar className="size-6">
                                 <AvatarImage src={member.photoURL || undefined} />
@@ -212,6 +295,24 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
                             <span className="text-sm">:{emoji.name}:</span>
                         </button>
                     ))}
+                </div>
+            )}
+            {autocompleteType === 'badge' && filteredBadges.length > 0 && (
+                <div className="space-y-1">
+                    <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">Badges matching "{autocompleteQuery}"</p>
+                    {filteredBadges.map(badge => {
+                        const Icon = badgeIcons[badge] || Hash;
+                        return (
+                            <button
+                                key={badge}
+                                className="w-full flex items-center gap-2 p-2 rounded-md text-left hover:bg-accent"
+                                onClick={() => insertAutocomplete(badge, 'badge')}
+                            >
+                                <Icon className="size-4" />
+                                <span className="text-sm">{badge}</span>
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </div>
