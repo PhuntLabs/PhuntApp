@@ -26,6 +26,12 @@ export interface CustomGame {
   imageUrl: string;
 }
 
+export interface Connection {
+    type: 'spotify' | 'github' | 'steam'; // Add more as needed
+    username: string;
+    connectedAt: FieldValue;
+}
+
 export interface UserProfile {
   id: string;
   uid: string;
@@ -46,6 +52,7 @@ export interface UserProfile {
   profileEffect?: ProfileEffect;
   currentGame?: Game | CustomGame | null; // Can be a standard game or a custom one
   customGames?: CustomGame[];
+  connections?: Connection[];
 }
 
 export interface ChatDocument {
@@ -173,6 +180,7 @@ export interface Server {
     channels: Channel[];
     isPublic?: boolean;
     description?: string;
+
     customEmojis?: CustomEmoji[];
     roles?: Role[];
     customInviteLink?: string;

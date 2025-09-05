@@ -2,7 +2,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, MessageCircleMore, SmilePlus, Check, Gamepad2 } from 'lucide-react';
+import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, MessageCircleMore, SmilePlus, Check, Gamepad2, Link as LinkIcon } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -27,7 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import type { UserProfile, UserStatus, Server, BadgeType, Role, AvatarEffect, ProfileEffect, Game, CustomGame } from '@/lib/types';
+import type { UserProfile, UserStatus, Server, BadgeType, Role, AvatarEffect, ProfileEffect, Game, CustomGame, Connection } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { SettingsDialog } from './settings-dialog';
@@ -270,6 +270,8 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
 
   const userStatus = user.status || 'offline';
   const { label: statusLabel, icon: StatusIcon, color: statusColor } = statusConfig[userStatus];
+  
+  const spotifyConnection = user.connections?.find(c => c.type === 'spotify');
 
   const TriggerComponent = as === 'button' ? (
      <button className="flex items-center gap-2 p-1 hover:bg-accent rounded-md cursor-pointer transition-colors w-full text-left">
@@ -394,6 +396,23 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                             {user.customStatus && <p className="text-sm text-foreground mt-1">{user.customStatus}</p>}
                             <Separator className="my-2" />
                             
+                            {spotifyConnection && !user.currentGame && (
+                                <>
+                                <div className="mb-2">
+                                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Listening to Spotify</h4>
+                                     <div className="flex items-center gap-3 mt-1 bg-secondary/50 p-2 rounded-md">
+                                        <Image src="/spotify-logo.svg" alt="Spotify" width={40} height={40} className="rounded-md" />
+                                        <div className="overflow-hidden flex-1">
+                                            <p className="font-semibold truncate">Song Name</p>
+                                            <p className="text-xs text-muted-foreground truncate">by Artist Name</p>
+                                            <p className="text-xs text-muted-foreground truncate">on Album Name</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                 <Separator className="my-2" />
+                                </>
+                            )}
+
                             {user.currentGame && (
                                 <>
                                 <div className="mb-2">
