@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { AvatarEffect, ProfileEffect } from '@/lib/types';
@@ -46,14 +46,102 @@ const RageEffect = () => (
     </>
 );
 
+const GlowEffect = () => <div className="avatar-effect-glow"></div>;
+
+const OrbitEffect = () => <div className="avatar-effect-orbit"></div>;
+
+const SparkleEffect = () => (
+    <div className="avatar-effect-sparkle">
+        {[...Array(5)].map((_, i) => (
+            <div key={i} className="sparkle" style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                width: `${Math.random() * 3 + 1}px`,
+                height: `${Math.random() * 3 + 1}px`,
+                animationDelay: `${Math.random() * 1.5}s`
+            }}/>
+        ))}
+    </div>
+);
+
+const BounceEffect = ({ children }: { children: React.ReactNode }) => <div className="avatar-effect-bounce">{children}</div>;
+
+const SnowEffect = () => (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(30)].map((_, i) => (
+            <div
+                key={i}
+                className="snowflake"
+                style={{
+                    left: `${Math.random() * 100}%`,
+                    fontSize: `${Math.random() * 10 + 8}px`,
+                    animationDuration: `${2 + Math.random() * 3}s`,
+                    animationDelay: `${Math.random() * 5}s`,
+                }}
+            >
+                ●
+            </div>
+        ))}
+    </div>
+);
+
+const AuroraEffect = () => <div className="aurora"></div>;
+
+const StarfieldEffect = () => (
+     <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(50)].map((_, i) => (
+            <div
+                key={i}
+                className="star"
+                style={{
+                    top: `${Math.random() * 100}%`,
+                    left: `${Math.random() * 100}%`,
+                    width: `${Math.random() * 2 + 1}px`,
+                    height: `${Math.random() * 2 + 1}px`,
+                    animationDelay: `${Math.random() * 2}s`,
+                    animationDuration: `${1.5 + Math.random() * 1}s`
+                }}
+            />
+        ))}
+    </div>
+)
+
+const ConfettiEffect = () => {
+    const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800'];
+    return (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {[...Array(25)].map((_, i) => (
+                 <div
+                    key={i}
+                    className="confetti"
+                    style={{
+                        left: `${Math.random() * 100}%`,
+                        backgroundColor: colors[Math.floor(Math.random() * colors.length)],
+                        animationDelay: `${Math.random() * 3}s`,
+                    }}
+                />
+            ))}
+        </div>
+    )
+}
+
+
 const avatarEffects: { id: AvatarEffect, name: string, component: React.FC }[] = [
     { id: 'none', name: 'None', component: () => null },
     { id: 'rage', name: 'Rage', component: RageEffect },
+    { id: 'glow', name: 'Glow', component: GlowEffect },
+    { id: 'orbit', name: 'Orbit', component: OrbitEffect },
+    { id: 'sparkle', name: 'Sparkle', component: SparkleEffect },
+    { id: 'bounce', name: 'Bounce', component: ({ children }) => <div className="avatar-effect-bounce">{children}</div> },
 ];
 
 const profileEffects: { id: ProfileEffect, name: string, component: React.FC }[] = [
     { id: 'none', name: 'None', component: () => null },
     { id: 'rain', name: 'Rain', component: RainEffect },
+    { id: 'snow', name: 'Snow', component: SnowEffect },
+    { id: 'aurora', name: 'Aurora', component: AuroraEffect },
+    { id: 'starfield', name: 'Starfield', component: StarfieldEffect },
+    { id: 'confetti', name: 'Confetti', component: ConfettiEffect },
 ];
 
 
@@ -99,25 +187,39 @@ export function ProfileSettings() {
             <CardDescription>Add a special effect that appears around your avatar across the app.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-           {avatarEffects.map(effect => (
-                <div 
-                    key={effect.id}
-                    onClick={() => setAvatarEffect(effect.id)}
-                    className={cn(
-                        "relative flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 cursor-pointer transition-all",
-                        avatarEffect === effect.id ? "border-primary bg-primary/10" : "border-transparent bg-muted/50 hover:bg-accent"
-                    )}
-                >
-                    <div className="relative">
-                        <Avatar className="size-20">
-                            <AvatarImage src={user.photoURL || undefined} />
-                            <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
-                        </Avatar>
-                        <effect.component />
+           {avatarEffects.map(effect => {
+                const EffectComponent = effect.component;
+                const isBounce = effect.id === 'bounce';
+
+                return (
+                    <div 
+                        key={effect.id}
+                        onClick={() => setAvatarEffect(effect.id)}
+                        className={cn(
+                            "relative flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 cursor-pointer transition-all h-40",
+                            avatarEffect === effect.id ? "border-primary bg-primary/10" : "border-transparent bg-muted/50 hover:bg-accent"
+                        )}
+                    >
+                        <div className={cn("relative", isBounce && "w-20 h-20 flex items-center justify-center")}>
+                            {isBounce ? (
+                                <BounceEffect>
+                                    <Avatar className="size-20">
+                                        <AvatarImage src={user.photoURL || undefined} />
+                                        <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
+                                    </Avatar>
+                                </BounceEffect>
+                            ) : (
+                                <Avatar className="size-20">
+                                    <AvatarImage src={user.photoURL || undefined} />
+                                    <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
+                                </Avatar>
+                            )}
+                            {!isBounce && <EffectComponent />}
+                        </div>
+                        <span className="font-medium text-sm mt-2">{effect.name}</span>
                     </div>
-                    <span className="font-medium text-sm">{effect.name}</span>
-                </div>
-           ))}
+                )
+           })}
         </CardContent>
       </Card>
       

@@ -132,4 +132,94 @@ body {
     50% { transform: translate(-1px, 1px) rotate(0deg); }
     75% { transform: translate(1px, 1px) rotate(-5deg); }
   }
+
+  /* New Avatar Effects */
+  .avatar-effect-glow {
+    @apply absolute inset-0 rounded-full;
+    box-shadow: 0 0 15px hsl(var(--primary)), 0 0 25px hsl(var(--primary) / 0.8);
+    animation: pulse-glow 2.5s infinite ease-in-out;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+  }
+
+  .avatar-effect-orbit {
+    @apply absolute w-4 h-4 rounded-full bg-primary;
+    animation: orbit 4s linear infinite;
+    box-shadow: 0 0 8px hsl(var(--primary));
+  }
+
+  @keyframes orbit {
+    from { transform: rotate(0deg) translateX(50px) rotate(0deg); }
+    to { transform: rotate(360deg) translateX(50px) rotate(-360deg); }
+  }
+
+  .avatar-effect-sparkle {
+    @apply absolute top-0 left-0 w-full h-full;
+  }
+
+  .sparkle {
+    @apply absolute bg-yellow-300 rounded-full;
+    animation: sparkle-anim 1.5s infinite ease-out;
+  }
+
+  @keyframes sparkle-anim {
+    0% { transform: scale(0); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.5; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+
+  .avatar-effect-bounce {
+    animation: bounce-anim 1s infinite ease-in-out;
+  }
+
+  @keyframes bounce-anim {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  /* New Profile Effects */
+  .snowflake {
+    @apply absolute text-white/80;
+    animation: snowfall linear infinite;
+  }
+
+  @keyframes snowfall {
+    0% { transform: translateY(-10px) translateX(0); opacity: 1; }
+    100% { transform: translateY(120px) translateX(15px); opacity: 0; }
+  }
+  
+  .aurora {
+    @apply absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-pink-500/30;
+    animation: aurora-anim 10s infinite alternate ease-in-out;
+    background-size: 200% 200%;
+  }
+
+  @keyframes aurora-anim {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+  }
+  
+  .star {
+      @apply absolute bg-white rounded-full;
+      animation: twinkle 2s infinite ease-in-out;
+  }
+
+  @keyframes twinkle {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+  }
+
+  .confetti {
+      @apply absolute w-1.5 h-3;
+      animation: confetti-fall 3s linear infinite;
+  }
+  
+  @keyframes confetti-fall {
+    0% { transform: translateY(-10px) rotate(0deg); opacity: 1;}
+    100% { transform: translateY(120px) rotate(360deg); opacity: 0;}
+  }
+
 }

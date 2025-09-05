@@ -9,8 +9,8 @@ export const ALL_BADGES = ['developer', 'bot', 'beta tester', 'youtuber', 'tikto
 export const BadgeType = z.enum(ALL_BADGES);
 export type BadgeType = z.infer<typeof BadgeType>;
 
-export type AvatarEffect = 'none' | 'rage';
-export type ProfileEffect = 'none' | 'rain';
+export type AvatarEffect = 'none' | 'rage' | 'glow' | 'orbit' | 'sparkle' | 'bounce';
+export type ProfileEffect = 'none' | 'rain' | 'snow' | 'aurora' | 'starfield' | 'confetti';
 
 export interface UserProfile {
   id: string;

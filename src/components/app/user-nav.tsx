@@ -27,7 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import type { UserProfile, UserStatus, Server, BadgeType, Role } from '@/lib/types';
+import type { UserProfile, UserStatus, Server, BadgeType, Role, AvatarEffect, ProfileEffect } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { SettingsDialog } from './settings-dialog';
@@ -57,39 +57,83 @@ const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, c
     'early supporter': { label: 'Early Supporter', icon: HeartHandshake, className: 'bg-pink-500/20 text-pink-300 border-pink-500/30' },
 };
 
+
+// Profile Effects Components
 const RainEffect = () => (
     <div className="absolute inset-0 pointer-events-none overflow-hidden h-full">
-        {Array.from({ length: 50 }).map((_, i) => (
-            <div
-                key={i}
-                className="raindrop"
-                style={{
-                    left: `${Math.random() * 100}%`,
-                    animationDuration: `${0.5 + Math.random() * 0.5}s`,
-                    animationDelay: `${Math.random() * 5}s`,
-                }}
-            />
+        {[...Array(50)].map((_, i) => (
+            <div key={i} className="raindrop" style={{ left: `${Math.random() * 100}%`, animationDuration: `${0.5 + Math.random() * 0.5}s`, animationDelay: `${Math.random() * 5}s` }} />
         ))}
     </div>
 );
 
+const SnowEffect = () => (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(30)].map((_, i) => (
+            <div key={i} className="snowflake" style={{ left: `${Math.random() * 100}%`, fontSize: `${Math.random() * 10 + 8}px`, animationDuration: `${2 + Math.random() * 3}s`, animationDelay: `${Math.random() * 5}s` }}>●</div>
+        ))}
+    </div>
+);
+
+const AuroraEffect = () => <div className="aurora"></div>;
+
+const StarfieldEffect = () => (
+     <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(50)].map((_, i) => (
+            <div key={i} className="star" style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`, width: `${Math.random() * 2 + 1}px`, height: `${Math.random() * 2 + 1}px`, animationDelay: `${Math.random() * 2}s`, animationDuration: `${1.5 + Math.random() * 1}s` }} />
+        ))}
+    </div>
+);
+
+const ConfettiEffect = () => {
+    const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800'];
+    return (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {[...Array(25)].map((_, i) => (
+                 <div key={i} className="confetti" style={{ left: `${Math.random() * 100}%`, backgroundColor: colors[Math.floor(Math.random() * colors.length)], animationDelay: `${Math.random() * 3}s` }} />
+            ))}
+        </div>
+    );
+};
+
+const profileEffects: Record<ProfileEffect, React.FC> = {
+    none: () => null,
+    rain: RainEffect,
+    snow: SnowEffect,
+    aurora: AuroraEffect,
+    starfield: StarfieldEffect,
+    confetti: ConfettiEffect,
+};
+
+
+// Avatar Effects Components
 const RageEffect = () => (
     <>
         <div className="avatar-effect-rage-pulse"></div>
         <div className="avatar-effect-rage-pulse" style={{ animationDelay: '0.5s' }}></div>
         <div className="avatar-effect-rage-pulse" style={{ animationDelay: '1s' }}></div>
         <div className="avatar-effect-rage-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 9C18.5523 9 19 8.55228 19 8C19 7.44772 18.5523 7 18 7C17.4477 7 17 7.44772 17 8C17 8.55228 17.4477 9 18 9Z" fill="currentColor"/>
-                <path d="M18 13C18.5523 13 19 12.5523 19 12C19 11.4477 18.5523 11 18 11C17.4477 11 17 11.4477 17 12C17 12.5523 17.4477 13 18 13Z" fill="currentColor"/>
-                <path d="M15 15C15.5523 15 16 14.5523 16 14C16 13.4477 15.5523 13 15 13C14.4477 13 14 13.4477 14 14C14 14.5523 14.4477 15 15 15Z" fill="currentColor"/>
-                <path d="M11 15C11.5523 15 12 14.5523 12 14C12 13.4477 11.5523 13 11 13C10.4477 13 10 13.4477 10 14C10 14.5523 10.4477 15 11 15Z" fill="currentColor"/>
-                <path d="M7 13C7.55228 13 8 12.5523 8 12C8 11.4477 7.55228 11 7 11C6.44772 11 6 11.4477 6 12C6 12.5523 6.44772 13 7 13Z" fill="currentColor"/>
-                <path d="M7 9C7.55228 9 8 8.55228 8 8C8 7.44772 7.55228 7 7 7C6.44772 7 6 7.44772 6 8C6 8.55228 6.44772 9 7 9Z" fill="currentColor"/>
-            </svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 9C18.5523 9 19 8.55228 19 8C19 7.44772 18.5523 7 18 7C17.4477 7 17 7.44772 17 8C17 8.55228 17.4477 9 18 9Z" fill="currentColor"/><path d="M18 13C18.5523 13 19 12.5523 19 12C19 11.4477 18.5523 11 18 11C17.4477 11 17 11.4477 17 12C17 12.5523 17.4477 13 18 13Z" fill="currentColor"/><path d="M15 15C15.5523 15 16 14.5523 16 14C16 13.4477 15.5523 13 15 13C14.4477 13 14 13.4477 14 14C14 14.5523 14.4477 15 15 15Z" fill="currentColor"/><path d="M11 15C11.5523 15 12 14.5523 12 14C12 13.4477 11.5523 13 11 13C10.4477 13 10 13.4477 10 14C10 14.5523 10.4477 15 11 15Z" fill="currentColor"/><path d="M7 13C7.55228 13 8 12.5523 8 12C8 11.4477 7.55228 11 7 11C6.44772 11 6 11.4477 6 12C6 12.5523 6.44772 13 7 13Z" fill="currentColor"/><path d="M7 9C7.55228 9 8 8.55228 8 8C8 7.44772 7.55228 7 7 7C6.44772 7 6 7.44772 6 8C6 8.55228 6.44772 9 7 9Z" fill="currentColor"/></svg>
         </div>
     </>
 );
+const GlowEffect = () => <div className="avatar-effect-glow"></div>;
+const OrbitEffect = () => <div className="avatar-effect-orbit"></div>;
+const SparkleEffect = () => (
+    <div className="avatar-effect-sparkle">
+        {[...Array(5)].map((_, i) => ( <div key={i} className="sparkle" style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`, width: `${Math.random() * 3 + 1}px`, height: `${Math.random() * 3 + 1}px`, animationDelay: `${Math.random() * 1.5}s` }}/> ))}
+    </div>
+);
+const BounceEffectWrapper = ({ children }: { children: React.ReactNode }) => <div className="avatar-effect-bounce">{children}</div>;
+
+const avatarEffects: Record<AvatarEffect, React.FC | React.FC<{ children: React.ReactNode }>> = {
+    none: () => null,
+    rage: RageEffect,
+    glow: GlowEffect,
+    orbit: OrbitEffect,
+    sparkle: SparkleEffect,
+    bounce: BounceEffectWrapper,
+};
 
 
 export function UserNav({ user, logout, as = 'button', children, serverContext }: UserNavProps) {
@@ -231,6 +275,9 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       ?.filter(role => memberRoles.includes(role.id))
       .sort((a, b) => a.priority - b.priority);
 
+  const AvatarEffectComponent = user.avatarEffect ? avatarEffects[user.avatarEffect] : null;
+  const ProfileEffectComponent = user.profileEffect ? profileEffects[user.profileEffect] : null;
+
   return (
     <Popover open={isPopoverOpen} onOpenChange={(open) => {
       setIsPopoverOpen(open);
@@ -243,20 +290,32 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       <TooltipProvider>
         <div className="flex flex-col">
             <div className="relative">
-                <div className="h-20 bg-accent relative">
+                 <div className="h-24 bg-accent relative overflow-hidden">
                      {user.bannerURL && (
                         <Image src={user.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} />
                     )}
-                    {user.profileEffect === 'rain' && <RainEffect />}
+                    {ProfileEffectComponent && <ProfileEffectComponent />}
                 </div>
-                <div className="absolute top-12 left-4">
+                 <div className="absolute top-[70px] left-4">
                      <div className="relative">
-                        <Avatar className="size-20 border-4 border-popover rounded-full">
-                          <AvatarImage src={displayUser.photoURL || undefined} />
-                          <AvatarFallback className="text-2xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                         {user.avatarEffect === 'rage' && <RageEffect />}
-                        <div className={cn("absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-popover flex items-center justify-center", statusColor.replace('text-', 'bg-'))}>
+                         {AvatarEffectComponent && 'children' in AvatarEffectComponent ? (
+                            <AvatarEffectComponent>
+                                <Avatar className="size-24 border-4 border-popover rounded-full">
+                                    <AvatarImage src={displayUser.photoURL || undefined} />
+                                    <AvatarFallback className="text-3xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                            </AvatarEffectComponent>
+                         ) : (
+                            <>
+                                <Avatar className="size-24 border-4 border-popover rounded-full">
+                                    <AvatarImage src={displayUser.photoURL || undefined} />
+                                    <AvatarFallback className="text-3xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                {AvatarEffectComponent && <AvatarEffectComponent />}
+                            </>
+                         )}
+                         
+                        <div className={cn("absolute bottom-1 right-1 w-6 h-6 rounded-full border-4 border-popover flex items-center justify-center", statusColor.replace('text-', 'bg-'))}>
                             <Tooltip>
                                <TooltipTrigger>
                                  {user.customStatus ? <MessageCircleMore className="size-3 text-white"/> : <StatusIcon className="size-3 text-white"/>}
@@ -277,7 +336,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                 </div>
             </div>
 
-            <div className="pt-12 px-4 pb-4">
+            <div className="pt-16 px-4 pb-4">
                {!isEditing ? (
                  <>
                     <div className="flex items-center gap-2">
