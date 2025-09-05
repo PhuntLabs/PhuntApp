@@ -202,8 +202,12 @@ export function ChatInput({
         if (pastedImage) {
             setIsUploading(true);
             try {
-                if (!chatId) throw new Error("Chat ID is missing.");
-                imageUrl = await uploadFile(pastedImage, `chat-images/${chatId}`);
+                if (!chatId && !channelId) throw new Error("Context ID is missing for upload.");
+                const uploadPath = channelId 
+                    ? `chat-images/${serverContext?.id}/${channelId}`
+                    : `chat-images/${chatId}`;
+
+                imageUrl = await uploadFile(pastedImage, uploadPath as any);
             } catch (error) {
                 toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload image.' });
                 setIsUploading(false);
