@@ -15,9 +15,10 @@ import { Label } from '@/components/ui/label';
 const SpotifyIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
         <title>Spotify</title>
-        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.78 17.602c-.312.448-.937.588-1.385.275-3.6-2.212-8.038-2.7-13.313-.912-.512.113-.988-.224-1.1-.737-.113-.512.224-.988.737-1.1.581-.125 11.025.563 15.025 3.025.462.287.587.9.275 1.387zm1.187-2.612c-.388.55-1.15.725-1.7.338-4.125-2.525-10.2-3.238-14.963-1.7- debilitating.625.2-1.2-.162-1.4-.787-.2-.625.163-1.2.788-1.4 5.4-1.775 12.25-.975 16.95 1.862.563.35.738 1.113.338 1.7zm.137-2.763c-4.95-2.912-13.05-3.2-17.438-1.762-.712.238-1.437-.188-1.675-.9-.238-.712.188-1.437.9-1.675 5.025-1.65 13.95-1.287 19.6 1.987.663.388.9 1.238.513 1.9s-1.237.9-1.9.5z" fill="#1DB954"/>
+        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.78 17.602c-.312.448-.937.588-1.385.275-3.6-2.212-8.038-2.7-13.313-.912-.512.113-.988-.224-1.1-.737-.113-.512.224-.988.737-1.1.581-.125 11.025.563 15.025 3.025.462.287.587.9.275 1.387zm1.187-2.612c-.388.55-1.15.725-1.7.338-4.125-2.525-10.2-3.238-14.963-1.7- debilitating.625.2-1.2-.162-1.4-.787-.2-.625.163-1.2.788-1.4 5.4-1.775 12.25-.975 16.95 1.862.563.35.738 1.113.338 1.7zm.137-2.763c-4.95-2.912-13.05-3.2-17.438-1.762-.712.238-1.437-.188-1.675-.9-.238-.712.188-1.437.9-1.675 5.025-1.65 13.95-1.287 19.6 1.987.663.388.9 1.238.513 1.9s-1.237.9-1.9.5z" fill="currentColor"/>
     </svg>
 );
+
 
 const supportedConnections = [
   {
@@ -33,6 +34,7 @@ const supportedConnections = [
     icon: SpotifyIcon,
     description: 'Show what you\'re listening to as your status.',
     type: 'oauth',
+    className: 'text-[#1DB954]'
   },
   {
     id: 'youtube',
@@ -40,6 +42,7 @@ const supportedConnections = [
     icon: Youtube,
     description: 'Display your YouTube channel on your profile.',
     type: 'oauth',
+    className: 'text-[#FF0000]'
   },
   {
     id: 'steam',
@@ -76,22 +79,35 @@ export function ConnectionsSettings() {
 
     setIsUpdating(type);
     try {
-        const existingConnections = connections.filter(c => c.type !== type);
-        const newConnection: Connection = {
-            type: type,
-            username: username || 'Connected User', // Placeholder for OAuth
-            connectedAt: new Date(),
-        };
+        const existingConnection = connections.find(c => c.type === type);
+        if (existingConnection && type !== 'github') {
+            // For OAuth, "connecting" again just re-authenticates. No need to update Firestore here.
+            // Let the OAuth flow handle it.
+        } else {
+             const existingConnections = connections.filter(c => c.type !== type);
+             const newConnection: Connection = {
+                type: type,
+                username: username || 'Connected User', // Placeholder for OAuth
+                connectedAt: new Date(),
+            };
 
-        const updatedConnections = [...existingConnections, newConnection];
-        await updateUserProfile({ connections: updatedConnections });
-        setConnections(updatedConnections);
+            const updatedConnections = [...existingConnections, newConnection];
+            await updateUserProfile({ connections: updatedConnections });
+            setConnections(updatedConnections);
+        }
+        
+        if (type === 'spotify') {
+             window.location.href = '/api/spotify/login';
+             return;
+        }
 
         toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} Connected!`, description: `Your profile will now show your ${type} connection.` });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to connect', description: error.message });
     } finally {
-        setIsUpdating(null);
+        if (type !== 'spotify') {
+             setIsUpdating(null);
+        }
     }
   };
   
@@ -174,7 +190,7 @@ export function ConnectionsSettings() {
                 return (
                     <div key={connInfo.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center gap-4">
-                            <Icon className="size-10"/>
+                            <Icon className={`size-10 ${connInfo.className || ''}`}/>
                             <div>
                                 <p className="font-semibold">{connInfo.name}</p>
                                 <p className="text-sm text-muted-foreground">{connInfo.description}</p>
@@ -186,9 +202,12 @@ export function ConnectionsSettings() {
                                 Disconnect
                             </Button>
                          ) : (
-                            <Button onClick={() => handleConnectOrUpdate(connInfo.id as Connection['type'])} disabled={isCurrentUpdating}>
+                            <Button 
+                                onClick={() => handleConnectOrUpdate(connInfo.id as Connection['type'])} 
+                                disabled={isCurrentUpdating || (connInfo.id !== 'spotify' && connInfo.id !== 'github')}
+                            >
                                 {isCurrentUpdating ? <Loader2 className="mr-2 animate-spin" /> : <LinkIcon className="mr-2"/>}
-                                Connect
+                                {connInfo.id !== 'spotify' && connInfo.id !== 'github' ? 'Coming Soon' : 'Connect'}
                             </Button>
                          )}
                     </div>
