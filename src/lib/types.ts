@@ -107,6 +107,7 @@ export interface Server {
     customEmojis?: CustomEmoji[];
     roles?: Role[];
     customInviteLink?: string;
+    isVerified?: boolean;
 }
 
 export type ChannelType = 'text' | 'announcement' | 'rules' | 'forum';

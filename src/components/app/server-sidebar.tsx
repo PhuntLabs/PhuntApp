@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { CardTitle } from '@/components/ui/card';
+import { CardTitle, CardDescription } from '@/components/ui/card';
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger } from '@/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import type { Server, Channel, ChannelType } from '@/lib/types';
-import { Hash, ChevronDown, Settings, Trash, Plus, MoreVertical, Pencil, Megaphone, ScrollText, MessageSquare, UserPlus } from 'lucide-react';
+import { Hash, ChevronDown, Settings, Trash, Plus, MoreVertical, Pencil, Megaphone, ScrollText, MessageSquare, UserPlus, BadgeCheck, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { EditServerDialog } from './edit-server-dialog';
 import { AddChannelDialog } from './add-channel-dialog';
@@ -152,8 +152,13 @@ export function ServerSidebar({
     onUpdateChannel,
     onDeleteChannel
 }: ServerSidebarProps) {
-    const { authUser } = useAuth();
-    const isOwner = authUser?.uid === server.ownerId;
+    const { user: currentUser } = useAuth();
+    const isOwner = currentUser?.uid === server.ownerId;
+    const isHeina = currentUser?.displayName === 'heina';
+
+    const handleToggleVerify = () => {
+        onUpdateServer(server.id, { isVerified: !server.isVerified });
+    }
 
     const sortedChannels = useMemo(() => {
         return server.channels?.sort((a, b) => (a.position || 0) - (b.position || 0)) || [];
@@ -163,9 +168,15 @@ export function ServerSidebar({
         <div className="p-0 border-b flex items-center justify-between pr-2">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className="flex items-center justify-between p-4 w-full hover:bg-accent/50 transition-colors">
-                        <CardTitle className="truncate text-lg">{server.name}</CardTitle>
-                        <ChevronDown className="size-5 shrink-0 text-muted-foreground" />
+                    <button className="flex flex-col items-start gap-0 p-4 w-full hover:bg-accent/50 transition-colors">
+                        <div className="flex items-center gap-2">
+                             {server.isVerified && <BadgeCheck className="size-5 text-blue-500 shrink-0" />}
+                            <CardTitle className="truncate text-lg">{server.name}</CardTitle>
+                            <ChevronDown className="size-5 shrink-0 text-muted-foreground" />
+                        </div>
+                        <CardDescription className="flex items-center gap-1 text-xs ml-1">
+                            <Users className="size-3"/> {server.members?.length || 0} Members
+                        </CardDescription>
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="start">
@@ -175,6 +186,12 @@ export function ServerSidebar({
                             <span>Invite People</span>
                         </DropdownMenuItem>
                     </InviteDialog>
+                    {isHeina && (
+                         <DropdownMenuItem onSelect={handleToggleVerify}>
+                            <BadgeCheck className="mr-2 h-4 w-4" />
+                            <span>{server.isVerified ? 'Unverify Server' : 'Verify Server'}</span>
+                        </DropdownMenuItem>
+                    )}
                     {isOwner && (
                         <>
                             <DropdownMenuSeparator />
@@ -184,9 +201,9 @@ export function ServerSidebar({
                                     <span>Server Settings</span>
                                 </DropdownMenuItem>
                             </EditServerDialog>
-                            <DropdownMenuSeparator />
                         </>
                     )}
+                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
                         <Trash className="mr-2 h-4 w-4" />
                         <span>Leave Server</span>
