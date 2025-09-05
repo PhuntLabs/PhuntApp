@@ -13,8 +13,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '../ui/button';
@@ -60,16 +60,16 @@ const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, c
 export function UserNav({ user, logout, as = 'button', children, serverContext }: UserNavProps) {
   const { authUser, user: currentUser, updateUserProfile, updateServerProfile } = useAuth();
   const { sendFriendRequest } = useFriendRequests();
+  const { toast } = useToast();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [customStatus, setCustomStatus] = useState(user?.customStatus || '');
 
   // Server-specific profile state
   const [nickname, setNickname] = useState('');
   const [serverAvatar, setServerAvatar] = useState('');
   
-  const { toast } = useToast();
-
   const isCurrentUser = authUser?.uid === user.uid;
 
   const serverProfile = serverContext?.memberDetails?.[user.uid]?.profile;
@@ -82,12 +82,15 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
 
   useEffect(() => {
     // When the popover opens or user context changes, sync state
-    if (isPopoverOpen && serverContext && user) {
+    if (isPopoverOpen) {
+      if (serverContext && user) {
         const profile = serverContext?.memberDetails?.[user.uid]?.profile;
         setNickname(profile?.nickname || '');
         setServerAvatar(profile?.avatar || '');
+      }
+      setCustomStatus(currentUser?.customStatus || '');
     }
-  }, [isPopoverOpen, user, serverContext]);
+  }, [isPopoverOpen, user, serverContext, currentUser?.customStatus]);
   
   if (!user) return null;
 
@@ -95,6 +98,20 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
     if (!isCurrentUser || !authUser) return;
      try {
         await updateUserProfile({ status });
+    } catch(error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: error.message,
+        });
+    }
+  }
+
+  const handleCustomStatusSave = async () => {
+     if (!isCurrentUser || !authUser) return;
+     try {
+        await updateUserProfile({ customStatus: customStatus.trim() });
+         toast({ title: 'Status Updated'});
     } catch(error: any) {
         toast({
             variant: 'destructive',
@@ -149,17 +166,17 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const { label: statusLabel, icon: StatusIcon, color: statusColor } = statusConfig[userStatus];
 
   const TriggerComponent = as === 'button' ? (
-     <button className="flex items-center gap-2 p-1 hover:bg-sidebar-accent rounded-md cursor-pointer transition-colors w-full text-left">
+     <button className="flex items-center gap-2 p-1 hover:bg-accent rounded-md cursor-pointer transition-colors w-full text-left">
         <div className="relative">
             <Avatar className="size-8">
                 <AvatarImage src={user.photoURL || undefined} />
                 <AvatarFallback>{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
             </Avatar>
-            <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background/50 flex items-center justify-center", statusConfig[userStatus].color === 'text-gray-500' ? 'bg-gray-500' : `bg-${statusConfig[userStatus].color.split('-')[1]}-500`)}>
+            <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background/50 flex items-center justify-center", statusConfig[userStatus].color === 'text-gray-500' ? 'bg-gray-500' : statusColor.replace('text-', 'bg-'))}>
                  {user.customStatus && <MessageCircleMore className="size-2 text-white/70" />}
             </div>
         </div>
-        <div className="flex flex-col -space-y-1 group-data-[collapsible=icon]:hidden">
+        <div className="flex flex-col -space-y-1 group-data-[collapsible=icon]:hidden overflow-hidden">
             <span className="text-sm font-semibold truncate">{user.displayName || user.email}</span>
             <span className="text-xs text-muted-foreground truncate">{user.customStatus || statusLabel}</span>
         </div>
@@ -190,8 +207,8 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       <PopoverContent className="w-80 mb-2 h-auto" side="top" align="start">
       <TooltipProvider>
         <div className="relative h-24 bg-accent rounded-t-lg -mx-4 -mt-4">
-            {displayUser.bannerURL && (
-                <Image src={displayUser.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
+            {user.bannerURL && (
+                <Image src={user.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
             )}
              <div className="absolute top-16 left-4">
                  <div className="relative">
@@ -199,7 +216,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                       <AvatarImage src={displayUser.photoURL || undefined} />
                       <AvatarFallback className="text-2xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <div className={cn("absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-popover flex items-center justify-center", statusConfig[userStatus].color === 'text-gray-500' ? 'bg-gray-500' : `bg-${statusConfig[userStatus].color.split('-')[1]}-500`)}>
+                    <div className={cn("absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-popover flex items-center justify-center", statusColor.replace('text-', 'bg-'))}>
                         <Tooltip>
                            <TooltipTrigger>
                              {user.customStatus ? <MessageCircleMore className="size-3 text-white"/> : <StatusIcon className="size-3 text-white"/>}
@@ -232,7 +249,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                         return (
                             <Tooltip key={badgeKey}>
                                 <TooltipTrigger>
-                                    <div className={cn("flex items-center justify-center size-5 rounded-full", className.replace('border-indigo-500/30', ''))}>
+                                    <div className={cn("flex items-center justify-center size-5 rounded-full", className.replace(/border-.*$/, ''))}>
                                         <Icon className="size-3" />
                                     </div>
                                 </TooltipTrigger>
@@ -244,7 +261,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                 </div>
 
                 <p className={cn("text-sm text-muted-foreground -mt-1", !user.email && 'italic')}>{user.email || 'No email provided'}</p>
-                 {user.customStatus && <p className="text-sm text-foreground -mt-1">{user.customStatus}</p>}
+                 {user.customStatus && <p className="text-sm text-foreground mt-1">{user.customStatus}</p>}
                 <Separator className="my-2" />
                  {serverContext && serverRoles && serverRoles.length > 0 && (
                   <>
@@ -267,7 +284,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                     <>
                     <Separator className="my-4" />
                     <div className="flex flex-col gap-1">
-                        <SettingsDialog>
+                        <SettingsDialog defaultSection="account">
                           <Button variant="outline" className="justify-start">
                               <Pencil className="mr-2 h-4 w-4" />
                               <span>Edit User Profile</span>
@@ -293,6 +310,20 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                         <span>{label}</span>
                                     </DropdownMenuItem>
                                 ))}
+                                <DropdownMenuSeparator />
+                                <div className="p-2">
+                                     <Label htmlFor="custom-status-dropdown">Custom Status</Label>
+                                     <div className="flex items-center gap-2 mt-1">
+                                        <Input
+                                            id="custom-status-dropdown"
+                                            placeholder="Set a custom status"
+                                            value={customStatus}
+                                            onChange={(e) => setCustomStatus(e.target.value)}
+                                            onKeyDown={(e) => { if(e.key === 'Enter') handleCustomStatusSave(); }}
+                                        />
+                                        <Button size="icon" className="size-8" onClick={handleCustomStatusSave}><Save/></Button>
+                                     </div>
+                                </div>
                             </DropdownMenuContent>
                         </DropdownMenu>
                         <SettingsDialog>
@@ -301,10 +332,12 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                 <span>Settings</span>
                             </Button>
                          </SettingsDialog>
-                        <Button variant="ghost" onClick={() => logout && logout()} className="justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10">
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>Log out</span>
-                        </Button>
+                        {logout && (
+                          <Button variant="ghost" onClick={logout} className="justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10">
+                              <LogOut className="mr-2 h-4 w-4" />
+                              <span>Log out</span>
+                          </Button>
+                        )}
                     </div>
                     </>
                 )}
@@ -332,5 +365,3 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
     </Popover>
   );
 }
-
-    
