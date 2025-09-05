@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Send, SmilePlus, X, AtSign } from 'lucide-react';
+import { Send, SmilePlus, X, AtSign, Slash, Bot, Trash, Lock } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Server } from '@/lib/types';
+import { executeSlashCommand } from '@/ai/flows/slash-command-flow';
 
 const standardEmojis: Emoji[] = [
     { name: "grinning", char: "😀", keywords: ["happy", "joy", "smile"] },
@@ -29,6 +30,13 @@ const standardEmojis: Emoji[] = [
     { name: "clap", char: "👏", keywords: ["praise", "applause", "congrats"] },
     { name: "star", char: "⭐", keywords: ["favorite", "rate", "special"] },
     { name: "tada", char: "🎉", keywords: ["party", "celebrate", "hooray"] },
+];
+
+const slashCommands = [
+    { name: 'clean', description: 'Deletes the last 100 messages in the channel.', icon: Trash, permission: 'manageChannels' },
+    { name: 'lock', description: 'Lock the channel to prevent members from sending messages.', icon: Lock, permission: 'manageChannels' },
+    { name: 'kick', description: 'Kick a member from the server.', icon: Bot, permission: 'kickMembers' },
+    { name: 'ban', description: 'Ban a member from the server.', icon: Bot, permission: 'banMembers' },
 ];
 
 interface ChatInputProps {
@@ -62,12 +70,13 @@ export function ChatInput({
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     
-    const [autocompleteType, setAutocompleteType] = useState<'mention' | 'emoji' | null>(null);
+    const [autocompleteType, setAutocompleteType] = useState<'mention' | 'emoji' | 'command' | null>(null);
     const [autocompleteQuery, setAutocompleteQuery] = useState('');
     const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
     
     const [filteredMembers, setFilteredMembers] = useState<Partial<UserProfile>[]>([]);
     const [filteredEmojis, setFilteredEmojis] = useState<(Emoji | CustomEmoji)[]>([]);
+    const [filteredCommands, setFilteredCommands] = useState<typeof slashCommands>([]);
    
     const combinedEmojis = [...standardEmojis, ...customEmojis];
 
@@ -106,9 +115,15 @@ export function ChatInput({
         
         const lastAt = textBeforeCursor.lastIndexOf('@');
         const lastColon = textBeforeCursor.lastIndexOf(':');
+        const lastSlash = textBeforeCursor.lastIndexOf('/');
         const lastSpace = textBeforeCursor.lastIndexOf(' ');
 
-        if (lastAt > lastSpace && !textBeforeCursor.substring(lastAt + 1).includes(' ')) {
+        if (lastSlash === 0 && !textBeforeCursor.includes(' ')) {
+            const query = textBeforeCursor.substring(lastSlash + 1);
+            setAutocompleteType('command');
+            setAutocompleteQuery(query);
+            setIsAutocompleteOpen(true);
+        } else if (lastAt > lastSpace && !textBeforeCursor.substring(lastAt + 1).includes(' ')) {
             const query = textBeforeCursor.substring(lastAt + 1);
             setAutocompleteType('mention');
             setAutocompleteQuery(query);
@@ -127,7 +142,13 @@ export function ChatInput({
     useEffect(() => {
         if (!isAutocompleteOpen || !autocompleteType) return;
 
-        if (autocompleteType === 'mention') {
+        if (autocompleteType === 'command') {
+            const matches = slashCommands.filter(cmd => 
+                cmd.name.toLowerCase().startsWith(autocompleteQuery.toLowerCase()) &&
+                hasPermission(cmd.permission as any)
+            );
+            setFilteredCommands(matches);
+        } else if (autocompleteType === 'mention') {
             let matches = members.filter(member => 
                 member.displayName?.toLowerCase().startsWith(autocompleteQuery.toLowerCase())
             );
@@ -142,16 +163,18 @@ export function ChatInput({
             setFilteredEmojis(filtered);
         }
 
-    }, [autocompleteQuery, autocompleteType, isAutocompleteOpen, members, combinedEmojis, canMentionEveryone, everyoneAndHereOption]);
+    }, [autocompleteQuery, autocompleteType, isAutocompleteOpen, members, combinedEmojis, canMentionEveryone, everyoneAndHereOption, hasPermission]);
 
-    const insertAutocomplete = (value: string, type: 'mention' | 'emoji') => {
+    const insertAutocomplete = (value: string, type: 'mention' | 'emoji' | 'command') => {
         if (!inputRef.current) return;
 
         const cursorPosition = inputRef.current.selectionStart;
         const textBeforeCursor = text.substring(0, cursorPosition);
         
         let newText: string;
-        if(type === 'mention') {
+        if (type === 'command') {
+            newText = `/${value} `;
+        } else if(type === 'mention') {
             const lastTrigger = textBeforeCursor.lastIndexOf('@');
             newText = text.substring(0, lastTrigger) + `@${value} ` + text.substring(cursorPosition);
         } else { // emoji
@@ -197,6 +220,28 @@ export function ChatInput({
         
         if ((text.trim() === '' && !pastedImage) || isUploading) return;
         
+        // Handle slash commands
+        if (text.startsWith('/') && serverContext && channelId && authUser) {
+            const [command, ...args] = text.substring(1).split(' ');
+            setIsUploading(true);
+            try {
+                const result = await executeSlashCommand({
+                    executorId: authUser.uid,
+                    serverId: serverContext.id,
+                    channelId,
+                    command,
+                    args,
+                });
+                toast({ title: `Command Executed: /${command}`, description: result });
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: 'Command Failed', description: error.message });
+            } finally {
+                setIsUploading(false);
+                setText('');
+            }
+            return;
+        }
+
         let imageUrl: string | undefined = undefined;
 
         if (pastedImage) {
@@ -235,6 +280,31 @@ export function ChatInput({
 
     const AutocompletePopover = () => (
         <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border rounded-lg shadow-lg p-2 max-h-60 overflow-y-auto z-10">
+            {autocompleteType === 'command' && filteredCommands.length > 0 && (
+                 <div className="space-y-1">
+                    <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">
+                        Commands matching "/{autocompleteQuery}"
+                    </p>
+                     {filteredCommands.map(cmd => {
+                        const Icon = cmd.icon;
+                        return (
+                            <button
+                                key={cmd.name}
+                                className="w-full flex items-center gap-3 p-2 rounded-md text-left hover:bg-accent"
+                                onClick={() => insertAutocomplete(cmd.name, 'command')}
+                            >
+                                <div className="size-8 bg-muted rounded-md flex items-center justify-center">
+                                    <Icon className="size-5" />
+                                </div>
+                                <div>
+                                    <p className="font-medium">{cmd.name}</p>
+                                    <p className="text-sm text-muted-foreground">{cmd.description}</p>
+                                </div>
+                            </button>
+                        )
+                     })}
+                 </div>
+            )}
             {autocompleteType === 'mention' && filteredMembers.length > 0 && (
                 <div className="space-y-1">
                     <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">
@@ -376,3 +446,5 @@ export function ChatInput({
         </form>
     );
 }
+
+    
