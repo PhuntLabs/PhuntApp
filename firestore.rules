@@ -1,99 +1,98 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Default deny all
-    match /{document=**} {
-      allow read, write: if false;
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // Users
+    function isUser(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isMemberOf(resourceId, resourceType) {
+      return isSignedIn() && get(/databases/$(database)/documents/$(resourceType)/$(resourceId)).data.members[request.auth.uid] == true;
+    }
+
+    function isMemberOfChat(chatId) {
+      return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
+    }
+    
+    function isMemberOfServer(serverId) {
+       return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+    }
+
+    function isOwnerOf(resourceId, resourceType) {
+        return isSignedIn() && request.auth.uid == get(/databases/$(database)/documents/$(resourceType)/$(resourceId)).data.ownerId;
+    }
+    
+    function isFriendRequestRecipient(requestId) {
+        return isSignedIn() && request.auth.uid == get(/databases/$(database)/documents/friendRequests/$(requestId)).data.to;
+    }
+
+    function isFriendRequestSender(requestId) {
+      return isSignedIn() && request.auth.uid == get(/databases/$(database)/documents/friendRequests/$(requestId)).data.from.id;
+    }
+
+    // Collection: users
     match /users/{userId} {
-      // Anyone authenticated can search for users to add them as friends or see profiles.
-      allow read: if request.auth != null;
-      // Users can only create their own profile
-      allow create: if request.auth.uid == userId
-                    && request.resource.data.uid == request.auth.uid
-                    && request.resource.data.displayName_lowercase == request.resource.data.displayName.lower();
-      // Users can only update their own profile
-      allow update: if request.auth.uid == userId;
-    }
-
-    // Friend Requests
-    match /friendRequests/{requestId} {
-        // Allow read if user is sender or receiver
-        allow read: if request.auth.uid == resource.data.from.id || request.auth.uid == resource.data.to;
-        
-        // Allow create if user is the sender
-        allow create: if request.auth.uid == request.resource.data.from.id;
-
-        // Allow update (accept/decline) if user is the receiver
-        allow update: if request.auth.uid == resource.data.to;
-    }
-
-    // Chats
-    match /chats/{chatId} {
-      // Allow read/delete if user is a member of the chat
-      allow read, delete: if request.auth.uid in resource.data.members;
-
-      // Allow create if the creator is in the members list and lists are sorted
-      allow create: if request.auth.uid in request.resource.data.members
-      				&& request.resource.data.members[0] < request.resource.data.members[1];
+      // Allow any authenticated user to read user profiles (for searching, DMs, etc.)
+      allow read: if isSignedIn();
       
-      // Allow update if user is a member (for lastMessageTimestamp)
-      allow update: if request.auth.uid in resource.data.members;
+      // Allow users to create their own user document during signup
+      allow create: if isUser(userId);
 
-      // Messages
-      match /messages/{messageId} {
-        // Allow read if user is a member of the parent chat
-        allow read: if get(/databases/$(database)/documents/chats/$(chatId)).data.members.hasAny([request.auth.uid]);
-        
-        // Allow create, update, delete if user is the sender
-        allow create, update, delete: if request.auth.uid == request.resource.data.sender;
-      }
+      // Allow users to update their own profile information
+      allow update: if isUser(userId);
+
+      // Users cannot delete their accounts through the API
+      allow delete: if false;
     }
     
-    // Servers
-    match /servers/{serverId} {
-    	// Allow read if server is public OR user is a member
-    	allow read: if resource.data.isPublic == true || request.auth.uid in resource.data.members;
+    // Collection: chats
+    match /chats/{chatId} {
+        allow read, update: if isMemberOfChat(chatId);
+        allow create: if isSignedIn() && request.auth.uid in request.resource.data.members;
+        allow delete: if isMemberOfChat(chatId);
 
-      // Allow create if user is the owner
-      allow create: if request.auth.uid == request.resource.data.ownerId
-      							&& request.auth.uid in request.resource.data.members;
-      
-      // Allow update if user is owner (settings) or if just joining (members array)
-      allow update: if request.auth.uid == resource.data.ownerId
-      							|| (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
-                      && request.resource.data.members.size() == resource.data.members.size() + 1);
-
-      // Allow delete if user is the owner
-      allow delete: if request.auth.uid == resource.data.ownerId;
-      
-      // Channels
-      match /channels/{channelId} {
-      	// Allow read if user can read the parent server
-      	allow read: if get(/databases/$(database)/documents/servers/$(serverId)).data.isPublic == true 
-        						|| request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
-        
-        // Allow create, update, delete if user is the server owner
-        allow create, update, delete: if request.auth.uid == get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId;
-        
-        // Channel Messages
+        // Subcollection: messages
         match /messages/{messageId} {
-        	// Allow read if user is a member of the server
-        	allow read: if request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
-          
-          // Allow create if user is a member of the server and the sender
-          allow create: if request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members
-          							&& request.auth.uid == request.resource.data.sender;
-          
-          // Allow update, delete if user is the message sender OR the server owner
-          allow update, delete: if request.auth.uid == request.resource.data.sender
-          										|| request.auth.uid == get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId;
+            allow read: if isMemberOfChat(chatId);
+            allow create: if isUser(request.resource.data.sender) && isMemberOfChat(chatId);
+            allow update: if isUser(resource.data.sender);
+            allow delete: if isUser(resource.data.sender);
         }
-      }
+    }
+    
+     // Collection: servers
+    match /servers/{serverId} {
+        allow read: if isMemberOfServer(serverId) || resource.data.isPublic == true;
+        allow create: if isUser(request.resource.data.ownerId);
+        allow update: if isOwnerOf(serverId, 'servers');
+        allow delete: if isOwnerOf(serverId, 'servers');
+        
+        // Subcollection: channels
+        match /channels/{channelId} {
+            allow read, create: if isMemberOfServer(serverId);
+            allow update, delete: if isOwnerOf(serverId, 'servers');
+            
+             // Sub-Subcollection: messages
+            match /messages/{messageId} {
+                allow read: if isMemberOfServer(serverId);
+                allow create: if isUser(request.resource.data.sender) && isMemberOfServer(serverId);
+                allow update: if isUser(resource.data.sender);
+                allow delete: if isUser(resource.data.sender);
+            }
+        }
+    }
+    
+    // Collection: friendRequests
+    match /friendRequests/{requestId} {
+        allow read: if isFriendRequestRecipient(requestId) || isFriendRequestSender(requestId);
+        allow create: if isUser(request.resource.data.from.id);
+        allow update: if isFriendRequestRecipient(requestId) || isFriendRequestSender(requestId);
+        allow delete: if false;
     }
   }
 }
