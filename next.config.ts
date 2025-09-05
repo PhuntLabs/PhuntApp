@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
         source: '/discovery',
         destination: '/discovery',
       },
+      {
+        source: '/add-qolforu',
+        destination: '/add-qolforu',
+      },
     ]
   },
   devIndicators: {
