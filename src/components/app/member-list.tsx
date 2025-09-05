@@ -76,7 +76,7 @@ export function MemberList({ members, server, loading }: MemberListProps) {
                                 {role.name} — {membersByRole[role.name].length}
                             </h3>
                             <div className="space-y-1 mt-1">
-                                {membersByRole[role.name].map(member => (
+                                {membersByRole[role.name][0] && membersByRole[role.name].map(member => (
                                      <MemberItem key={member.uid} member={member} server={server} topRoleColor={role.color} />
                                 ))}
                             </div>

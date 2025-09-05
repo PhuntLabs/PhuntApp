@@ -25,7 +25,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { Server, CustomEmoji, Role, Permission, permissionFlags } from '@/lib/types';
+import type { Server, CustomEmoji, Role, Permission } from '@/lib/types';
 import { Globe, Trash, Smile, ImagePlus, X, Palette, GripVertical, Plus, ShieldQuestion, Users } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Textarea } from '../ui/textarea';
@@ -34,7 +34,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { Checkbox } from '../ui/checkbox';
 import { allPermissionDetails } from '@/lib/permissions';
 import { ScrollArea } from '../ui/scroll-area';
 
