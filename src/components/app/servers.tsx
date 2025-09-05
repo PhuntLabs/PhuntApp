@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Plus, Compass, MessageSquare, Gamepad2 } from 'lucide-react';
@@ -11,6 +12,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Badge } from '../ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { useChats } from '@/hooks/use-chats';
+import Image from 'next/image';
 
 interface ServersProps {
     servers: Server[];
@@ -74,14 +76,12 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                     !selectedServer && !isDiscoveryActive && !isGamesActive ? "h-9" : "group-hover:h-5"
                                 )} 
                             />
-                            <Avatar className={cn(
-                                "size-12 rounded-3xl transition-all duration-200 bg-secondary",
+                            <div className={cn(
+                                "size-12 rounded-3xl transition-all duration-200 bg-secondary flex items-center justify-center",
                                 !selectedServer && !isDiscoveryActive && !isGamesActive ? 'rounded-2xl bg-primary' : 'group-hover:rounded-2xl group-hover:bg-primary'
                             )}>
-                                <AvatarFallback className="bg-transparent text-primary-foreground text-2xl font-bold">
-                                    <MessageSquare />
-                                </AvatarFallback>
-                            </Avatar>
+                                <Image src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdxcCEQJzJkyi0I_le_fiZKo41M-cSsIi0Zg&s" alt="Direct Messages" width={28} height={28} priority/>
+                            </div>
                         </button>
                     </TooltipTrigger>
                     <TooltipContent side="right">
@@ -108,7 +108,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                     <Avatar className={cn(
                                         "size-12 rounded-full transition-all duration-200 bg-secondary group-hover:rounded-2xl"
                                     )}>
-                                        <AvatarImage src={otherMember.photoURL || undefined} alt={otherMember.displayName} />
+                                        <AvatarImage src={otherMember.photoURL || undefined} alt={otherMember.displayName || ''} />
                                         <AvatarFallback className="font-bold text-lg bg-transparent">
                                             {otherMember.displayName?.charAt(0).toUpperCase()}
                                         </AvatarFallback>

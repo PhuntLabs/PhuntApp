@@ -58,7 +58,7 @@ function ServerList() {
                 <Card key={server.id} className="flex flex-col overflow-hidden group">
                      <div className="h-24 w-full relative">
                         {server.bannerURL ? (
-                            <Image src={server.bannerURL} alt={`${server.name} banner`} fill style={{ objectFit: 'cover' }} className="group-hover:scale-105 transition-transform duration-300"/>
+                            <Image src={server.bannerURL} alt={`${server.name} banner`} fill style={{ objectFit: 'cover' }} className="group-hover:scale-105 transition-transform duration-300" sizes="300px"/>
                         ) : (
                             <div className="h-full w-full bg-accent" />
                         )}

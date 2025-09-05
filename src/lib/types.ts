@@ -98,6 +98,26 @@ export interface Message {
   };
 }
 
+export interface Mention {
+    id: string;
+    mentionedUserId: string;
+    sender: string;
+    text: string;
+    timestamp: FieldValue;
+    context: {
+        type: 'dm';
+        chatId: string;
+        chatName: string;
+    } | {
+        type: 'channel';
+        serverId: string;
+        serverName: string;
+        channelId: string;
+        channelName: string;
+    }
+}
+
+
 export interface FriendRequest {
     id: string;
     from: {

@@ -15,14 +15,15 @@ import {
   deleteDoc,
   where,
   getDocs,
+  writeBatch,
 } from 'firebase/firestore';
-import type { Message, Server, Embed } from '@/lib/types';
+import type { Message, Server, Embed, Mention } from '@/lib/types';
 import { useAuth } from './use-auth';
 import { usePermissions } from './use-permissions';
 import { useToast } from './use-toast';
 
 // Function to find mentioned user IDs from message text
-async function getMentions(text: string, server: Server | null): Promise<string[]> {
+async function getMentionedUserIds(text: string, server: Server | null): Promise<string[]> {
   const mentionRegex = /@(\w+)/g;
   const mentions = text.match(mentionRegex);
   if (!mentions) return [];
@@ -32,6 +33,7 @@ async function getMentions(text: string, server: Server | null): Promise<string[
 
   // Special case for @everyone
   if (usernames.includes('everyone')) {
+    // Return all members if @everyone is mentioned
     return server?.members || [];
   }
   
@@ -48,7 +50,7 @@ async function getMentions(text: string, server: Server | null): Promise<string[
 }
 
 export function useChannelMessages(server: Server | null, channelId: string | undefined) {
-  const { authUser } = useAuth();
+  const { authUser, user } = useAuth();
   const { hasPermission } = usePermissions(server, channelId);
   const [messages, setMessages] = useState<Message[]>([]);
   const { toast } = useToast();
@@ -78,7 +80,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
 
   const sendMessage = useCallback(
     async (text: string, imageUrl?: string, embed?: Embed, replyTo?: Message['replyTo']) => {
-      if (!authUser || !server?.id || !channelId) return;
+      if (!authUser || !server?.id || !channelId || !user) return;
 
       if (!hasPermission('sendMessages')) {
         throw new Error("You don't have permission to send messages in this channel.");
@@ -88,7 +90,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
         throw new Error("You don't have permission to mention @everyone.");
       }
 
-      const mentionedUserIds = await getMentions(text, server);
+      const mentionedUserIds = await getMentionedUserIds(text, server);
       
       const messagePayload: Omit<Message, 'id' | 'timestamp'> = {
         text,
@@ -103,18 +105,44 @@ export function useChannelMessages(server: Server | null, channelId: string | un
 
 
       const messagesRef = collection(db, 'servers', server.id, 'channels', channelId, 'messages');
-      await addDoc(messagesRef, {
+      const messageDocRef = await addDoc(messagesRef, {
         ...messagePayload,
         timestamp: serverTimestamp()
       });
+      
+      // Create mention documents
+      if (mentionedUserIds.length > 0) {
+        const batch = writeBatch(db);
+        const channel = server.channels?.find(c => c.id === channelId);
+        
+        mentionedUserIds.forEach(userId => {
+            const mentionRef = doc(collection(db, 'mentions'));
+            const mentionPayload: Omit<Mention, 'id'> = {
+                mentionedUserId: userId,
+                sender: authUser.uid,
+                text,
+                timestamp: serverTimestamp(),
+                context: {
+                    type: 'channel',
+                    serverId: server.id,
+                    serverName: server.name,
+                    channelId: channelId,
+                    channelName: channel?.name || 'unknown-channel'
+                }
+            };
+            batch.set(mentionRef, mentionPayload);
+        });
+        await batch.commit();
+      }
+
     },
-    [authUser, server, channelId, hasPermission]
+    [authUser, server, channelId, hasPermission, user]
   );
   
   const editMessage = useCallback(
     async (messageId: string, newText: string) => {
         if (!server?.id || !channelId) return;
-        const mentionedUserIds = await getMentions(newText, server);
+        const mentionedUserIds = await getMentionedUserIds(newText, server);
         const messageRef = doc(db, 'servers', server.id, 'channels', channelId, 'messages', messageId);
         await updateDoc(messageRef, {
             text: newText,

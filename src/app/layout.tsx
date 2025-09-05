@@ -30,8 +30,7 @@ export default function RootLayout({
                 const font = localStorage.getItem('app-theme-font') || 'inter';
                 const customColor = localStorage.getItem('app-theme-custom-color');
 
-                document.documentElement.className = theme;
-                document.body.classList.add('font-' + font);
+                document.documentElement.className = theme + ' font-' + font;
 
                 if (theme === 'custom' && customColor) {
                   const hexToHsl = (hex) => {

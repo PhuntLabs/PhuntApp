@@ -67,7 +67,7 @@ export function AddBotToServerDialog({ children, bot, availableServers }: AddBot
                 <AvatarImage src={bot.photoURL || undefined} />
                 <AvatarFallback>{bot.displayName[0]}</AvatarFallback>
             </Avatar>
-          <DialogTitle className="text-2xl">Add {bot.displayName} to a server</DialogTitle>
+          <DialogTitle>Add {bot.displayName} to a server</DialogTitle>
           <DialogDescription>
             This bot will be added as a new member to the server you choose.
           </DialogDescription>

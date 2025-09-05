@@ -17,25 +17,26 @@ import {
   where,
   getDocs,
   increment,
+  writeBatch,
 } from 'firebase/firestore';
-import type { Message, PopulatedChat } from '@/lib/types';
+import type { Message, PopulatedChat, Mention } from '@/lib/types';
 import { useAuth } from './use-auth';
 import { useToast } from './use-toast';
 
 // Function to find mentioned user IDs from message text
-async function getMentions(text: string): Promise<string[]> {
+async function getMentionedUserIds(text: string): Promise<string[]> {
   const mentionRegex = /@(\w+)/g;
   const mentions = text.match(mentionRegex);
   if (!mentions) return [];
 
-  const usernames = mentions.map(m => m.substring(1));
+  const usernames = mentions.map(m => m.substring(1).toLowerCase());
   const mentionedUserIds: string[] = [];
 
   // Batch queries for usernames to be efficient
   // Firestore `in` query is limited to 10 items per query
   for (let i = 0; i < usernames.length; i += 10) {
     const chunk = usernames.slice(i, i + 10);
-    const q = query(collection(db, 'users'), where('displayName', 'in', chunk));
+    const q = query(collection(db, 'users'), where('displayName_lowercase', 'in', chunk));
     const snapshot = await getDocs(q);
     snapshot.forEach(doc => mentionedUserIds.push(doc.id));
   }
@@ -44,7 +45,7 @@ async function getMentions(text: string): Promise<string[]> {
 }
 
 export function useChat(chat: PopulatedChat | null) {
-  const { authUser } = useAuth();
+  const { authUser, user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const { toast } = useToast();
   const chatId = chat?.id;
@@ -81,9 +82,9 @@ export function useChat(chat: PopulatedChat | null) {
 
   const sendMessage = useCallback(
     async (text: string, imageUrl?: string, replyTo?: Message['replyTo']): Promise<Message | null> => {
-      if (!chatId || !authUser || !chat) return null;
+      if (!chatId || !authUser || !chat || !user) return null;
       
-      const mentionedUserIds = await getMentions(text);
+      const mentionedUserIds = await getMentionedUserIds(text);
 
       const messagePayload: Omit<Message, 'id' | 'timestamp'> = {
         text,
@@ -116,16 +117,39 @@ export function useChat(chat: PopulatedChat | null) {
         ...unreadUpdates
       });
       
+       // Create mention documents
+      if (mentionedUserIds.length > 0) {
+        const batch = writeBatch(db);
+        const otherMember = chat.members.find(m => m.id !== authUser.uid);
+        
+        mentionedUserIds.forEach(userId => {
+            const mentionRef = doc(collection(db, 'mentions'));
+            const mentionPayload: Omit<Mention, 'id'> = {
+                mentionedUserId: userId,
+                sender: authUser.uid,
+                text,
+                timestamp: serverTimestamp(),
+                context: {
+                    type: 'dm',
+                    chatId: chatId,
+                    chatName: otherMember?.displayName || 'Unknown Chat'
+                }
+            };
+            batch.set(mentionRef, mentionPayload);
+        });
+        await batch.commit();
+      }
+
       const messageDoc = await getDoc(messageDocRef);
       return { id: messageDoc.id, ...messageDoc.data() } as Message;
     },
-    [chat, authUser]
+    [chat, authUser, user]
   );
   
   const editMessage = useCallback(
     async (messageId: string, newText: string) => {
         if (!chatId) return;
-        const mentionedUserIds = await getMentions(newText);
+        const mentionedUserIds = await getMentionedUserIds(newText);
         const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
         await updateDoc(messageRef, {
             text: newText,
