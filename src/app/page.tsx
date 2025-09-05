@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { ServerSidebar } from '@/components/app/server-sidebar';
 import { MemberList } from '@/components/app/member-list';
 import { SettingsDialog } from '@/components/app/settings-dialog';
+import { UpdateLog } from '@/components/app/update-log';
 
 
 export default function Home() {
@@ -189,12 +190,6 @@ export default function Home() {
   
   const handleSelectChannel = async (channel: Channel) => {
     setSelectedChannel(channel);
-    if (channel.mentions?.includes(authUser?.uid || '')) {
-      const channelRef = doc(db, 'servers', channel.serverId, 'channels', channel.id);
-      await updateDoc(channelRef, {
-        mentions: arrayRemove(authUser?.uid)
-      });
-    }
   }
 
   const handleDeleteServer = async (serverId: string) => {
@@ -272,6 +267,7 @@ export default function Home() {
 
   return (
     <SidebarProvider>
+      <UpdateLog />
       <div className="flex h-screen bg-background/70">
         <Servers 
           servers={servers}
