@@ -13,6 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '../ui/separator';
+import { useRouter } from 'next/navigation';
 
 interface AddServerDialogProps {
   children: React.ReactNode;
@@ -21,10 +23,12 @@ interface AddServerDialogProps {
 
 export function AddServerDialog({ children, onCreateServer }: AddServerDialogProps) {
   const [serverName, setServerName] = useState('');
+  const [inviteLink, setInviteLink] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (serverName.trim()) {
       setIsLoading(true);
@@ -34,47 +38,72 @@ export function AddServerDialog({ children, onCreateServer }: AddServerDialogPro
         setIsOpen(false);
       } catch (error) {
         console.error("Failed to create server", error);
-        // You might want to show a toast message here
       } finally {
         setIsLoading(false);
       }
     }
   };
 
+  const handleJoinSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inviteLink.trim()) {
+      const link = inviteLink.trim().startsWith('/join/') 
+        ? inviteLink.trim() 
+        : `/join/${inviteLink.trim()}`;
+      router.push(link);
+      setIsOpen(false);
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create a Server</DialogTitle>
+          <DialogTitle>Create or Join a Server</DialogTitle>
           <DialogDescription>
-            Give your new server a name. You can always change it later.
+            Create your own server or join one with an invite link.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="server-name" className="text-right">
-                Server Name
-              </Label>
-              <Input
-                id="server-name"
-                value={serverName}
-                onChange={(e) => setServerName(e.target.value)}
-                className="col-span-3"
-                placeholder="My Awesome Server"
-                required
-              />
+
+        <form onSubmit={handleCreateSubmit}>
+            <Label htmlFor="server-name" className="text-xs uppercase font-bold text-muted-foreground">Create a Server</Label>
+            <div className="flex items-center gap-2 mt-2">
+                <Input
+                    id="server-name"
+                    value={serverName}
+                    onChange={(e) => setServerName(e.target.value)}
+                    placeholder="My Awesome Server"
+                    required
+                />
+                <Button type="submit" disabled={isLoading || !serverName.trim()}>
+                 {isLoading ? 'Creating...' : 'Create'}
+                </Button>
             </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-            <Button type="submit" disabled={isLoading || !serverName.trim()}>
-              {isLoading ? 'Creating...' : 'Create Server'}
-            </Button>
-          </DialogFooter>
+        </form>
+        
+        <div className="relative py-2">
+            <Separator />
+            <span className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">OR</span>
+        </div>
+
+        <form onSubmit={handleJoinSubmit}>
+            <Label htmlFor="invite-link" className="text-xs uppercase font-bold text-muted-foreground">Join a Server</Label>
+            <div className="flex items-center gap-2 mt-2">
+                <Input
+                    id="invite-link"
+                    value={inviteLink}
+                    onChange={(e) => setInviteLink(e.target.value)}
+                    placeholder="Enter invite link (e.g. goat)"
+                    required
+                />
+                <Button type="submit" variant="secondary" disabled={!inviteLink.trim()}>
+                    Join
+                </Button>
+            </div>
         </form>
       </DialogContent>
     </Dialog>
   );
 }
+    

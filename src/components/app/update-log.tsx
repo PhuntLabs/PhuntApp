@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,46 +12,31 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '../ui/badge';
-import { Rocket, Sparkles, MessageSquarePlus, Palette, User, Server, Link, Bug } from 'lucide-react';
+import { Rocket, Sparkles, Paintbrush, User, Server, Link as LinkIcon, Bug, ShieldCheck, KeyRound } from 'lucide-react';
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.1';
 const LOCAL_STORAGE_KEY = `changelog_seen_${APP_VERSION}`;
 
 const updates = [
     {
-        title: 'Server Discovery & Joining',
-        icon: Server,
-        description: 'Explore and join public servers through the new Discovery page. Share invite links to bring friends into your communities.',
-    },
-    {
-        title: 'Mentions & Statuses',
-        icon: User,
-        description: 'Mention users with "@username" to get their attention, highlighting the message. Set your status to Online, Idle, Do Not Disturb, or Offline.',
-    },
-    {
-        title: 'Custom Server Emojis',
+        title: 'Roles & Customization',
         icon: Sparkles,
-        description: 'Server owners can now upload up to 10 custom emojis! Use them in chat with autocomplete, just like standard emojis.',
+        description: 'Server owners can now create custom roles with unique colors. Members\' names will appear colored, and roles are displayed on user profiles within the server.',
     },
     {
-        title: 'Revamped Chat Input',
-        icon: MessageSquarePlus,
-        description: 'The chat input now features a custom emoji picker and autocompletes both user mentions and emoji shortcodes as you type.',
+        title: 'Custom Invite Links',
+        icon: LinkIcon,
+        description: 'Tired of random server IDs? Owners can now set a custom, memorable invite link for their server, like "/join/community".',
     },
     {
-        title: 'Link Previews & Safety',
-        icon: Link,
-        description: 'Server invite links now show a rich embed with server details. Other external links will show a safety warning before you leave the app.',
+        title: '2-Factor Authentication (WIP)',
+        icon: ShieldCheck,
+        description: 'The journey to enhanced security begins! You can now access the Security tab in settings to see the upcoming 2FA setup flow using an authenticator app. Full functionality coming soon.',
     },
     {
-        title: 'Theme Customization',
-        icon: Palette,
-        description: 'Choose from Light, Dark, and Amoled themes, or even set your own custom primary color in the new Settings panel.',
-    },
-    {
-        title: 'Account Management',
-        icon: User,
-        description: 'Edit your profile, change your avatar and banner by uploading files, and reset your password all from within the new Account Settings.',
+        title: 'Bug Squashing & Stability',
+        icon: Bug,
+        description: 'Fixed major bugs preventing servers, friend requests, and discovery from loading correctly. Also fixed an issue where newly created servers would disappear on refresh.',
     },
 ]
 
@@ -82,7 +66,7 @@ export function UpdateLog() {
              <div>
                 <DialogTitle className="text-2xl">What's New in Version {APP_VERSION}?</DialogTitle>
                 <DialogDescription>
-                    Welcome to the first official release! Here are the highlights.
+                    We've been busy! Here are the latest updates and fixes.
                 </DialogDescription>
             </div>
           </div>
@@ -115,9 +99,11 @@ export function UpdateLog() {
             </div>
         </ScrollArea>
         <DialogFooter>
-          <Button onClick={handleClose}>Got it, thanks!</Button>
+          <Button onClick={handleClose}>Let's Go!</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+    

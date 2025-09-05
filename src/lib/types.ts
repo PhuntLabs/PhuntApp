@@ -1,4 +1,3 @@
-
 import { FieldValue, Timestamp } from "firebase/firestore";
 
 export type UserStatus = 'online' | 'idle' | 'dnd' | 'offline';
@@ -16,6 +15,7 @@ export interface UserProfile {
   createdAt?: FieldValue;
   badges?: string[];
   status?: UserStatus;
+  roles?: { [serverId: string]: string[] }; // e.g. { "serverId1": ["roleId1", "roleId2"] }
 }
 
 export interface ChatDocument {
@@ -57,17 +57,27 @@ export interface CustomEmoji {
     url: string;
 }
 
+export interface Role {
+    id: string;
+    name: string;
+    color: string;
+    priority: number; // Lower number = higher priority
+}
+
 export interface Server {
     id:string;
     name: string;
     ownerId: string;
     members: string[];
+    memberDetails: { [userId: string]: { joinedAt: FieldValue, roles: string[] } };
     photoURL?: string | null;
     createdAt: FieldValue;
     channels?: Channel[];
     isPublic?: boolean;
     description?: string;
     customEmojis?: CustomEmoji[];
+    roles?: Role[];
+    customInviteLink?: string;
 }
 
 export type ChannelType = 'text' | 'announcement' | 'rules' | 'forum';
@@ -86,3 +96,5 @@ export interface Emoji {
     char: string;
     keywords: string[];
 }
+
+    
