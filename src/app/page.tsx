@@ -29,6 +29,7 @@ import { Mic, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServerSidebar } from '@/components/app/server-sidebar';
 import { MemberList } from '@/components/app/member-list';
+import { SettingsDialog } from '@/components/app/settings-dialog';
 
 
 export default function Home() {
@@ -325,7 +326,9 @@ export default function Home() {
                   <UserNav user={user} logout={logout}/>
                   <div className="flex items-center gap-1">
                       <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
-                      <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
+                      <SettingsDialog>
+                        <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
+                      </SettingsDialog>
                   </div>
                   </div>
               </div>

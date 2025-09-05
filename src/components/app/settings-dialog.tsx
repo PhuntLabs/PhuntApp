@@ -1,0 +1,89 @@
+
+'use client';
+
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import {
+  Shield,
+  User,
+  Paintbrush,
+  Bug,
+  X,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { AccountSettings } from './settings/account-settings';
+import { SecuritySettings } from './settings/security-settings';
+import { ThemeSettings } from './settings/theme-settings';
+import { BugReportSettings } from './settings/bug-report-settings';
+import { Separator } from '../ui/separator';
+
+type Section = 'account' | 'security' | 'theme' | 'bugs';
+
+const sections = [
+  { id: 'account', label: 'Account', icon: User },
+  { id: 'security', label: 'Security', icon: Shield },
+  { id: 'theme', label: 'Theme', icon: Paintbrush },
+  { id: 'bugs', label: 'Bugs', icon: Bug },
+] as const;
+
+export function SettingsDialog({ children }: { children: React.ReactNode }) {
+  const [activeSection, setActiveSection] = useState<Section>('account');
+
+  const renderSection = () => {
+    switch (activeSection) {
+      case 'account':
+        return <AccountSettings />;
+      case 'security':
+        return <SecuritySettings />;
+      case 'theme':
+        return <ThemeSettings />;
+      case 'bugs':
+        return <BugReportSettings />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="max-w-none w-full h-full sm:max-w-5xl sm:h-[90vh] sm:rounded-lg flex p-0">
+        <aside className="w-56 hidden sm:flex flex-col bg-secondary/30 p-4">
+          <nav className="flex flex-col gap-2">
+            {sections.map((section) => (
+              <Button
+                key={section.id}
+                variant="ghost"
+                className={cn(
+                  'justify-start',
+                  activeSection === section.id && 'bg-accent text-accent-foreground'
+                )}
+                onClick={() => setActiveSection(section.id)}
+              >
+                <section.icon className="mr-2 h-4 w-4" />
+                {section.label}
+              </Button>
+            ))}
+          </nav>
+        </aside>
+
+        <main className="flex-1 p-6 relative overflow-y-auto">
+          {renderSection()}
+          <div className="absolute top-4 right-4">
+             <DialogClose asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                    <X className="size-5" />
+                </Button>
+            </DialogClose>
+          </div>
+        </main>
+      </DialogContent>
+    </Dialog>
+  );
+}
