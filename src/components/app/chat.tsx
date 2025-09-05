@@ -138,7 +138,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
             </div>
         </UserNav>
       </header>
-      <div className="flex flex-1 flex-col h-full bg-muted/20">
+      <div className="flex flex-1 flex-col h-full bg-muted/20 overflow-hidden">
         <ScrollArea className="flex-1" ref={scrollAreaRef as any}>
           <TooltipProvider>
           <div className="p-4 space-y-1">

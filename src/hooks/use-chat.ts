@@ -16,8 +16,9 @@ import {
   getDoc,
   where,
   getDocs,
+  increment,
 } from 'firebase/firestore';
-import type { Message } from '@/lib/types';
+import type { Message, PopulatedChat } from '@/lib/types';
 import { useAuth } from './use-auth';
 import { useToast } from './use-toast';
 
@@ -42,10 +43,11 @@ async function getMentions(text: string): Promise<string[]> {
   return mentionedUserIds;
 }
 
-export function useChat(chatId: string | undefined) {
+export function useChat(chat: PopulatedChat | null) {
   const { authUser } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const { toast } = useToast();
+  const chatId = chat?.id;
 
   useEffect(() => {
     if (!chatId) {
@@ -66,12 +68,20 @@ export function useChat(chatId: string | undefined) {
       setMessages(msgs);
     });
 
+    // Clear unread count for the current user when they view the chat
+    if (authUser) {
+      const chatRef = doc(db, 'chats', chatId);
+      const unreadPath = `unreadCount.${authUser.uid}`;
+      updateDoc(chatRef, { [unreadPath]: 0 }).catch(console.error);
+    }
+
+
     return () => unsubscribe();
-  }, [chatId]);
+  }, [chatId, authUser]);
 
   const sendMessage = useCallback(
     async (text: string, imageUrl?: string, replyTo?: Message['replyTo']): Promise<Message | null> => {
-      if (!chatId || !authUser) return null;
+      if (!chatId || !authUser || !chat) return null;
       
       const mentionedUserIds = await getMentions(text);
 
@@ -90,15 +100,26 @@ export function useChat(chatId: string | undefined) {
           ...messagePayload,
           timestamp: serverTimestamp()
       });
-
-      await updateDoc(doc(db, 'chats', chatId), {
+      
+      // Update last message and increment unread count for other members
+      const chatRef = doc(db, 'chats', chatId);
+      const otherMembers = chat.members.filter(m => m.id !== authUser.uid);
+      const unreadUpdates: { [key: string]: any } = {};
+      otherMembers.forEach(member => {
+        if (member.id) {
+          unreadUpdates[`unreadCount.${member.id}`] = increment(1);
+        }
+      });
+      
+      await updateDoc(chatRef, {
         lastMessageTimestamp: serverTimestamp(),
+        ...unreadUpdates
       });
       
       const messageDoc = await getDoc(messageDocRef);
       return { id: messageDoc.id, ...messageDoc.data() } as Message;
     },
-    [chatId, authUser]
+    [chat, authUser]
   );
   
   const editMessage = useCallback(

@@ -20,7 +20,7 @@ import { useChannels } from '@/hooks/use-channels';
 import { useChannelMessages } from '@/hooks/use-channel-messages';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { PendingRequests } from '@/components/app/pending-requests';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
@@ -49,7 +49,7 @@ export default function Home() {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [initialLoad, setInitialLoad] = useState(true);
 
-  const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
+  const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat);
   const { server, setServer, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
   const { createChannel, updateChannel, deleteChannel } = useChannels(selectedServer?.id);
   const { 
@@ -61,6 +61,16 @@ export default function Home() {
 
 
   const { toast } = useToast();
+
+  const handleSelectChat = (chat: PopulatedChat) => {
+    setSelectedChat(chat);
+    // When a user selects a chat, clear their unread count for it.
+    if (user && chat.unreadCount?.[user.uid] > 0) {
+      const chatRef = doc(db, 'chats', chat.id);
+      updateDoc(chatRef, { [`unreadCount.${user.uid}`]: 0 });
+    }
+  };
+
 
   useEffect(() => {
     if (!loading && !authUser) {
@@ -81,7 +91,7 @@ export default function Home() {
         const currentTime = (current.lastMessageTimestamp as any)?.toMillis() || (current.createdAt as any)?.toMillis() || 0;
         return (prevTime > currentTime) ? prev : current;
       });
-      setSelectedChat(mostRecentChat);
+      handleSelectChat(mostRecentChat);
     } else if (chats.length === 0 && !selectedServer) {
         setSelectedChat(null);
     }
@@ -270,7 +280,7 @@ export default function Home() {
       const chat = chats.find(c => c.id === context.chatId);
       if (chat) {
         handleSelectServer(null);
-        setSelectedChat(chat);
+        handleSelectChat(chat);
       }
     } else {
       const server = servers.find(s => s.id === context.serverId);
@@ -341,7 +351,7 @@ export default function Home() {
                       <DirectMessages
                           directMessages={chats}
                           selectedChat={selectedChat}
-                          onSelectChat={setSelectedChat}
+                          onSelectChat={handleSelectChat}
                           onAddUser={handleSendFriendRequest}
                           onAddBot={handleCreateChatWithBot}
                           onDeleteChat={handleDeleteChat}
@@ -381,6 +391,7 @@ export default function Home() {
                   <div className="text-center">
                   <h2 className="text-xl font-medium text-foreground">{`Welcome to ${server.name}`}</h2>
                   <p className="text-muted-foreground">Select a channel to start talking.</p>
+
                   </div>
               </div>
               ) : selectedChat && user ? (
@@ -410,5 +421,3 @@ export default function Home() {
     </SidebarProvider>
   );
 }
-
-    

@@ -3,11 +3,12 @@
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSkeleton } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, CheckCircle, Bot, X } from 'lucide-react';
-import type { PopulatedChat } from '@/lib/types';
+import { PlusCircle, Bot, X, CircleDot, Moon, XCircle, MessageCircleMore } from 'lucide-react';
+import type { PopulatedChat, UserProfile, UserStatus } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '../ui/badge';
 import { AddUserDialog } from './add-user-dialog';
+import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +30,14 @@ interface DirectMessagesProps {
   onDeleteChat: (chatId: string) => void;
   loading: boolean;
 }
+
+const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType, color: string }> = {
+    online: { label: 'Online', icon: CircleDot, color: 'bg-green-500' },
+    idle: { label: 'Idle', icon: Moon, color: 'bg-yellow-500' },
+    dnd: { label: 'Do Not Disturb', icon: XCircle, color: 'bg-red-500' },
+    offline: { label: 'Offline', icon: CircleDot, color: 'bg-gray-500' },
+};
+
 
 export function DirectMessages({ directMessages, selectedChat, onSelectChat, onAddUser, onAddBot, onDeleteChat, loading }: DirectMessagesProps) {
   const { user } = useAuth();
@@ -63,36 +72,54 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
           const chatName = otherMember?.displayName || chat.name || 'Chat';
           const chatAvatar = otherMember?.photoURL || chat.photoURL;
           const isBotChat = otherMember?.isBot;
-
+          const status = otherMember?.status || 'offline';
+          const customStatus = otherMember?.customStatus;
+          const statusLabel = statusConfig[status].label;
+          const hasUnread = chat.unreadCount && chat.unreadCount[user?.uid || ''] > 0;
+          
           return (
             <SidebarMenuItem key={chat.id} className="group/item">
+               {hasUnread && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-1 bg-white rounded-r-full" />}
               <SidebarMenuButton
                 tooltip={chatName}
                 isActive={selectedChat?.id === chat.id}
                 onClick={() => onSelectChat(chat)}
+                className={cn("h-auto py-1.5", hasUnread && "text-white font-semibold")}
               >
-                <Avatar className="size-6 rounded-md relative">
-                  <AvatarImage src={chatAvatar || undefined} />
-                  <AvatarFallback>{chatName[0]}</AvatarFallback>
-                </Avatar>
-                <div className="flex items-center gap-1">
-                  <span className="truncate">{chatName}</span>
-                   {chat.isOfficial && (
-                      <Badge variant="outline" className="h-4 px-1 flex items-center gap-0.5 border-green-500 text-green-500">
-                        <CheckCircle className="size-2" /> OFFICIAL
-                      </Badge>
-                  )}
-                  {isBotChat && (
-                      <Badge variant="secondary" className="h-4 px-1 flex items-center gap-1 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
-                        <Bot className="size-2.5" /> BOT
-                      </Badge>
-                  )}
+                <div className="relative">
+                  <Avatar className="size-8 rounded-full relative">
+                    <AvatarImage src={chatAvatar || undefined} />
+                    <AvatarFallback>{chatName[0]}</AvatarFallback>
+                  </Avatar>
+                   <div className={cn(
+                        "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-secondary/30",
+                        statusConfig[status].color
+                    )} />
+                </div>
+                <div className="flex-1 overflow-hidden -space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate">{chatName}</span>
+                    {isBotChat && (
+                        <Badge variant="secondary" className="h-4 px-1 flex items-center gap-1 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                          <Bot className="size-2.5" /> BOT
+                        </Badge>
+                    )}
+                  </div>
+                  <p className={cn("text-xs truncate", hasUnread ? "text-white/70" : "text-muted-foreground")}>
+                    {customStatus || statusLabel}
+                  </p>
                 </div>
               </SidebarMenuButton>
 
+                {hasUnread && (
+                    <div className="absolute right-8 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center">
+                        {chat.unreadCount?.[user?.uid || ''] > 9 ? '9+' : chat.unreadCount?.[user?.uid || '']}
+                    </div>
+                )}
+
                <AlertDialog>
                 <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-5 w-5 absolute right-1 top-1.5 opacity-0 group-hover/item:opacity-100 text-muted-foreground hover:text-foreground">
+                    <Button variant="ghost" size="icon" className="h-5 w-5 absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/item:opacity-100 text-muted-foreground hover:text-foreground">
                         <X className="h-3 w-3"/>
                     </Button>
                 </AlertDialogTrigger>

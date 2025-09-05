@@ -107,6 +107,7 @@ export function useChats(enabled: boolean = true) {
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       const chatDocs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatDocument));
+      
       const populatedChats = await Promise.all(chatDocs.map(populateChat));
       
       // Sort by last message timestamp if available, otherwise by creation

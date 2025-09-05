@@ -39,6 +39,7 @@ export interface ChatDocument {
   photoURL?: string;
   createdAt?: Timestamp;
   lastMessageTimestamp?: Timestamp;
+  unreadCount?: { [userId: string]: number };
 }
 
 export interface PopulatedChat extends Omit<ChatDocument, 'members'> {
