@@ -3,7 +3,7 @@
 
 import React, { useMemo } from 'react';
 import { CardTitle } from '@/components/ui/card';
-import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger } from '@/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -160,7 +160,7 @@ export function ServerSidebar({
     }, [server.channels]);
 
     const renderHeader = () => (
-        <div className="p-0 border-b">
+        <div className="p-0 border-b flex items-center justify-between pr-2">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <button className="flex items-center justify-between p-4 w-full hover:bg-accent/50 transition-colors">
@@ -193,6 +193,7 @@ export function ServerSidebar({
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
+            <SidebarTrigger className="md:hidden" />
         </div>
     )
 

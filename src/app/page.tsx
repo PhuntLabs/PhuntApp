@@ -1,7 +1,7 @@
 
 'use client';
 
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -293,8 +293,9 @@ export default function Home() {
                   />
                   ) : (
                   <>
-                      <div className="p-4 border-b">
+                      <div className="p-4 border-b flex items-center justify-between">
                           <h2 className="font-semibold text-lg truncate">Direct Messages</h2>
+                          <SidebarTrigger className="md:hidden" />
                       </div>
                       <div className="py-2">
                       {incomingRequests.length > 0 && (

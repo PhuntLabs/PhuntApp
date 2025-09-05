@@ -65,7 +65,6 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   return (
     <div className="flex flex-col h-screen">
       <header className="p-4 flex items-center gap-2 border-b">
-        <SidebarTrigger className="md:hidden"/>
          <UserNav user={otherMember as UserProfile} as="trigger">
             <div className="flex items-center gap-2 cursor-pointer">
                  <Avatar className="size-8">
