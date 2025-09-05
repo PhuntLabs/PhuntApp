@@ -2,7 +2,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, MessageCircleMore, SmilePlus, Check, Gamepad2, Link as LinkIcon, Github } from 'lucide-react';
+import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, MessageCircleMore, SmilePlus, Check, Gamepad2, Link as LinkIcon, Github, Youtube } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -138,6 +138,12 @@ const avatarEffects: Record<AvatarEffect, React.FC | React.FC<{ children: React.
     bounce: BounceEffectWrapper,
 };
 
+const connectionIcons: Record<Connection['type'], React.FC<any> | { src: string; alt: string; }> = {
+    github: Github,
+    spotify: { src: "https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_Green.png", alt: "Spotify" },
+    youtube: Youtube,
+    steam: { src: "https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg", alt: "Steam" }
+};
 
 export function UserNav({ user, logout, as = 'button', children, serverContext }: UserNavProps) {
   const { authUser, user: currentUser, updateUserProfile, updateUserRolesInServer, updateServerProfile } = useAuth();
@@ -272,7 +278,6 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const { label: statusLabel, icon: StatusIcon, color: statusColor } = statusConfig[userStatus];
   
   const spotifyConnection = user.connections?.find(c => c.type === 'spotify');
-  const githubConnection = user.connections?.find(c => c.type === 'github');
 
 
   const TriggerComponent = as === 'button' ? (
@@ -403,7 +408,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                 <div className="mb-2">
                                     <h4 className="text-xs font-bold uppercase text-muted-foreground">Listening to Spotify</h4>
                                      <div className="flex items-center gap-3 mt-1 bg-secondary/50 p-2 rounded-md">
-                                        <Image src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_Green.png" alt="Spotify" width={40} height={40} className="rounded-md" />
+                                        <Image src={connectionIcons.spotify.src} alt="Spotify" width={40} height={40} className="rounded-md" />
                                         <div className="overflow-hidden flex-1">
                                             <p className="font-semibold truncate">Daylight</p>
                                             <p className="text-xs text-muted-foreground truncate">by David Kushner</p>
@@ -411,7 +416,6 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                         </div>
                                     </div>
                                 </div>
-                                <Separator className="my-2" />
                                 </>
                             )}
                             
@@ -435,11 +439,11 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                         </Link>
                                     )}
                                 </div>
-                                <Separator className="my-2" />
                                 </>
                             )}
 
                              <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
+                            
                              
                              {user.connections && user.connections.length > 0 && (
                                  <>
@@ -447,14 +451,19 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                 <div className="mb-2">
                                     <h4 className="text-xs font-bold uppercase text-muted-foreground">Connections</h4>
                                     <div className="flex flex-wrap gap-2 mt-1">
-                                        {githubConnection && (
-                                            <a href={`https://github.com/${githubConnection.username}`} target="_blank" rel="noopener noreferrer">
-                                                <Button variant="outline" size="sm" className="bg-[#181717] hover:bg-[#181717]/80 text-white">
-                                                    <Github className="mr-2"/>
-                                                    GitHub
-                                                </Button>
-                                            </a>
-                                        )}
+                                        {user.connections.map(conn => {
+                                            const iconInfo = connectionIcons[conn.type];
+                                            const href = conn.type === 'github' ? `https://github.com/${conn.username}` : `https://www.${conn.type}.com`;
+                                            const IconComponent = typeof iconInfo === 'function' ? iconInfo : null;
+
+                                            return (
+                                                <a key={conn.type} href={href} target="_blank" rel="noopener noreferrer">
+                                                    <Button variant="outline" size="icon" className="size-8">
+                                                        {IconComponent ? <IconComponent /> : <Image src={iconInfo.src} alt={iconInfo.alt} width={16} height={16} />}
+                                                    </Button>
+                                                </a>
+                                            )
+                                        })}
                                     </div>
                                 </div>
                                 </>
