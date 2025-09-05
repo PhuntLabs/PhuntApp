@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Separator } from '../ui/separator';
 import { usePathname, useRouter } from 'next/navigation';
+import { Badge } from '../ui/badge';
 
 interface ServersProps {
     servers: Server[];
@@ -15,9 +16,10 @@ interface ServersProps {
     onCreateServer: (name: string) => Promise<void>;
     selectedServer: Server | null;
     onSelectServer: (server: Server | null) => void;
+    totalUnreadCount: number;
 }
 
-export function Servers({ servers, loading, onCreateServer, selectedServer, onSelectServer }: ServersProps) {
+export function Servers({ servers, loading, onCreateServer, selectedServer, onSelectServer, totalUnreadCount }: ServersProps) {
     const router = useRouter();
     const pathname = usePathname();
     const isDiscoveryActive = pathname === '/discovery';
@@ -59,6 +61,11 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                     <MessageSquare />
                                 </AvatarFallback>
                             </Avatar>
+                            {totalUnreadCount > 0 && (
+                                <Badge className="absolute -top-1 -right-2 bg-red-500 text-white h-5 px-1.5 border-2 border-background/80">
+                                    {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                                </Badge>
+                            )}
                         </button>
                     </TooltipTrigger>
                     <TooltipContent side="right">

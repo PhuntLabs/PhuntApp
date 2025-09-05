@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, getDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDoc, doc, orderBy } from 'firebase/firestore';
 import type { PopulatedChat, ChatDocument, UserProfile, BadgeType } from '@/lib/types';
 import { useAuth } from './use-auth';
 
@@ -67,6 +67,7 @@ export function useChats(enabled: boolean = true) {
   const { authUser } = useAuth();
   const [chats, setChats] = useState<PopulatedChat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0);
   
   const addChat = useCallback(async (newChat: ChatDocument): Promise<PopulatedChat> => {
     const populated = await populateChat(newChat);
@@ -102,22 +103,23 @@ export function useChats(enabled: boolean = true) {
     setLoading(true);
     const q = query(
       collection(db, 'chats'),
-      where('members', 'array-contains', authUser.uid)
+      where('members', 'array-contains', authUser.uid),
+      orderBy('lastMessageTimestamp', 'desc')
     );
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       const chatDocs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatDocument));
       
       const populatedChats = await Promise.all(chatDocs.map(populateChat));
-      
-      // Sort by last message timestamp if available, otherwise by creation
-      populatedChats.sort((a, b) => {
-        const timeA = (a.lastMessageTimestamp as any)?.toMillis() || (a.createdAt as any)?.toMillis() || 0;
-        const timeB = (b.lastMessageTimestamp as any)?.toMillis() || (b.createdAt as any)?.toMillis() || 0;
-        return timeB - timeA;
-      });
 
       setChats(populatedChats);
+      
+      // Calculate total unread count
+      const totalCount = populatedChats.reduce((sum, chat) => {
+          return sum + (chat.unreadCount?.[authUser.uid] || 0);
+      }, 0);
+      setTotalUnreadCount(totalCount);
+      
       setLoading(false);
     }, (error) => {
         console.error("Error fetching chats:", error);
@@ -127,5 +129,5 @@ export function useChats(enabled: boolean = true) {
     return () => unsubscribe();
   }, [authUser, enabled]);
 
-  return { chats, loading, addChat, removeChat };
+  return { chats, loading, addChat, removeChat, totalUnreadCount };
 }
