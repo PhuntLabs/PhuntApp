@@ -195,6 +195,9 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
 
   const handlePermissionChange = (roleIndex: number, permission: Permission, value: boolean) => {
       const newRoles = [...roles];
+      if (!newRoles[roleIndex].permissions) {
+        newRoles[roleIndex].permissions = {} as Record<Permission, boolean>;
+      }
       newRoles[roleIndex].permissions[permission] = value;
       setRoles(newRoles);
   }
@@ -272,7 +275,7 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
                                             <div key={perm.id} className="flex items-center space-x-2">
                                                 <Checkbox 
                                                     id={`perm-${perm.id}`}
-                                                    checked={roles[0].permissions[perm.id]}
+                                                    checked={roles[0]?.permissions?.[perm.id] || false}
                                                     onCheckedChange={(checked) => handlePermissionChange(0, perm.id, !!checked)}
                                                 />
                                                 <div className="grid gap-1.5 leading-none">
