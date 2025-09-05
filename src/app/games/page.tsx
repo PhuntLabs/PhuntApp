@@ -9,43 +9,42 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import type { Game } from '@/lib/types';
 
-interface Game {
-    id: string;
-    name: string;
-    description: string;
-    logoUrl: string;
-    bannerUrl: string;
-}
 
 const mockGames: Game[] = [
     {
-        id: 'cosmic-rift',
-        name: 'Cosmic Rift',
-        description: 'Explore a vast, procedurally generated universe, trade resources, and battle pirates in this epic space adventure.',
-        logoUrl: 'https://picsum.photos/seed/cosmic-rift-logo/200',
-        bannerUrl: 'https://picsum.photos/seed/cosmic-rift-banner/600/400',
+        id: 'snow-rider-3d',
+        name: 'Snow Rider 3D',
+        description: 'Ride your sleigh down a snowy mountain, avoid obstacles, and collect gifts in this fast-paced 3D game.',
+        logoUrl: 'https://picsum.photos/seed/snow-rider-logo/200',
+        bannerUrl: 'https://picsum.photos/seed/snow-rider-banner/600/400',
+        embedUrl: 'https://snow3d.pages.dev/',
     },
     {
-        id: 'valor-quest',
-        name: 'Valor Quest',
-        description: 'A fantasy RPG where you assemble a team of heroes to defeat the encroaching darkness and save the kingdom.',
-        logoUrl: 'https://picsum.photos/seed/valor-quest-logo/200',
-        bannerUrl: 'https://picsum.photos/seed/valor-quest-banner/600/400',
+        id: 'cool-math-games',
+        name: 'Cool Math Games',
+        description: 'The official hub for thousands of free online math games, logic puzzles, and strategy games for all ages.',
+        logoUrl: 'https://picsum.photos/seed/cool-math-logo/200',
+        bannerUrl: 'https://picsum.photos/seed/cool-math-banner/600/400',
+        embedUrl: 'https://www.coolmath-games.com/',
     },
     {
-        id: 'speed-demons',
-        name: 'Speed Demons',
-        description: 'High-octane arcade racing with customizable cars and thrilling tracks. Race against friends or climb the leaderboards.',
-        logoUrl: 'https://picsum.photos/seed/speed-demons-logo/200',
-        bannerUrl: 'https://picsum.photos/seed/speed-demons-banner/600/400',
+        id: '2048',
+        name: '2048',
+        description: 'Join the numbers and get to the 2048 tile! A classic and addictive puzzle game that will test your logic.',
+        logoUrl: 'https://picsum.photos/seed/2048-logo/200',
+        bannerUrl: 'https://picsum.photos/seed/2048-banner/600/400',
+        embedUrl: 'https://play2048.co/',
     },
     {
-        id: 'cyber-ops',
-        name: 'Cyber Ops',
-        description: 'A tactical first-person shooter set in a dystopian future. Use advanced gadgets to outsmart your opponents.',
-        logoUrl: 'https://picsum.photos/seed/cyber-ops-logo/200',
-        bannerUrl: 'https://picsum.photos/seed/cyber-ops-banner/600/400',
+        id: 'slope',
+        name: 'Slope',
+        description: 'Control a ball rolling down a steep slope. Avoid obstacles and keep your ball on the randomly generated course.',
+        logoUrl: 'https://picsum.photos/seed/slope-logo/200',
+        bannerUrl: 'https://picsum.photos/seed/slope-banner/600/400',
+        embedUrl: 'https://slopegame.io/',
     }
 ];
 
@@ -54,6 +53,7 @@ export default function GamesPage() {
     const { servers, loading: userServersLoading, createServer } = useServers();
     const { user, updateUserProfile } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
     const [launchingGame, setLaunchingGame] = useState<string | null>(null);
     
     const handleLaunchGame = async (game: Game) => {
@@ -69,6 +69,7 @@ export default function GamesPage() {
                 title: 'Game Launched!',
                 description: `Your status is now "Playing ${game.name}".`,
             });
+            router.push(`/games/${game.id}`);
         } catch (error: any) {
              toast({
                 variant: 'destructive',
@@ -76,7 +77,7 @@ export default function GamesPage() {
                 description: error.message,
             });
         } finally {
-            setLaunchingGame(null);
+            // Keep launching state until page navigation completes
         }
     }
 

@@ -16,6 +16,7 @@ export interface Game {
   description: string;
   logoUrl: string;
   bannerUrl: string;
+  embedUrl: string;
 }
 
 export interface UserProfile {
