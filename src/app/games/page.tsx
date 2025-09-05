@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -45,6 +46,30 @@ const mockGames: Game[] = [
         logoUrl: 'https://picsum.photos/seed/slope-logo/200',
         bannerUrl: 'https://picsum.photos/seed/slope-banner/600/400',
         embedUrl: 'https://slopegame.io/',
+    },
+    {
+        id: 'retro-bowl',
+        name: 'Retro Bowl',
+        description: 'A retro-style American football game. Manage your team, call the plays, and lead your franchise to glory.',
+        logoUrl: 'https://picsum.photos/seed/retro-bowl-logo/200',
+        bannerUrl: 'https://picsum.photos/seed/retro-bowl-banner/600/400',
+        embedUrl: 'https://retrobowl.me/',
+    },
+    {
+        id: 'cookie-clicker',
+        name: 'Cookie Clicker',
+        description: 'An incremental game where you click a cookie to get more cookies, then buy upgrades to bake even faster.',
+        logoUrl: 'https://picsum.photos/seed/cookie-clicker-logo/200',
+        bannerUrl: 'https://picsum.photos/seed/cookie-clicker-banner/600/400',
+        embedUrl: 'https://cookieclicker.ee/',
+    },
+    {
+        id: 'flappy-bird',
+        name: 'Flappy Bird',
+        description: 'Navigate the iconic bird through a series of pipes. A simple yet notoriously difficult classic.',
+        logoUrl: 'https://picsum.photos/seed/flappy-bird-logo/200',
+        bannerUrl: 'https://picsum.photos/seed/flappy-bird-banner/600/400',
+        embedUrl: 'https://flappybird.io/',
     }
 ];
 

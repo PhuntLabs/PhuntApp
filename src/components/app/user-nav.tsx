@@ -1,7 +1,8 @@
+
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, MessageCircleMore, SmilePlus, Check } from 'lucide-react';
+import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, MessageCircleMore, SmilePlus, Check, Gamepad2 } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -32,6 +33,7 @@ import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { SettingsDialog } from './settings-dialog';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Checkbox } from '../ui/checkbox';
+import Link from 'next/link';
 
 interface UserNavProps {
     user: UserProfile; 
@@ -398,11 +400,19 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                     <h4 className="text-xs font-bold uppercase text-muted-foreground">Playing a Game</h4>
                                     <div className="flex items-center gap-3 mt-1 bg-secondary/50 p-2 rounded-md">
                                         <Image src={user.currentGame.logoUrl} alt={user.currentGame.name} width={40} height={40} className="rounded-md" />
-                                        <div className="overflow-hidden">
+                                        <div className="overflow-hidden flex-1">
                                             <p className="font-semibold truncate">{user.currentGame.name}</p>
                                             <p className="text-xs text-muted-foreground truncate">{user.currentGame.description}</p>
                                         </div>
                                     </div>
+                                    {!isCurrentUser && (
+                                        <Link href={`/games/${user.currentGame.id}`} className="mt-2 w-full">
+                                            <Button variant="outline" size="sm" className="w-full">
+                                                <Gamepad2 className="mr-2 size-4" />
+                                                Join Game
+                                            </Button>
+                                        </Link>
+                                    )}
                                 </div>
                                  <Separator className="my-2" />
                                 </>
