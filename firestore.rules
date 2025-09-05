@@ -1,52 +1,65 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users can read any profile, but only write to their own.
-    match /users/{userId} {
-      allow read;
-      allow create: if request.auth.uid == userId;
-      allow update: if request.auth.uid == userId;
+    // Helper functions
+    function isAuth() {
+      return request.auth != null;
     }
 
-    // Users can only create friend requests from their own account.
-    // Both the sender and receiver can read the request.
-    // Only the receiver can update the status (accept/decline).
-    match /friendRequests/{requestId} {
-      allow create: if request.auth.uid == request.resource.data.from.id;
-      allow read: if request.auth.uid == resource.data.to || request.auth.uid == resource.data.from.id;
-      allow update: if request.auth.uid == resource.data.to;
+    function isUser(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    // Collection: users
+    match /users/{userId} {
+      allow read: if isAuth();
+      allow create: if isUser(userId) && request.resource.data.uid == userId;
+      allow update: if isUser(userId);
     }
     
-    // A user can interact with a chat if they are a member of it.
-    // This allows them to read messages, send messages (create chat document if it doesn't exist),
-    // and leave chats.
+    // Collection: friendRequests
+    match /friendRequests/{requestId} {
+      allow create: if isAuth() && request.auth.uid == request.resource.data.from.id;
+      allow read, update: if isAuth() && request.auth.uid == resource.data.to;
+    }
+    
+    // Collection: chats
     match /chats/{chatId} {
-      allow read, update, delete: if request.auth.uid in resource.data.members;
-      allow create: if request.auth.uid in request.resource.data.members;
+      allow read, create, update, delete: if isAuth() && request.auth.uid in resource.data.members;
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read, create: if isAuth() && get(/databases/$(database)/documents/chats/$(chatId)).data.members.hasAny([request.auth.uid]);
+        allow update, delete: if isAuth() && get(/databases/$(database)/documents/chats/$(chatId)).data.members.hasAny([request.auth.uid]) && resource.data.sender == request.auth.uid;
+      }
     }
 
-    // Chat messages can be read/written by members of the parent chat.
-    match /chats/{chatId}/messages/{messageId} {
-       allow read, create, update, delete: if get(/databases/$(database)/documents/chats/$(chatId)).data.members.hasAny([request.auth.uid]);
-    }
-
-    // Servers can be read by anyone if public, but only by members if private.
-    // Only the owner can delete a server.
+    // Collection: servers
     match /servers/{serverId} {
-      allow read: if resource.data.isPublic == true || request.auth.uid in resource.data.members;
-      allow create: if request.auth.uid == request.resource.data.ownerId;
-      allow update: if request.auth.uid in resource.data.members;
-      allow delete: if request.auth.uid == resource.data.ownerId;
-    }
+      // Anyone logged in can see servers for the discovery page
+      allow read: if isAuth();
+      // Only the owner can update or delete a server
+      allow update, delete: if isAuth() && resource.data.ownerId == request.auth.uid;
+      // Any logged in user can create a server
+      allow create: if isAuth();
 
-    // Channels and their messages can be accessed by members of the parent server.
-    match /servers/{serverId}/channels/{channelId} {
-      allow read, create, update, delete: if get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
-    }
+      // Channels subcollection
+      match /channels/{channelId} {
+        // Anyone logged in can read channel lists
+        allow read: if isAuth();
+        // Only members of the server can create/update/delete channels
+        allow create, update, delete: if isAuth() && get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
 
-    match /servers/{serverId}/channels/{channelId}/messages/{messageId} {
-      allow read, create, update, delete: if get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
+        // Messages subcollection within a channel
+        match /messages/{messageId} {
+            // Only members of the server can read/create messages
+            allow read, create: if isAuth() && get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
+            // Only the original sender can update/delete their message
+            allow update, delete: if isAuth() && resource.data.sender == request.auth.uid;
+        }
+      }
     }
   }
 }
