@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Note: This is a best-effort attempt. `beforeunload` does not guarantee
         // the completion of asynchronous operations like `updateDoc`.
         // A more robust solution might use Realtime Database's onDisconnect or a backend service.
-        updateDoc(userRef, { status: 'offline' });
+        updateDoc(userRef, { status: 'offline', currentGame: null });
       }
     };
 
@@ -292,7 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     if(authUser) {
       const userRef = doc(db, 'users', authUser.uid);
-      await updateDoc(userRef, { status: 'offline' });
+      await updateDoc(userRef, { status: 'offline', currentGame: null });
     }
     return signOut(auth);
   };

@@ -26,7 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import type { UserProfile, UserStatus, Server, BadgeType, Role, AvatarEffect, ProfileEffect } from '@/lib/types';
+import type { UserProfile, UserStatus, Server, BadgeType, Role, AvatarEffect, ProfileEffect, Game } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { SettingsDialog } from './settings-dialog';
@@ -183,7 +183,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const handleStatusChange = async (status: UserStatus) => {
     if (!isCurrentUser || !authUser) return;
      try {
-        await updateUserProfile({ status });
+        await updateUserProfile({ status, currentGame: null }); // Clear game when status is manually set
     } catch(error: any) {
         toast({
             variant: 'destructive',
@@ -196,7 +196,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const handleCustomStatusSave = async () => {
      if (!isCurrentUser || !authUser) return;
      try {
-        await updateUserProfile({ customStatus: customStatus.trim() });
+        await updateUserProfile({ customStatus: customStatus.trim(), currentGame: null }); // Clear game when custom status is set
          toast({ title: 'Status Updated'});
     } catch(error: any) {
         toast({
@@ -392,6 +392,22 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                             {user.customStatus && <p className="text-sm text-foreground mt-1">{user.customStatus}</p>}
                             <Separator className="my-2" />
                             
+                            {user.currentGame && (
+                                <>
+                                <div className="mb-2">
+                                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Playing a Game</h4>
+                                    <div className="flex items-center gap-3 mt-1 bg-secondary/50 p-2 rounded-md">
+                                        <Image src={user.currentGame.logoUrl} alt={user.currentGame.name} width={40} height={40} className="rounded-md" />
+                                        <div className="overflow-hidden">
+                                            <p className="font-semibold truncate">{user.currentGame.name}</p>
+                                            <p className="text-xs text-muted-foreground truncate">{user.currentGame.description}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                 <Separator className="my-2" />
+                                </>
+                            )}
+
                             {serverContext && (
                             <>
                                 <div className="mb-2">

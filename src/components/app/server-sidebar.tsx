@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -19,7 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-import type { Server, Channel, ChannelType } from '@/lib/types';
+import type { Server, Channel, ChannelType, UserProfile } from '@/lib/types';
 import { Hash, ChevronDown, Settings, Trash, Plus, MoreVertical, Pencil, Megaphone, ScrollText, MessageSquare, UserPlus, BadgeCheck, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { EditServerDialog } from './edit-server-dialog';
@@ -42,6 +41,7 @@ interface ServerSidebarProps {
   server: Server;
   channels: Channel[];
   selectedChannel: Channel | null;
+  members: Partial<UserProfile>[];
   onSelectChannel: (channel: Channel) => void;
   onCreateChannel: (name: string) => Promise<void>;
   onUpdateChannel: (channelId: string, data: Partial<Channel>) => Promise<void>;
@@ -50,7 +50,7 @@ interface ServerSidebarProps {
   onDeleteServer: (serverId: string) => Promise<void>;
 }
 
-export function ServerSidebar({ server, channels, selectedChannel, onSelectChannel, onCreateChannel, onUpdateChannel, onDeleteChannel, onUpdateServer, onDeleteServer }: ServerSidebarProps) {
+export function ServerSidebar({ server, channels, selectedChannel, members, onSelectChannel, onCreateChannel, onUpdateChannel, onDeleteChannel, onUpdateServer, onDeleteServer }: ServerSidebarProps) {
   const { user, authUser } = useAuth();
   const isOwner = user?.uid === server.ownerId;
   const isHeina = user?.displayName === 'heina';
@@ -111,7 +111,7 @@ export function ServerSidebar({ server, channels, selectedChannel, onSelectChann
                                 <span>Create Channel</span>
                                 </DropdownMenuItem>
                             </AddChannelDialog>
-                            <EditServerDialog server={server} onUpdateServer={onUpdateServer} onDeleteServer={onDeleteServer}>
+                            <EditServerDialog server={server} members={members} onUpdateServer={onUpdateServer} onDeleteServer={onDeleteServer}>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                     <Settings className="mr-2 h-4 w-4" />
                                     <span>Server Settings</span>

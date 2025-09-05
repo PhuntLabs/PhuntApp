@@ -10,6 +10,14 @@ export type BadgeType = z.infer<typeof BadgeType>;
 export type AvatarEffect = 'none' | 'rage' | 'glow' | 'orbit' | 'sparkle' | 'bounce';
 export type ProfileEffect = 'none' | 'rain' | 'snow' | 'aurora' | 'starfield' | 'confetti';
 
+export interface Game {
+  id: string;
+  name: string;
+  description: string;
+  logoUrl: string;
+  bannerUrl: string;
+}
+
 export interface UserProfile {
   id: string;
   uid: string;
@@ -28,6 +36,7 @@ export interface UserProfile {
   customStatus?: string;
   avatarEffect?: AvatarEffect;
   profileEffect?: ProfileEffect;
+  currentGame?: Game | null;
 }
 
 export interface ChatDocument {

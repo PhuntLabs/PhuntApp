@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -25,8 +24,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { Server, CustomEmoji, Role, Permission } from '@/lib/types';
-import { Globe, Trash, Smile, ImagePlus, X, Palette, GripVertical, Plus, ShieldQuestion, Users } from 'lucide-react';
+import type { Server, CustomEmoji, Role, Permission, UserProfile } from '@/lib/types';
+import { Globe, Trash, Smile, ImagePlus, X, Palette, GripVertical, Plus, ShieldQuestion, Users, Search } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Textarea } from '../ui/textarea';
 import { Switch } from '../ui/switch';
@@ -40,6 +39,8 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Checkbox } from '../ui/checkbox';
 
 function generateRandomHexColor() {
   return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
@@ -70,7 +71,15 @@ const SortableRoleItem = ({ role, index, onRemove, onSelect, selectedRole, canBe
 };
 
 
-export function EditServerDialog({ children, server, onUpdateServer, onDeleteServer }: EditServerDialogProps) {
+interface EditServerDialogProps {
+  children: React.ReactNode;
+  server: Server;
+  onUpdateServer: (serverId: string, data: Partial<Omit<Server, 'id'>>) => Promise<void>;
+  onDeleteServer: (serverId: string) => Promise<void>;
+  members: Partial<UserProfile>[];
+}
+
+export function EditServerDialog({ children, server, onUpdateServer, onDeleteServer, members }: EditServerDialogProps) {
   const [serverName, setServerName] = useState(server.name);
   const [serverIcon, setServerIcon] = useState(server.photoURL || '');
   const [serverBanner, setServerBanner] = useState(server.bannerURL || '');
@@ -81,6 +90,7 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
   const [roles, setRoles] = useState<Role[]>(server.roles || []);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [systemChannelId, setSystemChannelId] = useState<string | undefined>(server.systemChannelId);
+  const [memberSearch, setMemberSearch] = useState('');
   
   const [newEmojiName, setNewEmojiName] = useState('');
   const [newEmojiUrl, setNewEmojiUrl] = useState('');
@@ -92,8 +102,8 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
   const [activeTab, setActiveTab] = useState('general');
 
   const emojiFileRef = useRef<HTMLInputElement>(null);
+  const { uploadFile, updateUserRolesInServer } = useAuth();
   const { toast } = useToast();
-  const { uploadFile } = useAuth();
   
   useEffect(() => {
     if (server && isOpen) {
@@ -249,8 +259,31 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
       }
   };
   
+  const handleMemberRoleChange = async (memberId: string, roleId: string, isChecked: boolean) => {
+      const memberDetails = server.memberDetails[memberId];
+      if (!memberDetails) return;
+
+      const currentRoles = memberDetails.roles || [];
+      const newRoles = isChecked
+          ? [...currentRoles, roleId]
+          : currentRoles.filter(id => id !== roleId);
+      
+      try {
+          await updateUserRolesInServer(server.id, memberId, newRoles);
+          // Note: The UI will update automatically via the onSnapshot listener in useServer.
+          // This is a "fire-and-forget" and we don't need to manually update local state here.
+          toast({ title: 'Roles updated', description: `Updated roles for the user.`});
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Failed to update roles.' });
+      }
+  };
+
   const activeRoleForEditing = roles.find(r => r.id === selectedRole);
   const textChannels = server.channels?.filter(c => c.type === 'text') || [];
+
+  const filteredMembers = members.filter(member => 
+      member.displayName?.toLowerCase().includes(memberSearch.toLowerCase())
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -452,9 +485,52 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
                     </TabsContent>
                     
                      <TabsContent value="members" className="mt-0">
-                        <DialogDescription>
+                        <DialogDescription className="py-4">
                             Manage server members and their roles.
                         </DialogDescription>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search members..." 
+                                className="pl-10 mb-4"
+                                value={memberSearch}
+                                onChange={(e) => setMemberSearch(e.target.value)}
+                            />
+                        </div>
+                        <ScrollArea className="h-[55vh]">
+                            <div className="space-y-2 pr-4">
+                                {filteredMembers.map(member => (
+                                    <div key={member.uid} className="flex items-center gap-4 p-2 rounded-md hover:bg-accent">
+                                        <Avatar>
+                                            <AvatarImage src={member.photoURL || undefined} />
+                                            <AvatarFallback>{member.displayName?.[0]}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1">
+                                            <p className="font-semibold">{member.displayName}</p>
+                                            <p className="text-xs text-muted-foreground">@{member.displayName_lowercase}</p>
+                                        </div>
+                                        <Select onValueChange={(roleId) => handleMemberRoleChange(member.uid!, roleId, !server.memberDetails[member.uid!]?.roles.includes(roleId))}>
+                                            <SelectTrigger className="w-48">
+                                                <SelectValue placeholder="Manage Roles" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {roles.map(role => (
+                                                    <div key={role.id} className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                                                        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                                                            <Checkbox
+                                                                checked={server.memberDetails[member.uid!]?.roles.includes(role.id)}
+                                                                onCheckedChange={(checked) => handleMemberRoleChange(member.uid!, role.id, !!checked)}
+                                                            />
+                                                        </span>
+                                                        {role.name}
+                                                    </div>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                ))}
+                            </div>
+                        </ScrollArea>
                     </TabsContent>
                     
                     <TabsContent value="danger-zone" className="mt-0">

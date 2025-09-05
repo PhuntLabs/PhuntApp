@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -11,7 +10,7 @@ import { Chat } from '@/components/app/chat';
 import { ChannelChat } from '@/components/app/channel-chat';
 import { DirectMessages } from '@/components/app/direct-messages';
 import { Servers } from '@/components/app/servers';
-import type { PopulatedChat, Server, Channel, ChannelType, Message } from '@/lib/types';
+import type { PopulatedChat, Server, Channel, ChannelType, Message, UserProfile } from '@/lib/types';
 import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useServers } from '@/hooks/use-servers';
@@ -341,6 +340,7 @@ export default function Home() {
                   <ServerSidebar 
                       server={server}
                       channels={channels}
+                      members={members as UserProfile[]}
                       selectedChannel={selectedChannel}
                       onSelectChannel={handleSelectChannel}
                       onCreateChannel={handleCreateChannel}
