@@ -275,7 +275,7 @@ export default function Home() {
 
   return (
     <SidebarProvider>
-      {/* <UpdateLog /> */}
+      <UpdateLog />
       <div className="flex h-screen bg-background/70">
         <Servers 
           servers={servers}

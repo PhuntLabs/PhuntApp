@@ -12,31 +12,31 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Rocket, Sparkles, Bug, ShieldCheck, Image as ImageIcon } from 'lucide-react';
+import { Rocket, Sparkles, Bug, ShieldCheck, Wrench, Image as ImageIcon } from 'lucide-react';
 
-const APP_VERSION = '1.0.3';
+const APP_VERSION = '1.0.4';
 const LOCAL_STORAGE_KEY = `changelog_seen_${APP_VERSION}`;
 
 const updates = [
     {
-        title: 'Welcome to phunt!',
-        icon: Sparkles,
-        description: 'The app has been officially renamed to phunt! We hope you like the new name as much as we do.',
+        title: 'Stability Overhaul',
+        icon: Wrench,
+        description: 'Version 1.0.4 is a major stability release focused on fixing critical bugs to make the app more reliable and enjoyable to use.',
     },
     {
-        title: 'Image Sharing is Here!',
-        icon: ImageIcon,
-        description: 'You can now paste images directly into the chat input to send them to your friends and in server channels. Give it a try!',
-    },
-    {
-        title: 'Major Bug Squashing',
+        title: 'UI Layout Fixed',
         icon: Bug,
-        description: 'Fixed critical permission errors that prevented users from joining servers, accepting friend requests, or seeing their DMs and servers correctly.',
+        description: 'Squashed a persistent bug that was breaking the main UI layout and causing elements to appear in the wrong place. The interface should now be stable.',
     },
     {
-        title: 'Stability Improvements',
+        title: 'Security Rules Hardened',
         icon: ShieldCheck,
-        description: 'Resolved a startup crash and data loading race condition that made the app feel buggy. The initial load should be much smoother now.',
+        description: 'Completely rewrote the Firestore security rules from the ground up to be more robust and secure, fixing a wide range of permission-related errors.',
+    },
+     {
+        title: 'Image Host Whitelisted',
+        icon: ImageIcon,
+        description: 'Fixed a runtime crash that occurred when users had profile banners hosted on previously un-whitelisted domains like i.pinimg.com.',
     },
 ]
 
