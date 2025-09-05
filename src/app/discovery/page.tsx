@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePublicServers } from '@/hooks/use-public-servers';
 import { Servers } from '@/components/app/servers';
 import { useServers } from '@/hooks/use-servers';
@@ -19,6 +19,10 @@ import { usePublicBots } from '@/hooks/use-public-bots';
 import type { UserProfile } from '@/lib/types';
 import { AddBotToServerDialog } from '@/components/app/add-bot-to-server-dialog';
 import { ensureQolforuBotUser } from '@/ai/flows/qolforu-bot-flow';
+import { QOLFORU_BOT_ID, QOLFORU_BOT_PHOTO_URL, QOLFORU_BOT_USERNAME } from '@/ai/bots/qolforu-config';
+import { PHUNT_BOT_ID, PHUNT_BOT_PHOTO_URL, PHUNT_BOT_USERNAME } from '@/ai/bots/phunt-config';
+import { ensurePhuntBotUser } from '@/ai/flows/phunt-bot-flow';
+
 
 function ServerList() {
     const { publicServers, loading } = usePublicServers();
@@ -106,6 +110,50 @@ function ServerList() {
 
 function BotList() {
     const { publicBots, loading } = usePublicBots();
+    const [allBots, setAllBots] = useState<UserProfile[]>([]);
+
+    useEffect(() => {
+        // Manually add qolforu and phunt bot to ensure they are always present
+        const hardcodedBots: UserProfile[] = [
+            {
+                uid: QOLFORU_BOT_ID,
+                id: QOLFORU_BOT_ID,
+                displayName: QOLFORU_BOT_USERNAME,
+                displayName_lowercase: QOLFORU_BOT_USERNAME.toLowerCase(),
+                photoURL: QOLFORU_BOT_PHOTO_URL,
+                bio: "I'm qolforu, a bot designed to bring quality-of-life features to your server. Use my commands like /poll and /embed to spice up your conversations!",
+                isBot: true,
+                isVerified: true,
+                isDiscoverable: true,
+                badges: ['bot'],
+            },
+            {
+                uid: PHUNT_BOT_ID,
+                id: PHUNT_BOT_ID,
+                displayName: PHUNT_BOT_USERNAME,
+                displayName_lowercase: PHUNT_BOT_USERNAME.toLowerCase(),
+                photoURL: PHUNT_BOT_PHOTO_URL,
+                bio: "Official Phunt bot for announcements and special events.",
+                isBot: true,
+                isVerified: true,
+                isDiscoverable: true,
+                badges: ['bot'],
+            }
+        ];
+
+        const combined = [...hardcodedBots];
+        const publicBotIds = new Set(hardcodedBots.map(b => b.uid));
+
+        publicBots.forEach(bot => {
+            if (!publicBotIds.has(bot.uid)) {
+                combined.push(bot);
+                publicBotIds.add(bot.uid);
+            }
+        });
+        
+        setAllBots(combined);
+
+    }, [publicBots]);
     
     if (loading) {
         return (
@@ -135,11 +183,11 @@ function BotList() {
     return (
         <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {publicBots.map(bot => (
+            {allBots.map(bot => (
                  <BotCard key={bot.uid} bot={bot} />
             ))}
         </div>
-         { !loading && publicBots.length === 0 && (
+         { !loading && allBots.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                 <h2 className="text-xl font-semibold">No bots found.</h2>
                 <p>Check back later for new bots to add to your server!</p>
@@ -194,8 +242,9 @@ export default function DiscoveryPage() {
     const loading = userServersLoading;
 
     useEffect(() => {
-        // Ensure the qolforu bot user exists so it can be discovered.
+        // Ensure the bot users exist so they can be added to servers.
         ensureQolforuBotUser();
+        ensurePhuntBotUser();
     }, []);
 
     return (
