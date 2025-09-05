@@ -174,10 +174,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = async (email: string, pass: string, username: string) => {
     // 1. Check if username is already taken
-    const usernameQuery = query(collection(db, 'users'), where('displayName_lowercase', '==', username.toLowerCase()));
-    const usernameSnapshot = await getDocs(usernameQuery);
-    if (!usernameSnapshot.empty) {
-        throw new Error("Username is already taken.");
+    try {
+        const usernameQuery = query(collection(db, 'users'), where('displayName_lowercase', '==', username.toLowerCase()));
+        const usernameSnapshot = await getDocs(usernameQuery);
+        if (!usernameSnapshot.empty) {
+            throw new Error("Username is already taken.");
+        }
+    } catch (e: any) {
+        throw new Error(`Failed to check if username is taken. This is likely a security rule issue. Original error: ${e.message}`);
     }
 
     // 2. Create the user in Firebase Auth
