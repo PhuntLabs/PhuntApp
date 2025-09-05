@@ -86,8 +86,5 @@ body {
   }
   body {
     @apply bg-background text-foreground;
-    background-image: radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0);
-    background-size: 2rem 2rem;
-    backdrop-filter: blur(8px);
   }
 }

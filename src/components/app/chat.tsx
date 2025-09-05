@@ -63,9 +63,9 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   const isBotChat = otherMember?.isBot;
 
   return (
-    <SidebarInset>
-      <div className="p-4 flex items-center gap-2 border-b">
-        <SidebarTrigger />
+    <div className="flex flex-col h-screen">
+      <header className="p-4 flex items-center gap-2 border-b">
+        <SidebarTrigger className="md:hidden"/>
          <UserNav user={otherMember as UserProfile} as="trigger">
             <div className="flex items-center gap-2 cursor-pointer">
                  <Avatar className="size-8">
@@ -82,7 +82,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                 </div>
             </div>
         </UserNav>
-      </div>
+      </header>
       <div className="flex flex-1 flex-col h-full bg-muted/20">
         <ScrollArea className="flex-1" ref={scrollAreaRef as any}>
           <div className="p-4 space-y-4">
@@ -175,6 +175,6 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
           />
         </div>
       </div>
-    </SidebarInset>
+    </div>
   );
 }
