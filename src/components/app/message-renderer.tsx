@@ -6,6 +6,7 @@ import { ExternalLinkDialog } from './external-link-dialog';
 import { ServerInviteEmbed } from './server-invite-embed';
 import type { CustomEmoji } from '@/lib/types';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 interface MessageRendererProps {
   content: string;
@@ -53,8 +54,13 @@ export function MessageRenderer({ content, customEmojis = [], imageUrl }: Messag
           return <ServerInviteEmbed key={i} serverId={serverId} />;
         }
 
-        if (part.match(mentionRegex)) {
-          return <strong key={i} className="text-indigo-400 font-medium bg-indigo-500/20 px-1 rounded-sm">{part}</strong>
+        const mentionMatch = part.match(mentionRegex);
+        if (mentionMatch) {
+          const isEveryone = mentionMatch[1] === 'everyone' || mentionMatch[1] === 'here';
+          return <strong key={i} className={cn(
+            "font-medium px-1 rounded-sm",
+            isEveryone ? "text-amber-400 bg-amber-500/20" : "text-indigo-400 bg-indigo-500/20"
+            )}>{part}</strong>
         }
         
         if (part.startsWith('http')) {

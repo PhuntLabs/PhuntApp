@@ -8,7 +8,7 @@ import type { Server, UserProfile, Channel } from '@/lib/types';
 import { useAuth } from './use-auth';
 
 export function useServer(serverId: string | undefined) {
-  const { authUser } = useAuth();
+  const { authUser, user: currentUser } = useAuth();
   const [server, setServer] = useState<Server | null>(null);
   const [members, setMembers] = useState<Partial<UserProfile>[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,13 +37,14 @@ export function useServer(serverId: string | undefined) {
                      const userDocData = userDoc.data();
                      return {
                         id: userDoc.id,
+                        uid: userDoc.id,
                         ...userDocData
                      } as UserProfile
                 }
                 return { id: memberId, uid: memberId, displayName: 'Unknown User' };
             });
             const memberProfiles = await Promise.all(memberPromises);
-            setMembers(memberProfiles);
+            setMembers(memberProfiles as UserProfile[]);
         }
         
         // Fetch channels
@@ -81,12 +82,19 @@ export function useServer(serverId: string | undefined) {
   }, [authUser]);
   
   const joinServer = useCallback(async (serverIdToJoin: string) => {
-      if (!authUser) throw new Error('Not authenticated');
+      if (!authUser || !currentUser) throw new Error('Not authenticated');
       const serverRef = doc(db, 'servers', serverIdToJoin);
+      
+      const memberDetailPath = `memberDetails.${authUser.uid}`;
+
       await updateDoc(serverRef, {
-        members: arrayUnion(authUser.uid)
+        members: arrayUnion(authUser.uid),
+        [memberDetailPath]: {
+            joinedAt: serverTimestamp(),
+            roles: [], // Start with no roles
+        }
       });
-  }, [authUser]);
+  }, [authUser, currentUser]);
 
   return { server, setServer, members, loading, updateServer, deleteServer, joinServer };
 }

@@ -2,7 +2,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake } from 'lucide-react';
+import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, MessageCircleMore, SmilePlus } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -26,7 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import type { UserProfile, UserStatus, Server, BadgeType } from '@/lib/types';
+import type { UserProfile, UserStatus, Server, BadgeType, Role } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { SettingsDialog } from './settings-dialog';
@@ -63,6 +63,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
   const [bannerURL, setBannerURL] = useState(user?.bannerURL || '');
   const [bio, setBio] = useState(user?.bio || '');
+  const [customStatus, setCustomStatus] = useState(user?.customStatus || '');
   const [isEditing, setIsEditing] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const { toast } = useToast();
@@ -76,6 +77,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
         setPhotoURL(user.photoURL || '');
         setBannerURL(user.bannerURL || '');
         setBio(user.bio || '');
+        setCustomStatus(user.customStatus || '');
     }
   }, [isPopoverOpen, user]);
   
@@ -84,7 +86,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const handleProfileUpdate = async () => {
     if (!isCurrentUser || !authUser) return;
     try {
-        await updateUserProfile({ displayName, photoURL, bannerURL, bio });
+        await updateUserProfile({ displayName, photoURL, bannerURL, bio, customStatus });
         toast({
             title: 'Profile Updated',
             description: 'Your changes have been saved successfully.',
@@ -132,6 +134,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
         setPhotoURL(user.photoURL || '');
         setBannerURL(user.bannerURL || '');
         setBio(user.bio || '');
+        setCustomStatus(user.customStatus || '');
     }
     setIsEditing(false);
   }
@@ -146,11 +149,13 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                 <AvatarImage src={user.photoURL || undefined} />
                 <AvatarFallback>{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
             </Avatar>
-            <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background/50", statusConfig[userStatus].color === 'text-gray-500' ? 'bg-gray-500' : `bg-${statusConfig[userStatus].color.split('-')[1]}-500`)} />
+            <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background/50 flex items-center justify-center", statusConfig[userStatus].color === 'text-gray-500' ? 'bg-gray-500' : `bg-${statusConfig[userStatus].color.split('-')[1]}-500`)}>
+                 {user.customStatus && <MessageCircleMore className="size-2 text-white/70" />}
+            </div>
         </div>
         <div className="flex flex-col -space-y-1 group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-semibold truncate">{user.displayName || user.email}</span>
-            <span className="text-xs text-muted-foreground">{statusLabel}</span>
+            <span className="text-xs text-muted-foreground truncate">{user.customStatus || statusLabel}</span>
         </div>
     </button>
   ) : (
@@ -196,7 +201,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                     <div className={cn("absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-popover flex items-center justify-center", statusConfig[userStatus].color === 'text-gray-500' ? 'bg-gray-500' : `bg-${statusConfig[userStatus].color.split('-')[1]}-500`)}>
                         <Tooltip>
                            <TooltipTrigger>
-                             <StatusIcon className="size-3 text-white"/>
+                             {user.customStatus ? <MessageCircleMore className="size-3 text-white"/> : <StatusIcon className="size-3 text-white"/>}
                            </TooltipTrigger>
                            <TooltipContent side="bottom">
                                 {statusLabel}
@@ -252,6 +257,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                 </div>
                 <h3 className="text-xl font-bold">{displayName}</h3>
                 <p className={cn("text-sm text-muted-foreground -mt-1", !user.email && 'italic')}>{user.email || 'No email provided'}</p>
+                 {user.customStatus && <p className="text-sm text-foreground -mt-1">{user.customStatus}</p>}
                 <Separator className="my-2" />
                  {serverContext && serverRoles && serverRoles.length > 0 && (
                   <>
@@ -288,6 +294,22 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                         <span>{label}</span>
                                     </DropdownMenuItem>
                                 ))}
+                                <DropdownMenuSeparator />
+                                <div className="p-2">
+                                     <Label htmlFor="custom-status-dropdown">Custom Status</Label>
+                                     <div className="flex items-center gap-2 mt-1">
+                                        <Input
+                                            id="custom-status-dropdown"
+                                            value={customStatus}
+                                            onChange={(e) => setCustomStatus(e.target.value)}
+                                            placeholder="Set a custom status"
+                                            onKeyDown={(e) => { if(e.key === 'Enter') handleProfileUpdate() }}
+                                        />
+                                        <Button size="icon" className="size-8" onClick={() => setCustomStatus('')}>
+                                            <XCircle className="size-4" />
+                                        </Button>
+                                     </div>
+                                </div>
                             </DropdownMenuContent>
                         </DropdownMenu>
                          <SettingsDialog>
@@ -321,6 +343,10 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                  <div className="space-y-1">
                     <Label htmlFor="bio">Bio</Label>
                     <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us about yourself..." rows={4}/>
+                </div>
+                 <div className="space-y-1">
+                    <Label htmlFor="custom-status">Custom Status</Label>
+                    <Input id="custom-status" value={customStatus} onChange={(e) => setCustomStatus(e.target.value)} placeholder="Doing homework..."/>
                 </div>
              </div>
            )}

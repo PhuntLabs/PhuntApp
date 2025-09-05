@@ -2,6 +2,12 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/use-auth';
+import { Inter, Roboto, Lato, Source_Code_Pro } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const roboto = Roboto({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-roboto' });
+const lato = Lato({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-lato' });
+const sourceCodePro = Source_Code_Pro({ subsets: ['latin'], variable: '--font-source-code-pro' });
 
 export const metadata: Metadata = {
   title: 'Firebase Studio App',
@@ -16,19 +22,17 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
          <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 const theme = localStorage.getItem('app-theme') || 'dark';
+                const font = localStorage.getItem('app-theme-font') || 'inter';
                 const customColor = localStorage.getItem('app-theme-custom-color');
+
                 document.documentElement.className = theme;
+                document.body.classList.add('font-' + font);
+
                 if (theme === 'custom' && customColor) {
                   const hexToHsl = (hex) => {
                       hex = hex.replace('#', '');
@@ -59,7 +63,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-body antialiased">
+      <body className={`${inter.variable} ${roboto.variable} ${lato.variable} ${sourceCodePro.variable} antialiased`}>
         <AuthProvider>
           {children}
           <Toaster />

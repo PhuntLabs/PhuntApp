@@ -1,9 +1,8 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { User } from 'firebase/auth';
-import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
@@ -16,6 +15,7 @@ import { Badge } from '../ui/badge';
 import { format } from 'date-fns';
 import { MessageRenderer } from './message-renderer';
 import { ChatInput } from './chat-input';
+import { useTypingStatus } from '@/hooks/use-typing-status';
 
 interface ChatProps {
   chat: PopulatedChat;
@@ -30,6 +30,12 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { handleTyping } = useTypingStatus(chat.id);
+  
+  const typingUsers = useMemo(() => {
+    return chat.members.filter(m => m.id !== currentUser.uid && chat.typing?.[m.id!]);
+  }, [chat.typing, chat.members, currentUser.uid]);
+
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -38,7 +44,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
         behavior: 'smooth',
       });
     }
-  }, [messages]);
+  }, [messages, typingUsers]);
 
 
   const handleEdit = (message: Message) => {
@@ -61,6 +67,20 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   const chatName = otherMember?.displayName || chat.name || 'Chat';
   const chatAvatar = otherMember?.photoURL;
   const isBotChat = otherMember?.isBot;
+
+  const TypingIndicator = () => {
+    if (typingUsers.length === 0) return null;
+    
+    const names = typingUsers.map(u => u.displayName).join(', ');
+    const text = `${names} ${typingUsers.length > 1 ? 'are' : 'is'} typing...`;
+
+    return (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground px-4 pb-2">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+            <span className="italic">{text}</span>
+        </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen">
@@ -165,9 +185,11 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
             })}
           </div>
         </ScrollArea>
+         <TypingIndicator />
         <div className="p-4 border-t bg-card">
           <ChatInput 
             onSendMessage={onSendMessage}
+            onTyping={handleTyping}
             placeholder={`Message @${chatName}`}
             members={chat.members}
             disabled={!!editingMessageId}

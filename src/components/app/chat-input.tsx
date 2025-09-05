@@ -1,18 +1,20 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, SmilePlus, X, Award, Beaker, Code, Clapperboard, PlaySquare, Hash } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Send, SmilePlus, X, AtSign } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import type { UserProfile, Emoji, CustomEmoji, BadgeType } from '@/lib/types';
+import type { UserProfile, Emoji, CustomEmoji } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from '../ui/scroll-area';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/use-permissions';
+import { Server } from '@/lib/types';
 
 const standardEmojis: Emoji[] = [
     { name: "grinning", char: "😀", keywords: ["happy", "joy", "smile"] },
@@ -31,20 +33,34 @@ const standardEmojis: Emoji[] = [
 
 interface ChatInputProps {
     onSendMessage: (text: string, imageUrl?: string) => void;
+    onTyping: (isTyping: boolean) => void;
     placeholder?: string;
     members: Partial<UserProfile>[];
     customEmojis?: CustomEmoji[];
     disabled?: boolean;
     chatId?: string;
+    serverContext?: Server;
+    channelId?: string;
 }
 
-export function ChatInput({ onSendMessage, placeholder, members, customEmojis = [], disabled, chatId }: ChatInputProps) {
+export function ChatInput({ 
+    onSendMessage, 
+    onTyping,
+    placeholder, 
+    members, 
+    customEmojis = [], 
+    disabled, 
+    chatId,
+    serverContext,
+    channelId,
+}: ChatInputProps) {
     const [text, setText] = useState('');
     const [pastedImage, setPastedImage] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
-    const { user, uploadFile } = useAuth();
+    const { user, authUser, uploadFile } = useAuth();
     const { toast } = useToast();
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     
     const [autocompleteType, setAutocompleteType] = useState<'mention' | 'emoji' | null>(null);
     const [autocompleteQuery, setAutocompleteQuery] = useState('');
@@ -55,9 +71,35 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
    
     const combinedEmojis = [...standardEmojis, ...customEmojis];
 
+    const { hasPermission } = usePermissions(serverContext || null, channelId || null);
+    const canMentionEveryone = hasPermission('mentionEveryone');
+
+    const everyoneAndHereOption = useMemo(() => {
+        return { id: 'everyone', displayName: 'everyone', note: 'Notifies everyone in this channel.' };
+    }, []);
+
+    const handleTyping = useCallback(() => {
+        onTyping(true);
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+        typingTimeoutRef.current = setTimeout(() => {
+            onTyping(false);
+        }, 3000); // User is considered "not typing" after 3 seconds of inactivity
+    }, [onTyping]);
+
+    useEffect(() => {
+        return () => {
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+            }
+        };
+    }, []);
+
     const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const value = e.target.value;
         setText(value);
+        handleTyping();
 
         const cursorPosition = e.target.selectionStart;
         const textBeforeCursor = value.substring(0, cursorPosition);
@@ -86,10 +128,13 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
         if (!isAutocompleteOpen || !autocompleteType) return;
 
         if (autocompleteType === 'mention') {
-            const filtered = members.filter(member => 
+            let matches = members.filter(member => 
                 member.displayName?.toLowerCase().startsWith(autocompleteQuery.toLowerCase())
             );
-            setFilteredMembers(filtered);
+            if (canMentionEveryone && 'everyone'.startsWith(autocompleteQuery.toLowerCase())) {
+                matches = [everyoneAndHereOption, ...matches];
+            }
+            setFilteredMembers(matches);
         } else if (autocompleteType === 'emoji') {
             const filtered = combinedEmojis.filter(emoji => 
                 emoji.name.toLowerCase().startsWith(autocompleteQuery.toLowerCase())
@@ -97,7 +142,7 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
             setFilteredEmojis(filtered);
         }
 
-    }, [autocompleteQuery, autocompleteType, isAutocompleteOpen, members, combinedEmojis]);
+    }, [autocompleteQuery, autocompleteType, isAutocompleteOpen, members, combinedEmojis, canMentionEveryone, everyoneAndHereOption]);
 
     const insertAutocomplete = (value: string, type: 'mention' | 'emoji') => {
         if (!inputRef.current) return;
@@ -167,6 +212,7 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
         }
 
         onSendMessage(text, imageUrl);
+        onTyping(false);
         setText('');
         setPastedImage(null);
         setIsUploading(false);
@@ -178,10 +224,13 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
             e.preventDefault();
             handleSubmit(e as any);
         }
+         if (e.key === 'Escape') {
+            setIsAutocompleteOpen(false);
+        }
     };
 
     const AutocompletePopover = () => (
-        <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border rounded-lg shadow-lg p-2 max-h-60 overflow-y-auto">
+        <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border rounded-lg shadow-lg p-2 max-h-60 overflow-y-auto z-10">
             {autocompleteType === 'mention' && filteredMembers.length > 0 && (
                 <div className="space-y-1">
                     <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">
@@ -193,11 +242,20 @@ export function ChatInput({ onSendMessage, placeholder, members, customEmojis = 
                             className="w-full flex items-center gap-2 p-2 rounded-md text-left hover:bg-accent"
                             onClick={() => insertAutocomplete(member.displayName!, 'mention')}
                         >
-                            <Avatar className="size-6">
-                                <AvatarImage src={member.photoURL || undefined} />
-                                <AvatarFallback>{member.displayName?.[0]}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm">{member.displayName}</span>
+                             {member.id === 'everyone' ? (
+                                <div className="size-6 bg-muted rounded-full flex items-center justify-center">
+                                    <AtSign className="size-4" />
+                                </div>
+                            ) : (
+                                <Avatar className="size-6">
+                                    <AvatarImage src={member.photoURL || undefined} />
+                                    <AvatarFallback>{member.displayName?.[0]}</AvatarFallback>
+                                </Avatar>
+                            )}
+                            <div className="flex-1">
+                                <span className="text-sm">{member.displayName}</span>
+                                {'note' in member && <p className="text-xs text-muted-foreground">{member.note}</p>}
+                            </div>
                         </button>
                     ))}
                 </div>

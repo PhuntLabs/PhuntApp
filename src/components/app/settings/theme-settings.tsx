@@ -5,10 +5,18 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Sun, Moon, Sparkles, Palette } from "lucide-react";
-import { Separator } from '@/components/ui/separator';
+import { Sun, Moon, Sparkles, Palette, Type } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Theme = 'light' | 'dark' | 'full-dark' | 'custom';
+type FontFamily = 'inter' | 'roboto' | 'lato' | 'source-code-pro';
+
+const fonts: { value: FontFamily; label: string }[] = [
+  { value: 'inter', label: 'Inter' },
+  { value: 'roboto', label: 'Roboto' },
+  { value: 'lato', label: 'Lato' },
+  { value: 'source-code-pro', label: 'Source Code Pro' },
+];
 
 // Helper function to convert hex to HSL
 const hexToHsl = (hex: string): string => {
@@ -35,28 +43,21 @@ const hexToHsl = (hex: string): string => {
     return `${(h * 360).toFixed(1)} ${(s * 100).toFixed(1)}% ${(l * 100).toFixed(1)}%`;
 };
 
-// Helper function to get HSL from CSS variable
-const getPrimaryHsl = () => {
-    if (typeof window === 'undefined') return '263.4 99.3% 62.5%';
-    const style = getComputedStyle(document.documentElement);
-    return style.getPropertyValue('--primary').trim();
-}
-
 export function ThemeSettings() {
   const [theme, setTheme] = useState<Theme>('dark');
   const [customColor, setCustomColor] = useState('#7c3aed'); // Default custom color (purple)
+  const [fontFamily, setFontFamily] = useState<FontFamily>('inter');
 
   // Load saved theme from localStorage on initial render
   useEffect(() => {
     const savedTheme = localStorage.getItem('app-theme') as Theme | null;
     const savedColor = localStorage.getItem('app-theme-custom-color');
+    const savedFont = localStorage.getItem('app-theme-font') as FontFamily | null;
     
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-    if (savedColor) {
-      setCustomColor(savedColor);
-    }
+    if (savedTheme) setTheme(savedTheme);
+    if (savedColor) setCustomColor(savedColor);
+    if (savedFont) setFontFamily(savedFont);
+
   }, []);
   
   // Apply theme when it changes
@@ -76,6 +77,13 @@ export function ThemeSettings() {
         localStorage.removeItem('app-theme-custom-color');
     }
   }, [theme, customColor]);
+
+  // Apply font family when it changes
+  useEffect(() => {
+    document.body.classList.remove('font-inter', 'font-roboto', 'font-lato', 'font-source-code-pro');
+    document.body.classList.add(`font-${fontFamily}`);
+    localStorage.setItem('app-theme-font', fontFamily);
+  }, [fontFamily]);
 
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTheme('custom');
@@ -144,6 +152,29 @@ export function ThemeSettings() {
         </Card>
       )}
 
+      <Card>
+        <CardHeader>
+            <CardTitle>Typography</CardTitle>
+            <CardDescription>Select a font family for the application.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="max-w-xs">
+                <Select value={fontFamily} onValueChange={(value) => setFontFamily(value as FontFamily)}>
+                    <SelectTrigger>
+                        <Type className="mr-2 size-4" />
+                        <SelectValue placeholder="Select a font" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {fonts.map(({ value, label }) => (
+                            <SelectItem key={value} value={value}>
+                                <span style={{ fontFamily: `var(--font-${value})` }}>{label}</span>
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

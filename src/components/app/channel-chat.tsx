@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import type { Channel, Server, Message, UserProfile } from '@/lib/types';
 import { Hash, Pencil, Send, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { User } from 'firebase/auth';
 import { MessageRenderer } from './message-renderer';
 import { ChatInput } from './chat-input';
+import { useTypingStatus } from '@/hooks/use-typing-status';
+import { usePermissions } from '@/hooks/use-permissions';
 
 interface ChannelChatProps {
     channel: Channel;
@@ -38,7 +40,15 @@ export function ChannelChat({
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingText, setEditingText] = useState('');
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const { handleTyping } = useTypingStatus(server.id, channel.id);
+    const { hasPermission } = usePermissions(server, channel.id);
+
+    const canSendMessages = hasPermission('sendMessages');
     
+    const typingUsers = useMemo(() => {
+        return members.filter(m => m.uid !== currentUser.uid && channel.typing?.[m.uid!]);
+    }, [channel.typing, members, currentUser.uid]);
+
     useEffect(() => {
         if (scrollAreaRef.current) {
           scrollAreaRef.current.scrollTo({
@@ -46,7 +56,7 @@ export function ChannelChat({
             behavior: 'smooth',
           });
         }
-    }, [messages]);
+    }, [messages, typingUsers]);
 
 
     const handleEdit = (message: Message) => {
@@ -69,6 +79,20 @@ export function ChannelChat({
 
     const getSenderProfile = (senderId: string) => {
         return members.find(m => m.uid === senderId);
+    }
+    
+    const TypingIndicator = () => {
+        if (typingUsers.length === 0) return null;
+        
+        const names = typingUsers.map(u => u.displayName).join(', ');
+        const text = `${names} ${typingUsers.length > 1 ? 'are' : 'is'} typing...`;
+
+        return (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground px-4 pb-2">
+                <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                <span className="italic">{text}</span>
+            </div>
+        );
     }
 
     return (
@@ -93,7 +117,7 @@ export function ChannelChat({
                                 const sender = getSenderProfile(message.sender);
                                 const isCurrentUser = message.sender === currentUser?.uid;
                                 const isEditing = editingMessageId === message.id;
-                                const isMentioned = message.mentions?.includes(currentUser.uid);
+                                const isMentioned = message.mentions?.includes(currentUser.uid) || message.text.includes('@everyone');
 
                                 const prevMessage = messages[index - 1];
                                 const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender;
@@ -111,7 +135,7 @@ export function ChannelChat({
                                     >
                                     <div className="flex-1 flex gap-3 items-start">
                                         {isFirstInGroup ? (
-                                        <UserNav user={sender as UserProfile} as="trigger">
+                                        <UserNav user={sender as UserProfile} as="trigger" serverContext={server}>
                                             <Avatar className="size-10 cursor-pointer mt-1">
                                                 <AvatarImage src={sender?.photoURL || undefined} />
                                                 <AvatarFallback>{sender?.displayName?.[0]}</AvatarFallback>
@@ -124,7 +148,7 @@ export function ChannelChat({
                                         <div className="flex-1 pt-1">
                                             {isFirstInGroup && (
                                                 <div className="flex items-baseline gap-2">
-                                                <UserNav user={sender as UserProfile} as="trigger">
+                                                <UserNav user={sender as UserProfile} as="trigger" serverContext={server}>
                                                     <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
                                                 </UserNav>
                                                 <span className="text-xs text-muted-foreground">
@@ -172,14 +196,18 @@ export function ChannelChat({
                         </div>
                     )}
                 </ScrollArea>
+                 <TypingIndicator />
             </div>
              <div className="p-4 border-t bg-card flex-shrink-0">
                 <ChatInput 
                     onSendMessage={onSendMessage}
-                    placeholder={`Message #${displayName}`}
+                    onTyping={handleTyping}
+                    placeholder={canSendMessages ? `Message #${displayName}` : `You do not have permission to send messages in #${displayName}`}
                     members={members}
                     customEmojis={server.customEmojis}
-                    disabled={!!editingMessageId}
+                    disabled={!!editingMessageId || !canSendMessages}
+                    serverContext={server}
+                    channelId={channel.id}
                 />
             </div>
         </div>

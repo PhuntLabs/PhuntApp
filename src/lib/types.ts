@@ -20,11 +20,13 @@ export interface UserProfile {
   createdAt?: FieldValue;
   badges?: BadgeType[];
   status?: UserStatus;
+  customStatus?: string;
 }
 
 export interface ChatDocument {
   id: string;
   members: string[];
+  typing?: { [userId: string]: true };
   isOfficial?: boolean;
   name?: string;
   photoURL?: string;
@@ -62,11 +64,26 @@ export interface CustomEmoji {
     url: string;
 }
 
+export const permissionFlags = [
+    'administrator',
+    'manageServer',
+    'manageChannels',
+    'manageRoles',
+    'kickMembers',
+    'banMembers',
+    'mentionEveryone',
+    'viewChannels',
+    'sendMessages',
+] as const;
+
+export type Permission = (typeof permissionFlags)[number];
+
 export interface Role {
     id: string;
     name: string;
     color: string;
     priority: number; // Lower number = higher priority
+    permissions: Record<Permission, boolean>;
 }
 
 export interface Server {
@@ -94,6 +111,10 @@ export interface Channel {
     createdAt?: FieldValue;
     position: number;
     type: ChannelType;
+    typing?: { [userId: string]: true };
+    permissionOverwrites?: {
+        [roleId: string]: Partial<Record<Permission, boolean>>;
+    };
 }
 
 export interface Emoji {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -24,8 +25,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { Server, CustomEmoji, Role } from '@/lib/types';
-import { Globe, Trash, Smile, ImagePlus, X, Palette, GripVertical, Plus } from 'lucide-react';
+import type { Server, CustomEmoji, Role, Permission, permissionFlags } from '@/lib/types';
+import { Globe, Trash, Smile, ImagePlus, X, Palette, GripVertical, Plus, ShieldQuestion, Users } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Textarea } from '../ui/textarea';
 import { Switch } from '../ui/switch';
@@ -33,6 +34,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { Checkbox } from '../ui/checkbox';
+import { allPermissionDetails } from '@/lib/permissions';
 
 interface EditServerDialogProps {
   children: React.ReactNode;
@@ -75,7 +78,9 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
       setDescription(server.description || '');
       setInviteLink(server.customInviteLink || '');
       setCustomEmojis(server.customEmojis || []);
-      setRoles(server.roles || [{ id: 'default', name: '@everyone', color: '#99AAB5', priority: 99 }]);
+      
+      const defaultRoles = [{ id: 'default', name: '@everyone', color: '#99AAB5', priority: 99, permissions: {} as Record<Permission, boolean> }];
+      setRoles(server.roles || defaultRoles);
     }
   }, [server, isOpen]);
 
@@ -84,29 +89,21 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
     try {
         let updatedData: Partial<Omit<Server, 'id'>> = {};
         
-        switch (activeTab) {
-            case 'general':
-                updatedData = { name: serverName.trim(), photoURL: serverIcon.trim(), customInviteLink: inviteLink.trim() };
-                break;
-            case 'discovery':
-                updatedData = { isPublic, description };
-                break;
-            case 'emojis':
-                updatedData = { customEmojis };
-                break;
-            case 'roles':
-                updatedData = { roles };
-                break;
-            default:
-                break;
-        }
+        // Always save any potential changes from any tab
+        updatedData = { 
+            name: serverName.trim(), 
+            photoURL: serverIcon.trim(), 
+            customInviteLink: inviteLink.trim(),
+            isPublic, 
+            description,
+            customEmojis,
+            roles 
+        };
         
         if (Object.keys(updatedData).length > 0) {
             await onUpdateServer(server.id, updatedData);
             toast({ title: "Server Updated", description: "Your changes have been saved."});
         }
-        // No need to close the dialog on every save, user might want to edit multiple tabs
-        // setIsOpen(false); 
     } catch (error: any) {
         console.error("Failed to update server", error);
         toast({ variant: "destructive", title: "Error", description: error.message || "Failed to update server." });
@@ -180,7 +177,8 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
           id: `role_${Date.now()}`,
           name: 'new role',
           color: generateRandomHexColor(),
-          priority: roles.length
+          priority: roles.length,
+          permissions: {} as Record<Permission, boolean>
       };
       setRoles([...roles, newRole]);
   }
@@ -195,27 +193,34 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
       setRoles(roles.filter((_, i) => i !== index));
   }
 
+  const handlePermissionChange = (roleIndex: number, permission: Permission, value: boolean) => {
+      const newRoles = [...roles];
+      newRoles[roleIndex].permissions[permission] = value;
+      setRoles(newRoles);
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl h-[90vh]">
         <DialogHeader>
           <DialogTitle>Server Settings: {server.name}</DialogTitle>
         </DialogHeader>
-        <div className="flex gap-4">
-            <div className="w-48 flex-shrink-0">
+        <div className="flex gap-4 flex-1 min-h-0">
+            <div className="w-52 flex-shrink-0">
                  <Tabs defaultValue={activeTab} onValueChange={setActiveTab} orientation="vertical">
                     <TabsList className="w-full h-auto flex-col items-start bg-transparent p-0">
                         <TabsTrigger value="general" className="w-full justify-start data-[state=active]:bg-accent">General</TabsTrigger>
                         <TabsTrigger value="roles" className="w-full justify-start data-[state=active]:bg-accent">Roles</TabsTrigger>
                         <TabsTrigger value="emojis" className="w-full justify-start data-[state=active]:bg-accent">Emojis</TabsTrigger>
+                        <TabsTrigger value="members" className="w-full justify-start data-[state=active]:bg-accent">Members</TabsTrigger>
                         <TabsTrigger value="discovery" className="w-full justify-start data-[state=active]:bg-accent">Discovery</TabsTrigger>
                         <Separator className="my-2"/>
                         <TabsTrigger value="danger-zone" className="w-full justify-start text-destructive data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">Danger Zone</TabsTrigger>
                     </TabsList>
                  </Tabs>
             </div>
-            <div className="flex-1 overflow-y-auto max-h-[60vh] pr-2">
+            <div className="flex-1 overflow-y-auto pr-2 border-l pl-4">
                  <Tabs defaultValue={activeTab} value={activeTab} className="w-full">
                     <TabsContent value="general" className="mt-0">
                         <div className="grid gap-4 py-4">
@@ -246,17 +251,43 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
                             <Label>Roles</Label>
                             <Button size="sm" variant="outline" onClick={handleAddRole}><Plus className="size-4 mr-2"/> Add Role</Button>
                         </div>
-                        <div className="space-y-2">
-                            {roles.map((role, index) => (
-                                <div key={role.id} className="flex items-center gap-2 p-2 border rounded-md">
-                                    <GripVertical className="size-5 text-muted-foreground cursor-grab"/>
-                                    <Input type="color" value={role.color} onChange={(e) => handleUpdateRole(index, { color: e.target.value })} className="p-1 h-8 w-10"/>
-                                    <Input value={role.name} onChange={(e) => handleUpdateRole(index, { name: e.target.value })} className="h-8"/>
-                                    <Button variant="ghost" size="icon" className="size-7 text-muted-foreground" onClick={() => handleRemoveRole(index)} disabled={role.id === 'default'}>
-                                        <X className="size-4" />
-                                    </Button>
-                                </div>
-                            ))}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                {roles.map((role, index) => (
+                                    <div key={role.id} className="flex items-center gap-2 p-2 border rounded-md">
+                                        <GripVertical className="size-5 text-muted-foreground cursor-grab"/>
+                                        <Input type="color" value={role.color} onChange={(e) => handleUpdateRole(index, { color: e.target.value })} className="p-1 h-8 w-10"/>
+                                        <Input value={role.name} onChange={(e) => handleUpdateRole(index, { name: e.target.value })} className="h-8"/>
+                                        <Button variant="ghost" size="icon" className="size-7 text-muted-foreground" onClick={() => handleRemoveRole(index)} disabled={role.id === 'default'}>
+                                            <X className="size-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="space-y-4 border rounded-lg p-4">
+                                <h4 className="font-semibold">Role Permissions</h4>
+                                {roles.length > 0 && (
+                                    <div className="space-y-3">
+                                        {allPermissionDetails.map(perm => (
+                                            <div key={perm.id} className="flex items-center space-x-2">
+                                                <Checkbox 
+                                                    id={`perm-${perm.id}`}
+                                                    checked={roles[0].permissions[perm.id]}
+                                                    onCheckedChange={(checked) => handlePermissionChange(0, perm.id, !!checked)}
+                                                />
+                                                <div className="grid gap-1.5 leading-none">
+                                                    <label htmlFor={`perm-${perm.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                        {perm.name}
+                                                    </label>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {perm.description}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </TabsContent>
                     
@@ -321,6 +352,12 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
                         </div>
                     </TabsContent>
                     
+                     <TabsContent value="members" className="mt-0">
+                        <DialogDescription>
+                            Manage server members and their roles.
+                        </DialogDescription>
+                    </TabsContent>
+                    
                     <TabsContent value="danger-zone" className="mt-0">
                         <div className="py-4 space-y-4">
                             <h3 className="font-semibold text-destructive">Delete Server</h3>
@@ -355,7 +392,7 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
                  </Tabs>
             </div>
         </div>
-        <DialogFooter className="border-t pt-4 flex sm:justify-between">
+        <DialogFooter className="border-t pt-4 mt-auto flex sm:justify-between">
             <div>
                  <Button variant="ghost" onClick={() => setIsOpen(false)}>Close</Button>
             </div>

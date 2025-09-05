@@ -16,23 +16,29 @@ import {
   where,
   getDocs,
 } from 'firebase/firestore';
-import type { Message } from '@/lib/types';
+import type { Message, Server, UserProfile } from '@/lib/types';
 import { useAuth } from './use-auth';
+import { usePermissions } from './use-permissions';
 
 // Function to find mentioned user IDs from message text
-async function getMentions(text: string): Promise<string[]> {
+async function getMentions(text: string, server: Server | null): Promise<string[]> {
   const mentionRegex = /@(\w+)/g;
   const mentions = text.match(mentionRegex);
   if (!mentions) return [];
 
-  const usernames = mentions.map(m => m.substring(1));
+  const usernames = mentions.map(m => m.substring(1).toLowerCase());
   const mentionedUserIds: string[] = [];
+
+  // Special case for @everyone
+  if (usernames.includes('everyone')) {
+    return server?.members || [];
+  }
   
   // Batch queries for usernames to be efficient
   // Firestore `in` query is limited to 10 items per query
   for (let i = 0; i < usernames.length; i += 10) {
     const chunk = usernames.slice(i, i + 10);
-    const q = query(collection(db, 'users'), where('displayName_lowercase', 'in', chunk.map(u => u.toLowerCase())));
+    const q = query(collection(db, 'users'), where('displayName_lowercase', 'in', chunk));
     const snapshot = await getDocs(q);
     snapshot.forEach(doc => mentionedUserIds.push(doc.id));
   }
@@ -40,17 +46,18 @@ async function getMentions(text: string): Promise<string[]> {
   return mentionedUserIds;
 }
 
-export function useChannelMessages(serverId: string | undefined, channelId: string | undefined) {
+export function useChannelMessages(server: Server | null, channelId: string | undefined) {
   const { authUser } = useAuth();
+  const { hasPermission } = usePermissions(server, channelId);
   const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
-    if (!serverId || !channelId) {
+    if (!server?.id || !channelId) {
         setMessages([]);
         return;
     };
 
-    const messagesRef = collection(db, 'servers', serverId, 'channels', channelId, 'messages');
+    const messagesRef = collection(db, 'servers', server.id, 'channels', channelId, 'messages');
     const q = query(messagesRef, orderBy('timestamp', 'asc'));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -65,13 +72,17 @@ export function useChannelMessages(serverId: string | undefined, channelId: stri
     });
 
     return () => unsubscribe();
-  }, [serverId, channelId]);
+  }, [server?.id, channelId]);
 
   const sendMessage = useCallback(
     async (text: string) => {
-      if (!authUser || !serverId || !channelId) return;
+      if (!authUser || !server?.id || !channelId) return;
 
-      const mentionedUserIds = await getMentions(text);
+      if (text.includes('@everyone') && !hasPermission('mentionEveryone')) {
+        throw new Error("You don't have permission to mention @everyone.");
+      }
+
+      const mentionedUserIds = await getMentions(text, server);
       
       const messagePayload = {
         text,
@@ -81,33 +92,33 @@ export function useChannelMessages(serverId: string | undefined, channelId: stri
         mentions: mentionedUserIds,
       };
 
-      const messagesRef = collection(db, 'servers', serverId, 'channels', channelId, 'messages');
+      const messagesRef = collection(db, 'servers', server.id, 'channels', channelId, 'messages');
       await addDoc(messagesRef, messagePayload);
     },
-    [authUser, serverId, channelId]
+    [authUser, server, channelId, hasPermission]
   );
   
   const editMessage = useCallback(
     async (messageId: string, newText: string) => {
-        if (!serverId || !channelId) return;
-        const mentionedUserIds = await getMentions(newText);
-        const messageRef = doc(db, 'servers', serverId, 'channels', channelId, 'messages', messageId);
+        if (!server?.id || !channelId) return;
+        const mentionedUserIds = await getMentions(newText, server);
+        const messageRef = doc(db, 'servers', server.id, 'channels', channelId, 'messages', messageId);
         await updateDoc(messageRef, {
             text: newText,
             edited: true,
             mentions: mentionedUserIds,
         });
     },
-    [serverId, channelId]
+    [server]
   );
   
   const deleteMessage = useCallback(
     async (messageId: string) => {
-        if (!serverId || !channelId) return;
-        const messageRef = doc(db, 'servers', serverId, 'channels', channelId, 'messages', messageId);
+        if (!server?.id || !channelId) return;
+        const messageRef = doc(db, 'servers', server.id, 'channels', channelId, 'messages', messageId);
         await deleteDoc(messageRef);
     },
-    [serverId, channelId]
+    [server?.id, channelId]
   );
 
   return { messages, sendMessage, editMessage, deleteMessage };
