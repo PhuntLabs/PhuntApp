@@ -97,12 +97,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Effect for handling online/offline status
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (auth.currentUser) {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        // Note: This is a best-effort attempt. `beforeunload` does not guarantee
+        // the completion of asynchronous operations like `updateDoc`.
+        // A more robust solution might use Realtime Database's onDisconnect or a backend service.
+        updateDoc(userRef, { status: 'offline' });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        setAuthUser(firebaseUser);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
+        
+        // Set user online
+        await setDoc(userDocRef, { status: 'online' }, { merge: true });
+        
+        setAuthUser(firebaseUser);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
@@ -256,11 +279,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return userCredential;
   };
 
-  const login = (email: string, pass: string) => {
-    return signInWithEmailAndPassword(auth, email, pass);
+  const login = async (email: string, pass: string) => {
+    const credential = await signInWithEmailAndPassword(auth, email, pass);
+    if (credential.user) {
+        const userRef = doc(db, 'users', credential.user.uid);
+        await updateDoc(userRef, { status: 'online' });
+    }
+    return credential;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if(authUser) {
+      const userRef = doc(db, 'users', authUser.uid);
+      await updateDoc(userRef, { status: 'offline' });
+    }
     return signOut(auth);
   };
 
