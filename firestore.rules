@@ -2,74 +2,52 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper Functions
+
     function isAuth() {
       return request.auth != null;
     }
-    
-    // USERS
-    // - Anyone can create their own user profile during signup.
-    // - Anyone authenticated can read user profiles (to see member info, etc).
-    // - Users can only update their own profile.
-    match /users/{userId} {
-      allow create: if !isAuth();
-      allow read: if isAuth();
-      allow update: if isAuth() && request.auth.uid == userId;
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
 
-    // FRIEND REQUESTS
-    // - Authenticated users can query for users to send requests.
-    // - Authenticated users can create a friend request if they are the sender.
-    // - The sender or receiver can read the request.
-    // - Only the receiver can update the status (accept/decline).
+    match /users/{userId} {
+      allow read: if isAuth();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+    }
+    
     match /friendRequests/{requestId} {
-      allow list: if isAuth();
-      allow create: if isAuth() && request.auth.uid == request.resource.data.from.id;
       allow read: if isAuth() && (request.auth.uid == resource.data.to || request.auth.uid == resource.data.from.id);
+      allow create: if isAuth() && request.auth.uid == request.resource.data.from.id;
       allow update: if isAuth() && request.auth.uid == resource.data.to;
     }
-    
-    // CHATS (Direct Messages)
-    // - Users can only read, create, update, or delete chats they are a member of.
+
     match /chats/{chatId} {
-      allow read, update, delete: if isAuth() && request.auth.uid in resource.data.members;
+      allow read, delete: if isAuth() && request.auth.uid in resource.data.members;
       allow create: if isAuth() && request.auth.uid in request.resource.data.members;
-      
-      // MESSAGES (within a chat)
-      // - Members of a chat can read and create messages.
-      // - Users can only edit or delete their own messages.
       match /messages/{messageId} {
-        allow read, create: if isAuth() && get(/databases/$(database)/documents/chats/$(chatId)).data.members.hasAny([request.auth.uid]);
-        allow update, delete: if isAuth() && request.auth.uid == resource.data.sender;
+        allow read, create, update, delete: if isAuth() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
       }
     }
-    
-    // SERVERS
-    // - Any authenticated user can read server lists and details (for discovery and joining).
-    // - Users can only create servers if they are authenticated.
-    // - Only the owner can update or delete the server (simplified rule, can be expanded to roles later).
+
     match /servers/{serverId} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.auth.uid == request.resource.data.ownerId;
+      // Allow owner to update everything.
+      // Allow any authenticated user to update a server ONLY to add themselves to the members list.
+      allow update: if (isAuth() && request.auth.uid == resource.data.ownerId) || 
+                    (isAuth() && request.resource.data.members == resource.data.members.concat([request.auth.uid]));
+      allow delete: if isAuth() && request.auth.uid == resource.data.ownerId;
+
+      match /channels/{channelId} {
         allow read: if isAuth();
-        allow create: if isAuth() && request.auth.uid == request.resource.data.ownerId;
-        allow update: if isAuth() && (request.auth.uid == resource.data.ownerId || request.auth.uid in resource.data.members);
-        allow delete: if isAuth() && request.auth.uid == resource.data.ownerId;
+        allow create, update, delete: if isAuth() && request.auth.uid == get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId;
 
-        // CHANNELS (within a server)
-        // - Any authenticated user can read channel info (for joining/viewing servers).
-        // - Only server members can write/edit channels (simplified to owner for now).
-        match /channels/{channelId} {
-            allow read: if isAuth();
-            allow create, update, delete: if isAuth() && get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId == request.auth.uid;
-
-            // MESSAGES (within a channel)
-            // - Only members of the server can read or send messages.
-            // - Users can only edit or delete their own messages.
-            match /messages/{messageId} {
-                allow read, create: if isAuth() && request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
-                allow update, delete: if isAuth() && request.auth.uid == resource.data.sender;
-            }
+        match /messages/{messageId} {
+          allow read, create, update, delete: if isAuth() && request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
         }
+      }
     }
   }
 }
