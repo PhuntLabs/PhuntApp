@@ -49,7 +49,7 @@ const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType,
 
 const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, className: string }> = {
     developer: { label: 'Developer', icon: Code, className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
-    bot: { label: 'Bot', icon: Bot, className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
+    bot: { label: 'Bot', icon: Bot, className: 'bg-gray-500/20 text-gray-300 border-gray-500/30' },
     'beta tester': { label: 'Beta Tester', icon: Beaker, className: 'bg-teal-500/20 text-teal-300 border-teal-500/30' },
     youtuber: { label: 'Youtuber', icon: PlaySquare, className: 'bg-red-500/20 text-red-300 border-red-500/30' },
     tiktoker: { label: 'Tiktoker', icon: Clapperboard, className: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
@@ -237,26 +237,27 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
         <div className="pt-14">
            {!isEditing ? (
              <>
-                <div className="absolute top-28 right-4 flex justify-end gap-1">
-                 {allBadges.map((badgeKey) => {
-                     const badgeInfo = badgeConfig[badgeKey as BadgeType];
-                     if (!badgeInfo) return null;
-                     const { label, icon: Icon, className } = badgeInfo;
-                     return (
-                         <Tooltip key={badgeKey}>
-                            <TooltipTrigger asChild>
-                                 <Badge variant="secondary" className={cn("flex items-center justify-center h-6 w-6 p-0", className)}>
-                                    <Icon className="size-3.5" />
-                                 </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>{label}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                     )
-                 })}
+                <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold">{displayName}</h3>
+                    <div className="flex items-center gap-1">
+                    {allBadges.map((badgeKey) => {
+                        const badgeInfo = badgeConfig[badgeKey as BadgeType];
+                        if (!badgeInfo) return null;
+                        const { label, icon: Icon, className } = badgeInfo;
+                        return (
+                            <Tooltip key={badgeKey}>
+                                <TooltipTrigger>
+                                    <div className={cn("flex items-center justify-center size-5 rounded-full", className.replace('border-indigo-500/30', ''))}>
+                                        <Icon className="size-3" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent><p>{label}</p></TooltipContent>
+                            </Tooltip>
+                        )
+                    })}
+                    </div>
                 </div>
-                <h3 className="text-xl font-bold">{displayName}</h3>
+
                 <p className={cn("text-sm text-muted-foreground -mt-1", !user.email && 'italic')}>{user.email || 'No email provided'}</p>
                  {user.customStatus && <p className="text-sm text-foreground -mt-1">{user.customStatus}</p>}
                 <Separator className="my-2" />

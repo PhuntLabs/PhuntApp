@@ -1,8 +1,8 @@
 
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji } from '@/lib/types';
-import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, BadgeCheck } from 'lucide-react';
+import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, BadgeType } from '@/lib/types';
+import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Code, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -19,17 +19,18 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Badge } from '../ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
-const standardEmojis: Emoji[] = [
-    { name: "grinning", char: "😀", keywords: ["happy", "joy", "smile"] },
-    { name: "joy", char: "😂", keywords: ["happy", "lol", "laugh"] },
-    { name: "sob", char: "😭", keywords: ["sad", "cry", "tear"] },
-    { name: "thinking", char: "🤔", keywords: ["idea", "question", "hmm"] },
-    { name: "thumbsup", char: "👍", keywords: ["agree", "yes", "like"] },
-    { name: "heart", char: "❤️", keywords: ["love", "like", "romance"] },
-    { name: "fire", char: "🔥", keywords: ["hot", "lit", "burn"] },
-    { name: "rocket", char: "🚀", keywords: ["launch", "space", "fast"] },
-];
+
+const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, className: string }> = {
+    developer: { label: 'Developer', icon: Code, className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
+    bot: { label: 'Bot', icon: Beaker, className: 'bg-gray-500/20 text-gray-300 border-gray-500/30' },
+    'beta tester': { label: 'Beta Tester', icon: Beaker, className: 'bg-teal-500/20 text-teal-300 border-teal-500/30' },
+    youtuber: { label: 'Youtuber', icon: PlaySquare, className: 'bg-red-500/20 text-red-300 border-red-500/30' },
+    tiktoker: { label: 'Tiktoker', icon: Clapperboard, className: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
+    goat: { label: 'The GOAT', icon: Award, className: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+    'early supporter': { label: 'Early Supporter', icon: HeartHandshake, className: 'bg-pink-500/20 text-pink-300 border-pink-500/30' },
+};
 
 interface ChannelChatProps {
     channel: Channel;
@@ -143,6 +144,7 @@ export function ChannelChat({
 
             <div className="flex-1 flex flex-col h-full bg-muted/20 overflow-hidden">
                 <ScrollArea className="flex-1" ref={scrollAreaRef as any}>
+                    <TooltipProvider>
                     {messages.length === 0 ? (
                          <div className="flex flex-col justify-end items-start p-4 h-full">
                              <div className="p-4 rounded-lg bg-background/50">
@@ -162,6 +164,9 @@ export function ChannelChat({
                                 const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender || !!message.replyTo;
 
                                 if (!sender) return null; // Or show a fallback for deleted users
+
+                                const allBadges = [...(sender.badges || [])];
+                                if (sender.isBot) allBadges.push('bot');
 
                                 return (
                                     <div
@@ -199,17 +204,29 @@ export function ChannelChat({
 
                                             {isFirstInGroup && (
                                                 <div className="flex items-baseline gap-2">
-                                                <UserNav user={sender as UserProfile} as="trigger" serverContext={server}>
-                                                    <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
-                                                </UserNav>
-                                                {sender?.displayName === 'heina' && (
-                                                    <Badge variant="outline" className="h-5 px-1.5 flex items-center gap-1 border-blue-500 text-blue-400 bg-blue-500/10">
-                                                        <BadgeCheck className="size-3" /> DEVELOPER
-                                                    </Badge>
-                                                )}
-                                                <span className="text-xs text-muted-foreground">
-                                                    {message.timestamp ? format((message.timestamp as any).toDate(), 'PPpp') : 'sending...'}
-                                                </span>
+                                                    <UserNav user={sender as UserProfile} as="trigger" serverContext={server}>
+                                                        <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
+                                                    </UserNav>
+                                                    <div className="flex items-center gap-1">
+                                                        {allBadges.map((badgeKey) => {
+                                                            const badgeInfo = badgeConfig[badgeKey as BadgeType];
+                                                            if (!badgeInfo) return null;
+                                                            const { label, icon: Icon, className } = badgeInfo;
+                                                            return (
+                                                                <Tooltip key={badgeKey}>
+                                                                    <TooltipTrigger>
+                                                                        <Badge variant="outline" className={cn("h-5 px-1.5 flex items-center gap-1", className)}>
+                                                                            <Icon className="size-3" /> {label}
+                                                                        </Badge>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>{label}</TooltipContent>
+                                                                </Tooltip>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {message.timestamp ? format((message.timestamp as any).toDate(), 'PPpp') : 'sending...'}
+                                                    </span>
                                                 </div>
                                             )}
 
@@ -256,6 +273,7 @@ export function ChannelChat({
                             })}
                         </div>
                     )}
+                    </TooltipProvider>
                 </ScrollArea>
                  <TypingIndicator />
             </div>
