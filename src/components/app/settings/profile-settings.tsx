@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { AvatarEffect, ProfileEffect } from '@/lib/types';
+import Image from 'next/image';
 
 // Mock components for preview
 const RainEffect = () => (
@@ -126,7 +127,7 @@ const ConfettiEffect = () => {
 }
 
 
-const avatarEffects: { id: AvatarEffect, name: string, component: React.FC }[] = [
+const avatarEffects: { id: AvatarEffect, name: string, component: React.FC | React.FC<{ children: React.ReactNode }> }[] = [
     { id: 'none', name: 'None', component: () => null },
     { id: 'rage', name: 'Rage', component: RageEffect },
     { id: 'glow', name: 'Glow', component: GlowEffect },
@@ -238,8 +239,21 @@ export function ProfileSettings() {
                          profileEffect === effect.id ? "border-primary bg-primary/10" : "border-transparent bg-muted/50 hover:bg-accent"
                     )}
                 >
-                    <div className="w-full h-24 bg-accent rounded-lg relative overflow-hidden">
+                    <div className="w-full h-32 bg-accent rounded-lg relative overflow-hidden flex flex-col items-center justify-end p-2">
                         <effect.component />
+                        <div className="relative z-10 w-full bg-background/50 backdrop-blur-sm p-2 rounded-md border">
+                            <div className="flex items-center gap-2">
+                                <Avatar className="size-10">
+                                     <AvatarImage src={user.photoURL || undefined} />
+                                     <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-bold">{user.displayName}</p>
+                                    <p className="text-xs text-muted-foreground">Previewing effect...</p>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                      <span className="font-medium text-sm">{effect.name}</span>
                 </div>

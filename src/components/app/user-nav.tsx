@@ -96,8 +96,8 @@ const ConfettiEffect = () => {
     );
 };
 
-const profileEffects: Record<ProfileEffect, React.FC> = {
-    none: () => null,
+const profileEffects: Record<ProfileEffect, React.FC | undefined> = {
+    none: undefined,
     rain: RainEffect,
     snow: SnowEffect,
     aurora: AuroraEffect,
@@ -126,8 +126,8 @@ const SparkleEffect = () => (
 );
 const BounceEffectWrapper = ({ children }: { children: React.ReactNode }) => <div className="avatar-effect-bounce">{children}</div>;
 
-const avatarEffects: Record<AvatarEffect, React.FC | React.FC<{ children: React.ReactNode }>> = {
-    none: () => null,
+const avatarEffects: Record<AvatarEffect, React.FC | React.FC<{ children: React.ReactNode }> | null> = {
+    none: null,
     rage: RageEffect,
     glow: GlowEffect,
     orbit: OrbitEffect,
@@ -286,19 +286,19 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       <PopoverTrigger asChild>
         {TriggerComponent}
       </PopoverTrigger>
-      <PopoverContent className="w-80 mb-2 h-auto p-0" side="top" align="start">
+      <PopoverContent className="w-80 mb-2 p-0 border-none rounded-lg overflow-hidden" side="top" align="start">
       <TooltipProvider>
-        <div className="flex flex-col">
-            <div className="relative">
-                 <div className="h-24 bg-accent relative overflow-hidden">
+        <div className="flex flex-col relative overflow-hidden">
+             {ProfileEffectComponent && <ProfileEffectComponent />}
+            <div className="relative z-10">
+                 <div className="h-24 bg-accent relative">
                      {user.bannerURL && (
                         <Image src={user.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} />
                     )}
-                    {ProfileEffectComponent && <ProfileEffectComponent />}
                 </div>
                  <div className="absolute top-[70px] left-4">
                      <div className="relative">
-                         {AvatarEffectComponent && 'children' in AvatarEffectComponent ? (
+                         {AvatarEffectComponent && 'prototype' in AvatarEffectComponent ? (
                             <AvatarEffectComponent>
                                 <Avatar className="size-24 border-4 border-popover rounded-full">
                                     <AvatarImage src={displayUser.photoURL || undefined} />
@@ -336,7 +336,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                 </div>
             </div>
 
-            <div className="pt-16 px-4 pb-4">
+            <div className="pt-16 px-4 pb-4 bg-popover rounded-b-lg z-10">
                {!isEditing ? (
                  <>
                     <div className="flex items-center gap-2">
