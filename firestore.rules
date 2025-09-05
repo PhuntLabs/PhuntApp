@@ -3,117 +3,145 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // =====================================================================
-    //
-    // HELPER FUNCTIONS
-    //
-    // =====================================================================
-    
-    // Check if the user is authenticated
-    function isAuthenticated() {
+
+    // Helper functions to make rules more readable
+    function isSignedIn() {
       return request.auth != null;
     }
-    
-    // Check if the user is the owner of a document
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    
-    // Check if a user document is valid before creation
-    function isValidNewUser(userId, data) {
-      return isOwner(userId)
-        && data.displayName is string && data.displayName.size() > 2 && data.displayName.size() < 30
-        && data.displayName_lowercase == data.displayName.toLowerCase()
-        && data.email == request.auth.token.email
-        && data.uid == userId
-        && data.createdAt == request.time
-        && data.photoURL is string;
-    }
-    
-    // Check if a user is a member of a given server
-    function isServerMember(serverId) {
-        return isAuthenticated() && get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
-    }
-    
-     // Check if a user is the owner of a given server
-    function isServerOwner(serverId) {
-        return isAuthenticated() && get(/databases/$(database)/documents/servers/$(serverId)).data.ownerId == request.auth.uid;
-    }
-    
-    // Check if a user is a member of a given chat
-    function isChatMember(chatId) {
-        return isAuthenticated() && get(/databases/$(database)/documents/chats/$(chatId)).data.members.hasAny([request.auth.uid]);
-    }
-    
-    // =====================================================================
-    //
-    // COLLECTION RULES
-    //
-    // =====================================================================
 
-    // USERS
-    // Publicly readable for profile lookups and username checks.
-    // Users can only create their own profile and update their own data.
+    function isUser(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isMemberOf(serverDoc) {
+      return isSignedIn() && request.auth.uid in serverDoc.data.members;
+    }
+
+    function isOwnerOf(serverDoc) {
+      return isUser(serverDoc.data.ownerId);
+    }
+    
+    // =====================================================================
+    // Users Collection
+    // =====================================================================
     match /users/{userId} {
+      // Anyone can read user profiles (needed for mentions, member lists, etc.)
+      // Also allows checking for unique usernames on signup.
       allow read;
-      allow create: if isValidNewUser(userId, request.resource.data);
-      allow update: if isOwner(userId);
-      allow delete: if false; // Users should not be able to delete their profiles
+
+      // A user can only create their own profile document.
+      allow create: if isUser(userId)
+                    && 'displayName' in request.resource.data
+                    && 'displayName_lowercase' in request.resource.data
+                    && 'uid' in request.resource.data && request.resource.data.uid == userId;
+
+      // A user can only update their own profile.
+      allow update: if isUser(userId);
+
+      // Users cannot delete their profiles through the app.
+      allow delete: if false;
     }
-    
-    // SERVERS
-    // All servers are listable/readable for the Discovery page.
-    // Detailed channel/message access is controlled at a deeper level.
-    // Users can only create servers if authenticated.
-    // Only owners can update or delete servers.
+
+    // =====================================================================
+    // Servers Collection
+    // =====================================================================
     match /servers/{serverId} {
-      allow read; // Allow reading server info for discovery/join pages
-      allow create: if isAuthenticated();
-      allow update: if isServerOwner(serverId) // Server settings updates
-                   || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])); // Joining/leaving
-      allow delete: if isServerOwner(serverId);
+      // Read Rules:
+      // 1. Anyone can read a server document if it is public (for discovery page).
+      // 2. Members of a server can read its document.
+      allow read: if resource.data.isPublic == true || isMemberOf(resource);
 
-      // CHANNELS
-      // Readable by server members, writable only by the owner.
-      match /channels/{channelId} {
-        allow read: if isServerMember(serverId);
-        allow create, update, delete: if isServerOwner(serverId);
-
-        // MESSAGES
-        // Readable by server members.
-        // Members can create messages.
-        // Users can only edit/delete their own messages.
-        match /messages/{messageId} {
-          allow read: if isServerMember(serverId);
-          allow create: if isServerMember(serverId);
-          allow update, delete: if isServerMember(serverId) && resource.data.sender == request.auth.uid;
-        }
-      }
-    }
-    
-    // CHATS (Direct Messages)
-    // Users can only access chats they are a member of.
-    match /chats/{chatId} {
-      allow read, delete: if isChatMember(chatId);
-      allow create: if isAuthenticated() && request.auth.uid in request.resource.data.members;
+      // Create Rule:
+      // An authenticated user can create a server if they are the owner and a member.
+      allow create: if isSignedIn()
+                    && request.resource.data.ownerId == request.auth.uid
+                    && request.auth.uid in request.resource.data.members;
       
-      // CHAT MESSAGES
-      match /messages/{messageId} {
-        allow read, create: if isChatMember(chatId);
-        allow update, delete: if isChatMember(chatId) && resource.data.sender == request.auth.uid;
+      // Update Rules:
+      // 1. Any authenticated user can join a server (add themselves to members).
+      // 2. A member can leave a server (remove themselves from members).
+      // 3. Only the owner can update other server properties.
+      allow update: if isSignedIn() && (
+                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
+                       request.resource.data.members.size() == resource.data.members.size() + 1 &&
+                       request.auth.uid in request.resource.data.members) ||
+                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
+                       request.resource.data.members.size() == resource.data.members.size() - 1 &&
+                       request.auth.uid in resource.data.members) ||
+                      isOwnerOf(resource)
+                    );
+
+      // Delete Rule: Only the server owner can delete it.
+      allow delete: if isOwnerOf(resource);
+      
+      // --- Subcollections of Servers ---
+
+      // Channels
+      match /channels/{channelId} {
+        // Only members of the parent server can list/read channels.
+        allow read: if isMemberOf(get(/databases/$(database)/documents/servers/$(serverId)));
+
+        // Only the owner of the parent server can create, update, or delete channels.
+        allow write: if isOwnerOf(get(/databases/$(database)/documents/servers/$(serverId)));
+      }
+      
+      // Channel Messages
+      match /channels/{channelId}/messages/{messageId} {
+         // Only server members can read messages.
+        allow read: if isMemberOf(get(/databases/$(database)/documents/servers/$(serverId)));
+
+        // Authenticated user can create a message if they are a server member and the sender.
+        allow create: if isMemberOf(get(/databases/$(database)/documents/servers/$(serverId)))
+                      && isUser(request.resource.data.sender);
+
+        // A user can only update/delete their own messages.
+        allow update, delete: if isUser(resource.data.sender);
       }
     }
     
-    // FRIEND REQUESTS
-    // Users can create requests.
-    // Only the recipient can update the status (accept/decline).
-    // Readable only by involved parties to prevent snooping.
+    // =====================================================================
+    // Chats Collection
+    // =====================================================================
+    match /chats/{chatId} {
+        // Allow access only if the requesting user is a member of the chat.
+        allow read, update: if isSignedIn() && request.auth.uid in resource.data.members;
+
+        // Allow creation if the user is one of the members.
+        allow create: if isSignedIn() && request.auth.uid in request.resource.data.members;
+      
+        // Users can remove themselves from a chat, which is a delete op on client.
+        allow delete: if isSignedIn() && request.auth.uid in resource.data.members;
+
+        // --- Subcollection for Messages ---
+        match /messages/{messageId} {
+            // Only chat members can read messages.
+            allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
+
+            // A user can create a message if they are a member of the chat and the sender.
+            allow create: if isSignedIn() 
+                        && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
+                        && isUser(request.resource.data.sender);
+
+            // A user can only update or delete their own messages.
+            allow update, delete: if isUser(resource.data.sender);
+        }
+    }
+    
+    // =====================================================================
+    // Friend Requests Collection
+    // =====================================================================
     match /friendRequests/{requestId} {
-       allow read: if isAuthenticated() && request.auth.uid in resource.data.members;
-       allow create: if isAuthenticated() && request.auth.uid == request.resource.data.from.id;
-       allow update: if isAuthenticated() && request.auth.uid == resource.data.to;
-       allow delete: if false;
+      // Allow read only if the user is the sender or the receiver of the request.
+      allow read: if isSignedIn() && (isUser(resource.data.from.id) || isUser(resource.data.to));
+      
+      // Allow create if the user is the sender of the request.
+      allow create: if isSignedIn() && isUser(request.resource.data.from.id);
+      
+      // Allow update only by the recipient of the request to change the status.
+      allow update: if isSignedIn() && isUser(resource.data.to);
+      
+      // Disallow deletes. Status should be changed to 'declined' instead.
+      allow delete: if false;
     }
   }
 }
