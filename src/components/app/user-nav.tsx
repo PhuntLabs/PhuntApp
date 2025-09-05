@@ -58,7 +58,7 @@ const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, c
 };
 
 const RainEffect = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden h-full">
         {Array.from({ length: 50 }).map((_, i) => (
             <div
                 key={i}
