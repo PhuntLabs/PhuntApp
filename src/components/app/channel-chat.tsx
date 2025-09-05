@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { User } from 'firebase/auth';
 import { MessageRenderer } from './message-renderer';
+import { ChatInput } from './chat-input';
 
 interface ChannelChatProps {
     channel: Channel;
@@ -34,7 +35,6 @@ export function ChannelChat({
     onEditMessage,
     onDeleteMessage,
 }: ChannelChatProps) {
-    const [newMessage, setNewMessage] = useState('');
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingText, setEditingText] = useState('');
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -48,12 +48,6 @@ export function ChannelChat({
         }
     }, [messages]);
 
-    const handleSendMessage = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (newMessage.trim() === '') return;
-        onSendMessage(newMessage);
-        setNewMessage('');
-    };
 
     const handleEdit = (message: Message) => {
         setEditingMessageId(message.id);
@@ -180,21 +174,12 @@ export function ChannelChat({
                 </ScrollArea>
             </div>
              <div className="p-4 border-t bg-card flex-shrink-0">
-                 <form
-                    onSubmit={handleSendMessage}
-                    className="flex items-center gap-2"
-                >
-                    <Input
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                <ChatInput 
+                    onSendMessage={onSendMessage}
                     placeholder={`Message #${displayName}`}
-                    className="flex-1"
+                    members={members}
                     disabled={!!editingMessageId}
-                    />
-                    <Button type="submit" size="icon" disabled={!!editingMessageId}>
-                    <Send />
-                    </Button>
-                </form>
+                />
             </div>
         </div>
     )

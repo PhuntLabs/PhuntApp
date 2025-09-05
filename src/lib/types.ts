@@ -74,3 +74,9 @@ export interface Channel {
     position: number;
     type: ChannelType;
 }
+
+export interface Emoji {
+    name: string;
+    char: string;
+    keywords: string[];
+}

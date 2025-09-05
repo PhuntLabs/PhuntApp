@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import { format } from 'date-fns';
 import { MessageRenderer } from './message-renderer';
+import { ChatInput } from './chat-input';
 
 interface ChatProps {
   chat: PopulatedChat;
@@ -26,7 +27,6 @@ interface ChatProps {
 }
 
 export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMessage, currentUser }: ChatProps) {
-  const [newMessage, setNewMessage] = useState('');
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -40,12 +40,6 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
     }
   }, [messages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newMessage.trim() === '') return;
-    onSendMessage(newMessage);
-    setNewMessage('');
-  };
 
   const handleEdit = (message: Message) => {
     setEditingMessageId(message.id);
@@ -173,21 +167,12 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
           </div>
         </ScrollArea>
         <div className="p-4 border-t bg-card">
-          <form
-            onSubmit={handleSendMessage}
-            className="flex items-center gap-2"
-          >
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder={`Message @${chatName}`}
-              className="flex-1"
-              disabled={!!editingMessageId}
-            />
-            <Button type="submit" size="icon" disabled={!!editingMessageId}>
-              <Send />
-            </Button>
-          </form>
+          <ChatInput 
+            onSendMessage={onSendMessage}
+            placeholder={`Message @${chatName}`}
+            members={chat.members}
+            disabled={!!editingMessageId}
+          />
         </div>
       </div>
     </SidebarInset>
