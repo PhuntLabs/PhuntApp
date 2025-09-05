@@ -16,11 +16,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Channel, ChannelType } from '@/lib/types';
 import { Hash, Megaphone, ScrollText, MessageSquare } from 'lucide-react';
+import { Textarea } from '../ui/textarea';
 
 interface EditChannelDialogProps {
   children: React.ReactNode;
   channel: Channel;
-  onUpdateChannel: (channelId: string, data: { name?: string, type?: ChannelType }) => Promise<void>;
+  onUpdateChannel: (channelId: string, data: { name?: string, type?: ChannelType, topic?: string }) => Promise<void>;
 }
 
 const channelTypes: { value: ChannelType; label: string; icon: React.ElementType }[] = [
@@ -33,6 +34,7 @@ const channelTypes: { value: ChannelType; label: string; icon: React.ElementType
 export function EditChannelDialog({ children, channel, onUpdateChannel }: EditChannelDialogProps) {
   const [channelName, setChannelName] = useState(channel.name);
   const [channelType, setChannelType] = useState(channel.type || 'text');
+  const [channelTopic, setChannelTopic] = useState(channel.topic || '');
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -40,6 +42,7 @@ export function EditChannelDialog({ children, channel, onUpdateChannel }: EditCh
     if (channel) {
       setChannelName(channel.name);
       setChannelType(channel.type || 'text');
+      setChannelTopic(channel.topic || '');
     }
   }, [channel, isOpen]);
 
@@ -48,7 +51,7 @@ export function EditChannelDialog({ children, channel, onUpdateChannel }: EditCh
     if (channelName.trim()) {
       setIsLoading(true);
       try {
-        await onUpdateChannel(channel.id, { name: channelName.trim(), type: channelType });
+        await onUpdateChannel(channel.id, { name: channelName.trim(), type: channelType, topic: channelTopic.trim() });
         setIsOpen(false);
       } catch (error) {
         console.error("Failed to update channel", error);
@@ -67,13 +70,23 @@ export function EditChannelDialog({ children, channel, onUpdateChannel }: EditCh
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+             <div className="space-y-2">
               <Label htmlFor="channel-name">Channel Name</Label>
               <Input
                 id="channel-name"
                 value={channelName}
                 onChange={(e) => setChannelName(e.target.value)}
                 required
+              />
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="channel-topic">Channel Topic</Label>
+              <Textarea
+                id="channel-topic"
+                value={channelTopic}
+                onChange={(e) => setChannelTopic(e.target.value)}
+                placeholder="Let everyone know what this channel is about"
+                maxLength={1024}
               />
             </div>
             <div className="space-y-2">

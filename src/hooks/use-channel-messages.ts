@@ -15,8 +15,9 @@ import {
   deleteDoc,
   where,
   getDocs,
+  runTransaction,
 } from 'firebase/firestore';
-import type { Message, Server, UserProfile } from '@/lib/types';
+import type { Message, Server, Reaction } from '@/lib/types';
 import { useAuth } from './use-auth';
 import { usePermissions } from './use-permissions';
 
@@ -75,7 +76,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
   }, [server?.id, channelId]);
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, imageUrl?: string, replyTo?: Message['replyTo']) => {
       if (!authUser || !server?.id || !channelId) return;
 
       if (text.includes('@everyone') && !hasPermission('mentionEveryone')) {
@@ -84,16 +85,22 @@ export function useChannelMessages(server: Server | null, channelId: string | un
 
       const mentionedUserIds = await getMentions(text, server);
       
-      const messagePayload = {
+      const messagePayload: Omit<Message, 'id' | 'timestamp'> = {
         text,
         sender: authUser.uid,
-        timestamp: serverTimestamp(),
         edited: false,
         mentions: mentionedUserIds,
       };
 
+      if (imageUrl) messagePayload.imageUrl = imageUrl;
+      if (replyTo) messagePayload.replyTo = replyTo;
+
+
       const messagesRef = collection(db, 'servers', server.id, 'channels', channelId, 'messages');
-      await addDoc(messagesRef, messagePayload);
+      await addDoc(messagesRef, {
+        ...messagePayload,
+        timestamp: serverTimestamp()
+      });
     },
     [authUser, server, channelId, hasPermission]
   );
@@ -121,5 +128,43 @@ export function useChannelMessages(server: Server | null, channelId: string | un
     [server?.id, channelId]
   );
 
-  return { messages, sendMessage, editMessage, deleteMessage };
+  const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
+      if (!authUser || !server?.id || !channelId) return;
+
+      const messageRef = doc(db, 'servers', server.id, 'channels', channelId, 'messages', messageId);
+
+      await runTransaction(db, async (transaction) => {
+          const messageDoc = await transaction.get(messageRef);
+          if (!messageDoc.exists()) {
+              throw new Error("Message does not exist!");
+          }
+
+          const reactions = (messageDoc.data().reactions || []) as Reaction[];
+          const reactionIndex = reactions.findIndex(r => r.emoji === emoji);
+          
+          if (reactionIndex > -1) {
+              // Reaction exists, check if user has already reacted
+              const userIndex = reactions[reactionIndex].users.indexOf(authUser.uid);
+              if (userIndex > -1) {
+                  // User has reacted, so remove their reaction
+                  reactions[reactionIndex].users.splice(userIndex, 1);
+                  // If no users are left for this reaction, remove the reaction object
+                  if (reactions[reactionIndex].users.length === 0) {
+                      reactions.splice(reactionIndex, 1);
+                  }
+              } else {
+                  // User has not reacted, so add them
+                  reactions[reactionIndex].users.push(authUser.uid);
+              }
+          } else {
+              // Reaction does not exist, so create it
+              reactions.push({ emoji, users: [authUser.uid] });
+          }
+
+          transaction.update(messageRef, { reactions });
+      });
+
+  }, [authUser, server?.id, channelId]);
+
+  return { messages, sendMessage, editMessage, deleteMessage, toggleReaction };
 }

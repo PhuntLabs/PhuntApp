@@ -16,8 +16,10 @@ import {
   getDoc,
   where,
   getDocs,
+  runTransaction,
 } from 'firebase/firestore';
-import type { Message } from '@/lib/types';
+import type { Message, Reaction } from '@/lib/types';
+import { useAuth } from './use-auth';
 
 // Function to find mentioned user IDs from message text
 async function getMentions(text: string): Promise<string[]> {
@@ -41,6 +43,7 @@ async function getMentions(text: string): Promise<string[]> {
 }
 
 export function useChat(chatId: string | undefined) {
+  const { authUser } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
@@ -66,31 +69,26 @@ export function useChat(chatId: string | undefined) {
   }, [chatId]);
 
   const sendMessage = useCallback(
-    async (text: string, sender: string, imageUrl?: string): Promise<Message | null> => {
-      if (!chatId) return null;
+    async (text: string, imageUrl?: string, replyTo?: Message['replyTo']): Promise<Message | null> => {
+      if (!chatId || !authUser) return null;
       
       const mentionedUserIds = await getMentions(text);
 
-      const messagePayload: {
-        text: string;
-        sender: string;
-        timestamp: any;
-        edited: boolean;
-        mentions: string[];
-        imageUrl?: string;
-      } = {
+      const messagePayload: Omit<Message, 'id' | 'timestamp'> = {
         text,
-        sender,
-        timestamp: serverTimestamp(),
+        sender: authUser.uid,
         edited: false,
         mentions: mentionedUserIds,
       };
 
-      if (imageUrl) {
-        messagePayload.imageUrl = imageUrl;
-      }
+      if (imageUrl) messagePayload.imageUrl = imageUrl;
+      if (replyTo) messagePayload.replyTo = replyTo;
 
-      const messageDocRef = await addDoc(collection(db, 'chats', chatId, 'messages'), messagePayload);
+
+      const messageDocRef = await addDoc(collection(db, 'chats', chatId, 'messages'), {
+          ...messagePayload,
+          timestamp: serverTimestamp()
+      });
 
       await updateDoc(doc(db, 'chats', chatId), {
         lastMessageTimestamp: serverTimestamp(),
@@ -99,7 +97,7 @@ export function useChat(chatId: string | undefined) {
       const messageDoc = await getDoc(messageDocRef);
       return { id: messageDoc.id, ...messageDoc.data() } as Message;
     },
-    [chatId]
+    [chatId, authUser]
   );
   
   const editMessage = useCallback(
@@ -124,5 +122,38 @@ export function useChat(chatId: string | undefined) {
     [chatId]
   );
 
-  return { messages, sendMessage, editMessage, deleteMessage };
+  const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
+      if (!authUser || !chatId) return;
+
+      const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
+
+      await runTransaction(db, async (transaction) => {
+          const messageDoc = await transaction.get(messageRef);
+          if (!messageDoc.exists()) {
+              throw new Error("Message does not exist!");
+          }
+
+          const reactions = (messageDoc.data().reactions || []) as Reaction[];
+          const reactionIndex = reactions.findIndex(r => r.emoji === emoji);
+          
+          if (reactionIndex > -1) {
+              const userIndex = reactions[reactionIndex].users.indexOf(authUser.uid);
+              if (userIndex > -1) {
+                  reactions[reactionIndex].users.splice(userIndex, 1);
+                  if (reactions[reactionIndex].users.length === 0) {
+                      reactions.splice(reactionIndex, 1);
+                  }
+              } else {
+                  reactions[reactionIndex].users.push(authUser.uid);
+              }
+          } else {
+              reactions.push({ emoji, users: [authUser.uid] });
+          }
+
+          transaction.update(messageRef, { reactions });
+      });
+
+  }, [authUser, chatId]);
+
+  return { messages, sendMessage, editMessage, deleteMessage, toggleReaction };
 }

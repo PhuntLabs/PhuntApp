@@ -1,8 +1,8 @@
 
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import type { Channel, Server, Message, UserProfile } from '@/lib/types';
-import { Hash, Pencil, Send, Trash2 } from 'lucide-react';
+import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji } from '@/lib/types';
+import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,20 @@ import { MessageRenderer } from './message-renderer';
 import { ChatInput } from './chat-input';
 import { useTypingStatus } from '@/hooks/use-typing-status';
 import { usePermissions } from '@/hooks/use-permissions';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import Image from 'next/image';
+
+const standardEmojis: Emoji[] = [
+    { name: "grinning", char: "😀", keywords: ["happy", "joy", "smile"] },
+    { name: "joy", char: "😂", keywords: ["happy", "lol", "laugh"] },
+    { name: "sob", char: "😭", keywords: ["sad", "cry", "tear"] },
+    { name: "thinking", char: "🤔", keywords: ["idea", "question", "hmm"] },
+    { name: "thumbsup", char: "👍", keywords: ["agree", "yes", "like"] },
+    { name: "heart", char: "❤️", keywords: ["love", "like", "romance"] },
+    { name: "fire", char: "🔥", keywords: ["hot", "lit", "burn"] },
+    { name: "rocket", char: "🚀", keywords: ["launch", "space", "fast"] },
+];
 
 interface ChannelChatProps {
     channel: Channel;
@@ -22,9 +36,10 @@ interface ChannelChatProps {
     currentUser: User;
     members: Partial<UserProfile>[];
     messages: Message[];
-    onSendMessage: (text: string) => void;
+    onSendMessage: (text: string, imageUrl?: string, replyTo?: Message['replyTo']) => void;
     onEditMessage: (messageId: string, newText: string) => void;
     onDeleteMessage: (messageId: string) => void;
+    onToggleReaction: (messageId: string, emoji: string) => void;
 }
 
 export function ChannelChat({ 
@@ -36,9 +51,11 @@ export function ChannelChat({
     onSendMessage,
     onEditMessage,
     onDeleteMessage,
+    onToggleReaction,
 }: ChannelChatProps) {
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingText, setEditingText] = useState('');
+    const [replyingTo, setReplyingTo] = useState<Message | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const { handleTyping } = useTypingStatus(server.id, channel.id);
     const { hasPermission } = usePermissions(server, channel.id);
@@ -58,6 +75,11 @@ export function ChannelChat({
         }
     }, [messages, typingUsers]);
 
+    useEffect(() => {
+        // Reset reply state if channel changes
+        setReplyingTo(null);
+    }, [channel.id]);
+
 
     const handleEdit = (message: Message) => {
         setEditingMessageId(message.id);
@@ -74,6 +96,26 @@ export function ChannelChat({
         onEditMessage(messageId, editingText);
         handleCancelEdit();
     };
+
+    const handleSendMessageWrapper = (text: string, imageUrl?: string) => {
+        let replyInfo: Message['replyTo'] | undefined = undefined;
+        if (replyingTo) {
+            const senderProfile = getSenderProfile(replyingTo.sender);
+            replyInfo = {
+                messageId: replyingTo.id,
+                senderId: replyingTo.sender,
+                senderDisplayName: senderProfile?.displayName || 'Unknown User',
+                text: replyingTo.text,
+            };
+        }
+        onSendMessage(text, imageUrl, replyInfo);
+        setReplyingTo(null);
+    }
+    
+    const insertReaction = (messageId: string, emoji: Emoji | CustomEmoji) => {
+        const emojiIdentifier = 'char' in emoji ? emoji.char : `:${emoji.name}:`;
+        onToggleReaction(messageId, emojiIdentifier);
+    }
 
     const displayName = channel.name.replace(/-/g, ' ');
 
@@ -99,7 +141,10 @@ export function ChannelChat({
         <div className="flex flex-col h-full">
             <header className="p-4 border-b flex items-center gap-2 flex-shrink-0">
                 <Hash className="size-6 text-muted-foreground" />
-                <h1 className="text-xl font-semibold">{displayName}</h1>
+                <div className="flex-1">
+                    <h1 className="text-xl font-semibold">{displayName}</h1>
+                    {channel.topic && <p className="text-sm text-muted-foreground truncate">{channel.topic}</p>}
+                </div>
             </header>
 
             <div className="flex-1 flex flex-col h-full bg-muted/20 overflow-hidden">
@@ -112,7 +157,7 @@ export function ChannelChat({
                             </div>
                         </div>
                     ) : (
-                        <div className="p-4 space-y-4">
+                        <div className="p-4 space-y-1">
                             {messages.map((message, index) => {
                                 const sender = getSenderProfile(message.sender);
                                 const isCurrentUser = message.sender === currentUser?.uid;
@@ -120,7 +165,7 @@ export function ChannelChat({
                                 const isMentioned = message.mentions?.includes(currentUser.uid) || message.text.includes('@everyone');
 
                                 const prevMessage = messages[index - 1];
-                                const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender;
+                                const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender || !!message.replyTo;
 
                                 if (!sender) return null; // Or show a fallback for deleted users
 
@@ -146,6 +191,18 @@ export function ChannelChat({
                                         )}
 
                                         <div className="flex-1 pt-1">
+                                             {message.replyTo && (
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                                                    <Reply className="size-3.5" />
+                                                    <Avatar className="size-4">
+                                                        <AvatarImage src={getSenderProfile(message.replyTo.senderId)?.photoURL || undefined} />
+                                                        <AvatarFallback>{message.replyTo.senderDisplayName[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="font-semibold text-foreground/80">{message.replyTo.senderDisplayName}</span>
+                                                    <p className="truncate flex-1">{message.replyTo.text}</p>
+                                                </div>
+                                            )}
+
                                             {isFirstInGroup && (
                                                 <div className="flex items-baseline gap-2">
                                                 <UserNav user={sender as UserProfile} as="trigger" serverContext={server}>
@@ -176,18 +233,74 @@ export function ChannelChat({
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="text-sm text-foreground/90">
-                                                   <MessageRenderer content={message.text} customEmojis={server.customEmojis} />
-                                                   {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
-                                                </div>
+                                                <>
+                                                    <div className="text-sm text-foreground/90">
+                                                    <MessageRenderer content={message.text} customEmojis={server.customEmojis} />
+                                                    {message.edited && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
+                                                    </div>
+                                                     {message.reactions && message.reactions.length > 0 && (
+                                                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                                            {message.reactions.map(reaction => (
+                                                                <Button 
+                                                                    key={reaction.emoji} 
+                                                                    variant="secondary"
+                                                                    className={cn(
+                                                                        "h-7 px-2.5 rounded-full flex items-center gap-1.5 text-xs",
+                                                                        reaction.users.includes(currentUser.uid) && "bg-primary/20 border border-primary/50 text-primary-foreground"
+                                                                    )}
+                                                                    onClick={() => onToggleReaction(message.id, reaction.emoji)}
+                                                                >
+                                                                    <MessageRenderer content={reaction.emoji} customEmojis={server.customEmojis} />
+                                                                    <span className="font-semibold">{reaction.users.length}</span>
+                                                                </Button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     </div>
 
-                                    {isCurrentUser && !isEditing && (
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md border p-0.5">
-                                            <Button variant="ghost" size="icon" className="size-6" onClick={() => handleEdit(message)}><Pencil className="size-3.5" /></Button>
-                                            <Button variant="ghost" size="icon" className="size-6 text-red-500 hover:text-red-500" onClick={() => onDeleteMessage(message.id)}><Trash2 className="size-3.5" /></Button>
+                                    {!isEditing && (
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md border p-0.5">
+                                             <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="size-6"><SmilePlus className="size-3.5" /></Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-80 p-0 border-none mb-1" side="top" align="end">
+                                                    <Tabs defaultValue="standard">
+                                                        <TabsList className="w-full rounded-b-none">
+                                                            <TabsTrigger value="standard" className="flex-1">Standard</TabsTrigger>
+                                                            {server.customEmojis && server.customEmojis.length > 0 && <TabsTrigger value="custom" className="flex-1">Custom</TabsTrigger>}
+                                                        </TabsList>
+                                                        <TabsContent value="standard" className="mt-0">
+                                                            <ScrollArea className="h-48">
+                                                            <div className="p-2 grid grid-cols-8 gap-1">
+                                                                {standardEmojis.map(emoji => (
+                                                                    <button key={emoji.name} type="button" onClick={() => insertReaction(message.id, emoji)} className="aspect-square text-xl flex items-center justify-center rounded-md hover:bg-accent">{emoji.char}</button>
+                                                                ))}
+                                                            </div>
+                                                            </ScrollArea>
+                                                        </TabsContent>
+                                                        <TabsContent value="custom" className="mt-0">
+                                                             <ScrollArea className="h-48">
+                                                                <div className="p-2 grid grid-cols-8 gap-2">
+                                                                    {server.customEmojis?.map(emoji => (
+                                                                        <button key={emoji.name} type="button" onClick={() => insertReaction(message.id, emoji)} className="aspect-square flex items-center justify-center rounded-md hover:bg-accent">
+                                                                            <Image src={emoji.url} alt={emoji.name} width={28} height={28} />
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </ScrollArea>
+                                                        </TabsContent>
+                                                    </Tabs>
+                                                </PopoverContent>
+                                            </Popover>
+                                            <Button variant="ghost" size="icon" className="size-6" onClick={() => setReplyingTo(message)}><Reply className="size-3.5" /></Button>
+                                            {isCurrentUser && <>
+                                                <Button variant="ghost" size="icon" className="size-6" onClick={() => handleEdit(message)}><Pencil className="size-3.5" /></Button>
+                                                <Button variant="ghost" size="icon" className="size-6 text-red-500 hover:text-red-500" onClick={() => onDeleteMessage(message.id)}><Trash2 className="size-3.5" /></Button>
+                                            </>}
                                         </div>
                                     )}
                                     </div>
@@ -199,8 +312,16 @@ export function ChannelChat({
                  <TypingIndicator />
             </div>
              <div className="p-4 border-t bg-card flex-shrink-0">
+                {replyingTo && (
+                    <div className="flex items-center justify-between text-sm bg-secondary px-3 py-1.5 rounded-t-md -mb-1 mx-[-1px]">
+                       <p className="text-muted-foreground">
+                           Replying to <span className="font-semibold text-foreground">{getSenderProfile(replyingTo.sender)?.displayName}</span>
+                       </p>
+                       <Button variant="ghost" size="icon" className="size-5" onClick={() => setReplyingTo(null)}><X className="size-3.5"/></Button>
+                    </div>
+                )}
                 <ChatInput 
-                    onSendMessage={onSendMessage}
+                    onSendMessage={handleSendMessageWrapper}
                     onTyping={handleTyping}
                     placeholder={canSendMessages ? `Message #${displayName}` : `You do not have permission to send messages in #${displayName}`}
                     members={members}

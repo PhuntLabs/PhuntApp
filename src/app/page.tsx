@@ -11,7 +11,7 @@ import { Chat } from '@/components/app/chat';
 import { ChannelChat } from '@/components/app/channel-chat';
 import { DirectMessages } from '@/components/app/direct-messages';
 import { Servers } from '@/components/app/servers';
-import type { PopulatedChat, Server, Channel, ChannelType } from '@/lib/types';
+import type { PopulatedChat, Server, Channel, ChannelType, Message } from '@/lib/types';
 import { useChat } from '@/hooks/use-chat';
 import { useChats } from '@/hooks/use-chats';
 import { useServers } from '@/hooks/use-servers';
@@ -48,7 +48,7 @@ export default function Home() {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [initialLoad, setInitialLoad] = useState(true);
 
-  const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat?.id);
+  const { messages, sendMessage, editMessage, deleteMessage, toggleReaction: toggleDmReaction } = useChat(selectedChat?.id);
   const { server, setServer, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
   const { createChannel, updateChannel, deleteChannel } = useChannels(selectedServer?.id);
   const { 
@@ -56,7 +56,8 @@ export default function Home() {
     sendMessage: sendChannelMessage,
     editMessage: editChannelMessage,
     deleteMessage: deleteChannelMessage,
-  } = useChannelMessages(selectedServer?.id, selectedChannel?.id);
+    toggleReaction: toggleChannelReaction,
+  } = useChannelMessages(selectedServer, selectedChannel?.id);
 
 
   const { toast } = useToast();
@@ -98,13 +99,13 @@ export default function Home() {
   }, [servers, serversLoading, authReady, initialLoad]);
 
 
-  const handleSendMessage = async (text: string, imageUrl?: string) => {
+  const handleSendMessage = async (text: string, imageUrl?: string, replyTo?: Message['replyTo']) => {
     if (!authUser || !selectedChat) return;
-    const sentMessage = await sendMessage(text, authUser.uid, imageUrl);
+    const sentMessage = await sendMessage(text, imageUrl, replyTo);
 
-    if (!imageUrl) { // Don't echo images for now
+    if (sentMessage && !imageUrl) { // Don't echo images for now
         const echoBot = selectedChat.members.find(m => m.id === BOT_ID);
-        if (echoBot && sentMessage) {
+        if (echoBot) {
             processEcho({ chatId: selectedChat.id, message: { id: sentMessage.id, text, sender: authUser.uid }});
         }
     }
@@ -233,7 +234,7 @@ export default function Home() {
     }
   }
   
-  const handleUpdateChannel = async (channelId: string, data: { name?: string, type?: ChannelType}) => {
+  const handleUpdateChannel = async (channelId: string, data: { name?: string, type?: ChannelType, topic?: string}) => {
     try {
       await updateChannel(channelId, data);
       if (server && server.channels) {
@@ -350,6 +351,7 @@ export default function Home() {
                 onSendMessage={sendChannelMessage}
                 onEditMessage={editChannelMessage}
                 onDeleteMessage={deleteChannelMessage}
+                onToggleReaction={toggleChannelReaction}
               />
               ) : server ? (
               <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
@@ -365,6 +367,7 @@ export default function Home() {
                   onSendMessage={handleSendMessage}
                   onEditMessage={editMessage}
                   onDeleteMessage={deleteMessage}
+                  onToggleReaction={toggleDmReaction}
                   currentUser={authUser}
               />
               ) : (

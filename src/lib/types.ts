@@ -38,6 +38,11 @@ export interface PopulatedChat extends Omit<ChatDocument, 'members'> {
   members: Partial<UserProfile>[];
 }
 
+export interface Reaction {
+  emoji: string;
+  users: string[]; // array of user IDs
+}
+
 export interface Message {
   id: string;
   sender: string;
@@ -46,6 +51,13 @@ export interface Message {
   edited?: boolean;
   mentions?: string[];
   imageUrl?: string;
+  reactions?: Reaction[];
+  replyTo?: {
+    messageId: string;
+    senderId: string;
+    senderDisplayName: string;
+    text: string;
+  };
 }
 
 export interface FriendRequest {
@@ -107,6 +119,7 @@ export type ChannelType = 'text' | 'announcement' | 'rules' | 'forum';
 export interface Channel {
     id: string;
     name: string;
+    topic?: string;
     serverId: string;
     createdAt?: FieldValue;
     position: number;

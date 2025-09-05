@@ -14,11 +14,12 @@ interface MessageRendererProps {
   imageUrl?: string;
 }
 
-const combinedRegex = /(https?:\/\/[^\s]+)|(@\w+)|(:[a-zA-Z0-9_+-]+:)/g;
+const combinedRegex = /(https?:\/\/[^\s]+)|(@\w+)|(:[a-zA-Z0-9_+-]+:)|(😀|😂|😭|🤔|👍|❤️|🔥|🚀)/g;
 
 const inviteRegex = /\/join\/([a-zA-Z0-9]+)/;
 const mentionRegex = /@(\w+)/;
 const emojiRegex = /:([a-zA-Z0-9_+-]+):/;
+const standardEmojiRegex = /(😀|😂|😭|🤔|👍|❤️|🔥|🚀)/;
 
 export function MessageRenderer({ content, customEmojis = [], imageUrl }: MessageRendererProps) {
   if (!content && !imageUrl) return null;
@@ -30,10 +31,10 @@ export function MessageRenderer({ content, customEmojis = [], imageUrl }: Messag
       {parts.map((part, i) => {
         if (!part) return null;
 
-        const emojiMatch = part.match(emojiRegex);
-        if (emojiMatch) {
-            const emojiName = emojiMatch[1];
-            const customEmoji = customEmojis.find(e => e.name === emojiName);
+        const customEmojiMatch = part.match(emojiRegex);
+        if (customEmojiMatch) {
+            const emojiName = customEmojiMatch[1];
+            const customEmoji = customEmojis?.find(e => e.name === emojiName);
             if (customEmoji) {
                 return (
                     <Image 
@@ -46,6 +47,11 @@ export function MessageRenderer({ content, customEmojis = [], imageUrl }: Messag
                     />
                 );
             }
+        }
+
+        const standardEmojiMatch = part.match(standardEmojiRegex);
+        if (standardEmojiMatch) {
+            return <span key={i} className="text-xl align-middle">{part}</span>
         }
 
         const inviteMatch = part.match(inviteRegex);
