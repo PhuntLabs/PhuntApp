@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMobileView } from "@/hooks/use-mobile-view";
@@ -7,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function DeveloperSettings() {
     const { isMobileView, setIsMobileView, isPwaMode } = useMobileView();
@@ -46,7 +48,16 @@ export function DeveloperSettings() {
                     </div>
                      {isPwaMode && (
                         <Alert className="mt-4">
-                            <Info className="h-4 w-4" />
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Info className="h-4 w-4 cursor-help" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>This setting is locked because you are running the app in PWA mode (`?m=true`).</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                             <AlertDescription>
                                 Mobile UI is permanently enabled when running in app mode.
                             </AlertDescription>
@@ -57,3 +68,5 @@ export function DeveloperSettings() {
         </div>
     );
 }
+
+    

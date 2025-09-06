@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -47,7 +48,7 @@ export function SecuritySettings() {
         
         const newSecret = generateRandomSecret();
         const newTotp = new TOTP({
-            issuer: "WhisperChat",
+            issuer: "phunt",
             label: user?.email || "User",
             algorithm: "SHA1",
             digits: 6,
@@ -182,5 +183,7 @@ export function SecuritySettings() {
     </div>
   );
 }
+
+    
 
     
