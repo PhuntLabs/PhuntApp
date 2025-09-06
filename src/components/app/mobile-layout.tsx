@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Home, AtSign, User as UserIcon } from 'lucide-react';
+import { Home, AtSign, User as UserIcon, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DirectMessages } from './direct-messages';
 import type { PopulatedChat, Server, UserProfile, Channel } from '@/lib/types';
@@ -11,14 +12,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { ServerSidebar } from './server-sidebar';
 import { SettingsDialog } from './settings-dialog';
 import { AccountSettings } from './settings/account-settings';
-import { ProfileSettings } from './settings/profile-settings';
-import { GameActivitySettings } from './settings/game-activity-settings';
-import { SecuritySettings } from './settings/security-settings';
-import { ThemeSettings } from './settings/theme-settings';
-import { DeveloperSettings } from './settings/developer-settings';
-import { BugReportSettings } from './settings/bug-report-settings';
 import { Button } from '../ui/button';
-import { ChevronLeft } from 'lucide-react';
 
 interface MobileLayoutProps {
     user: UserProfile;
@@ -46,7 +40,7 @@ interface MobileLayoutProps {
     onDeleteChat: (chatId: string) => void;
 }
 
-type ActiveView = 'chat' | 'sidebar' | 'settings';
+type View = 'chat' | 'sidebar' | 'settings';
 
 export function MobileLayout({
     user,
@@ -60,12 +54,21 @@ export function MobileLayout({
     mainContent,
     ...sidebarProps
 }: MobileLayoutProps) {
-  const [activeView, setActiveView] = useState<ActiveView>('chat');
+  const [viewStack, setViewStack] = useState<View[]>(['sidebar']);
+  const activeView = viewStack[viewStack.length - 1];
+
+  const navigateTo = (view: View) => {
+    setViewStack(prev => [...prev, view]);
+  }
+  
+  const goBack = () => {
+    setViewStack(prev => prev.length > 1 ? prev.slice(0, -1) : prev);
+  }
 
   useEffect(() => {
     // When the user selects a chat or channel, switch back to the chat view
     if (selectedChat || sidebarProps.selectedChannel) {
-        setActiveView('chat');
+        setViewStack(['chat']);
     }
   }, [selectedChat, sidebarProps.selectedChannel]);
 
@@ -116,8 +119,8 @@ export function MobileLayout({
         case 'settings':
             return (
                  <div className="h-full bg-background p-4 overflow-y-auto">
-                    <Button variant="ghost" className="mb-4" onClick={() => setActiveView('chat')}>
-                        <ChevronLeft /> Back to Chat
+                    <Button variant="ghost" className="mb-4" onClick={goBack}>
+                        <ChevronLeft /> Back
                     </Button>
                     <AccountSettings />
                  </div>
@@ -128,6 +131,16 @@ export function MobileLayout({
     }
   }
 
+  const handleTabClick = (view: View) => {
+    if (activeView === view) {
+        // If current view is already the tab, go to its root
+        if (view === 'sidebar') setViewStack(['sidebar']);
+    } else {
+        setViewStack([view]);
+    }
+  }
+
+
   return (
     <div className="flex flex-col h-screen bg-background">
       <main className="flex-1 overflow-hidden">
@@ -136,7 +149,7 @@ export function MobileLayout({
       
       <footer className="flex items-center justify-around border-t bg-secondary/50 p-2">
         <button 
-          onClick={() => setActiveView('sidebar')}
+          onClick={() => handleTabClick('sidebar')}
           className={cn("flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground", activeView === 'sidebar' && "text-primary")}
         >
           <Home className="size-6" />
@@ -150,7 +163,7 @@ export function MobileLayout({
           <span className="text-xs">Mentions</span>
         </button>
         <button 
-             onClick={() => setActiveView('settings')}
+             onClick={() => handleTabClick('settings')}
              className={cn("flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground", activeView === 'settings' && "text-primary")}
         >
             <UserIcon className="size-6" />
