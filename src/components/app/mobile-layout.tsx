@@ -144,21 +144,6 @@ export function MobileLayout({
           return (
              <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                 <div className="flex h-full">
-                    <div className="hidden sm:flex">
-                        <Servers
-                            servers={servers}
-                            loading={false}
-                            onCreateServer={onCreateServer}
-                            selectedServer={selectedServer}
-                            onSelectServer={handleSelectServer}
-                            onSelectChat={handleSelectChat}
-                        />
-                    </div>
-                    <div className="flex-1">
-                        {renderHomeContent()}
-                    </div>
-                </div>
-                 <SheetContent side="left" className="p-0 w-[85vw] max-w-sm flex">
                     <Servers
                         servers={servers}
                         loading={false}
@@ -167,6 +152,11 @@ export function MobileLayout({
                         onSelectServer={handleSelectServer}
                         onSelectChat={handleSelectChat}
                     />
+                    <div className="flex-1">
+                        {renderHomeContent()}
+                    </div>
+                </div>
+                 <SheetContent side="left" className="p-0 w-[85vw] max-w-sm flex">
                     <div className="flex-1">
                         {renderSidebarContent()}
                     </div>
