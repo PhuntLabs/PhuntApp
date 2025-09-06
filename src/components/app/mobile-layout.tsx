@@ -86,6 +86,11 @@ export function MobileLayout({
       setIsSidebarOpen(false);
   }
 
+  const handleSelectHome = () => {
+    setActiveView('home');
+    onSelectServer(null); // This is the key fix: reset to DMs when home is clicked
+  }
+
   const onJumpToMessage = () => {} // Placeholder
 
   const renderMainContent = () => {
@@ -135,11 +140,13 @@ export function MobileLayout({
     }
 
     // Fallback screen for home tab when no chat is selected
+    // This now renders the DM list by default
     return (
-        <div className="flex-1 flex flex-col items-center justify-center bg-muted text-center p-4">
-            <h2 className="text-xl font-semibold">Select a Conversation</h2>
-            <p className="text-muted-foreground">Choose a server or direct message to get started.</p>
-        </div>
+        <MobileDMList 
+            chats={chats} 
+            onSelectChat={handleSelectChat} 
+            onAddUser={sidebarProps.onAddUser}
+        />
     );
   };
 
@@ -167,17 +174,19 @@ export function MobileLayout({
 
   return (
     <div className="h-screen bg-background flex">
-      <Servers
-        servers={servers}
-        loading={false}
-        onCreateServer={onCreateServer}
-        selectedServer={selectedServer}
-        onSelectServer={onSelectServer}
-        onSelectChat={handleSelectChat}
-      />
-      
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
         <SheetContent side="left" className="p-0 w-full flex gap-0 max-w-[85vw] sm:max-w-sm">
+             <Servers
+                servers={servers}
+                loading={false}
+                onCreateServer={onCreateServer}
+                selectedServer={selectedServer}
+                onSelectServer={(server) => {
+                  setActiveView('home');
+                  onSelectServer(server);
+                }}
+                onSelectChat={handleSelectChat}
+            />
             <div className="flex-1 flex flex-col bg-secondary/30">
                 <main className="flex-1 overflow-y-auto">
                     {renderSidebarContent()}
@@ -187,47 +196,44 @@ export function MobileLayout({
                  </footer>
             </div>
         </SheetContent>
-      </Sheet>
       
       <div className="flex-1 flex flex-col min-w-0 h-full">
         <main className="flex-1 min-h-0">{renderMainContent()}</main>
 
         <nav className="flex items-center justify-around p-2 border-t bg-secondary/30">
-        <button
-            onClick={() => {
-                setIsSidebarOpen(true);
-                setActiveView('home');
-            }}
-            className={cn(
-                "flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground w-1/3",
-                activeView === 'home' && 'text-primary'
-            )}
-        >
-            <Home />
-            <span className="text-xs">Home</span>
-        </button>
-        <button
-            onClick={() => setActiveView('notifications')}
-            className={cn(
-                "flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground w-1/3",
-                activeView === 'notifications' && 'text-primary'
-            )}
-        >
-            <AtSign />
-            <span className="text-xs">Mentions</span>
-        </button>
-        <button
-            onClick={() => setActiveView('settings')}
-            className={cn(
-                "flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground w-1/3",
-                activeView === 'settings' && 'text-primary'
-            )}
-        >
-            <UserIcon />
-            <span className="text-xs">You</span>
-        </button>
+          <button
+              onClick={handleSelectHome}
+              className={cn(
+                  "flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground w-1/3",
+                  activeView === 'home' && 'text-primary'
+              )}
+          >
+              <Home />
+              <span className="text-xs">Home</span>
+          </button>
+          <button
+              onClick={() => setActiveView('notifications')}
+              className={cn(
+                  "flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground w-1/3",
+                  activeView === 'notifications' && 'text-primary'
+              )}
+          >
+              <AtSign />
+              <span className="text-xs">Mentions</span>
+          </button>
+          <button
+              onClick={() => setActiveView('settings')}
+              className={cn(
+                  "flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground w-1/3",
+                  activeView === 'settings' && 'text-primary'
+              )}
+          >
+              <UserIcon />
+              <span className="text-xs">You</span>
+          </button>
         </nav>
       </div>
+    </Sheet>
     </div>
   );
 }

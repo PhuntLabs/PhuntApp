@@ -13,6 +13,7 @@ import { Badge } from '../ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { useChats } from '@/hooks/use-chats';
 import Image from 'next/image';
+import { useMobileView } from '@/hooks/use-mobile-view';
 
 interface ServersProps {
     servers: Server[];
@@ -27,6 +28,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
     const router = useRouter();
     const pathname = usePathname();
     const { user, authUser } = useAuth();
+    const { isMobileView } = useMobileView();
     const isDiscoveryActive = pathname === '/discovery';
     const isGamesActive = pathname.startsWith('/games');
 

@@ -103,18 +103,19 @@ export default function Home() {
     }
     
     // Auto-select most recent chat if no server is selected
-    if ((!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0 && !selectedServer) {
+    if (initialLoad && (!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0 && !selectedServer) {
       const mostRecentChat = chats.reduce((prev, current) => {
         const prevTime = (prev.lastMessageTimestamp as any)?.toMillis() || (prev.createdAt as any)?.toMillis() || 0;
         const currentTime = (current.lastMessageTimestamp as any)?.toMillis() || (current.createdAt as any)?.toMillis() || 0;
         return (prevTime > currentTime) ? prev : current;
       });
+      // Don't auto-select on mobile, let the DM list show first.
       if(!isMobileView) handleSelectChat(mostRecentChat);
     } else if (chats.length === 0 && !selectedServer) {
         setSelectedChat(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chats, selectedChat, chatsLoading, selectedServer]);
+  }, [chats, selectedChat, chatsLoading, selectedServer, initialLoad]);
 
   useEffect(() => {
     // This effect handles the very first load of the app
