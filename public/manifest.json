@@ -1,11 +1,11 @@
 {
-  "name": "phunt",
-  "short_name": "phunt",
-  "start_url": "/",
+  "name": "Firebase Studio App",
+  "short_name": "Studio App",
+  "description": "A chat application built with Firebase Studio.",
+  "start_url": "/?m=true",
   "display": "standalone",
   "background_color": "#09090b",
   "theme_color": "#7c3aed",
-  "description": "A new way to chat and connect with communities.",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -16,6 +16,28 @@
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/icons/maskable-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Discover Servers",
+      "short_name": "Discover",
+      "description": "Find new communities to join",
+      "url": "/discovery?m=true",
+      "icons": [{ "src": "/icons/discover.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Game Hub",
+      "short_name": "Games",
+      "description": "Launch and play games",
+      "url": "/games?m=true",
+      "icons": [{ "src": "/icons/games.png", "sizes": "192x192" }]
     }
   ]
 }

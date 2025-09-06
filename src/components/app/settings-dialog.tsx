@@ -18,6 +18,7 @@ import {
   Sparkles,
   Gamepad,
   Code,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountSettings } from './settings/account-settings';
@@ -27,13 +28,15 @@ import { BugReportSettings } from './settings/bug-report-settings';
 import { ProfileSettings } from './settings/profile-settings';
 import { GameActivitySettings } from './settings/game-activity-settings';
 import { DeveloperSettings } from './settings/developer-settings';
+import { NotificationsSettings } from './settings/notifications-settings';
 
-type Section = 'account' | 'profiles' | 'security' | 'theme' | 'bugs' | 'game-activity' | 'developer';
+type Section = 'account' | 'profiles' | 'security' | 'theme' | 'bugs' | 'game-activity' | 'developer' | 'notifications';
 
 const sections = [
   { id: 'account', label: 'My Account', icon: User },
   { id: 'profiles', label: 'Profiles', icon: Sparkles },
   { id: 'game-activity', label: 'Game Activity', icon: Gamepad },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'security', label: 'Security', icon: Shield },
   { id: 'theme', label: 'Theme', icon: Paintbrush },
   { id: 'developer', label: 'Developer', icon: Code },
@@ -60,6 +63,8 @@ export function SettingsDialog({ children, defaultSection = 'account', onOpenCha
         return <GameActivitySettings />;
       case 'security':
         return <SecuritySettings />;
+      case 'notifications':
+        return <NotificationsSettings />;
       case 'theme':
         return <ThemeSettings />;
       case 'developer':

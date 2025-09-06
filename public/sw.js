@@ -1,24 +1,49 @@
+
 // A basic service worker for PWA functionality
 
 const CACHE_NAME = 'phunt-cache-v1';
 const urlsToCache = [
   '/',
-  '/manifest.json',
-  // Note: Add other important assets here, like your main CSS file, JS bundles, and key images.
-  // Be careful not to cache everything, especially dynamic API responses.
+  '/discovery',
+  '/games',
+  // You would add your main JS and CSS files here.
+  // Next.js generates hashed filenames, so a more robust solution
+  // would inject these filenames during the build process.
 ];
 
+// Install event: fires when the service worker is first installed.
 self.addEventListener('install', event => {
-  // Perform install steps
+  console.log('Service Worker: Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
+        console.log('Service Worker: Caching app shell');
         return cache.addAll(urlsToCache);
       })
+      .catch(err => console.error('Service Worker: Caching failed', err))
   );
 });
 
+// Activate event: fires when the service worker becomes active.
+self.addEventListener('activate', event => {
+  console.log('Service Worker: Activating...');
+  // Clean up old caches
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cache => {
+          if (cache !== CACHE_NAME) {
+            console.log('Service Worker: Clearing old cache', cache);
+            return caches.delete(cache);
+          }
+        })
+      );
+    })
+  );
+});
+
+
+// Fetch event: fires for every network request.
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
@@ -27,43 +52,53 @@ self.addEventListener('fetch', event => {
         if (response) {
           return response;
         }
-
-        return fetch(event.request).then(
-          response => {
-            // Check if we received a valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // IMPORTANT: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          }
-        );
-      })
+        return fetch(event.request);
+      }
+    )
   );
 });
 
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
+
+// === PUSH NOTIFICATION LOGIC ===
+
+self.addEventListener('push', event => {
+  console.log('[Service Worker] Push Received.');
+  const data = event.data.json();
+  console.log('[Service Worker] Push data:', data);
+
+  const title = data.title || 'New Notification';
+  const options = {
+    body: data.body || 'Something new happened!',
+    icon: data.icon || '/icons/icon-192x192.png',
+    badge: '/icons/icon-192x192.png',
+    data: {
+      url: data.url || '/'
+    }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+
+self.addEventListener('notificationclick', event => {
+  console.log('[Service Worker] Notification click Received.');
+
+  event.notification.close();
+
+  const urlToOpen = event.notification.data.url;
+
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
+    clients.matchAll({
+      type: "window"
+    }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url === '/' && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
     })
   );
 });
