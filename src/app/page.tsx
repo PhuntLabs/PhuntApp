@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -102,16 +103,18 @@ export default function Home() {
       setSelectedChat(null);
     }
     
-    // Auto-select most recent chat if no server is selected
     if (initialLoad && (!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0 && !selectedServer) {
-      const mostRecentChat = chats.reduce((prev, current) => {
-        const prevTime = (prev.lastMessageTimestamp as any)?.toMillis() || (prev.createdAt as any)?.toMillis() || 0;
-        const currentTime = (current.lastMessageTimestamp as any)?.toMillis() || (current.createdAt as any)?.toMillis() || 0;
-        return (prevTime > currentTime) ? prev : current;
-      });
-      // Don't auto-select on mobile, let the DM list show first.
-      if(!isMobileView) handleSelectChat(mostRecentChat);
-    } else if (chats.length === 0 && !selectedServer) {
+        // On mobile, we don't auto-select a chat to show the DM list first.
+        // On desktop, we do.
+        if (!isMobileView) {
+            const mostRecentChat = chats.reduce((prev, current) => {
+                const prevTime = (prev.lastMessageTimestamp as any)?.toMillis() || (prev.createdAt as any)?.toMillis() || 0;
+                const currentTime = (current.lastMessageTimestamp as any)?.toMillis() || (current.createdAt as any)?.toMillis() || 0;
+                return (prevTime > currentTime) ? prev : current;
+            });
+            handleSelectChat(mostRecentChat);
+        }
+    } else if (chats.length === 0 && !selectedServer && !isMobileView) {
         setSelectedChat(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -329,40 +332,38 @@ export default function Home() {
   
   if (isMobileView) {
     return (
-        <SidebarProvider>
-            <MobileLayout 
-                user={user}
-                servers={servers}
-                chats={chats}
-                selectedServer={selectedServer}
-                selectedChat={selectedChat}
-                onSelectServer={handleSelectServer}
-                onSelectChat={handleSelectChat}
-                onCreateServer={handleCreateServer}
-                // Pass down all props needed by sub-components
-                channels={channels}
-                members={members}
-                selectedChannel={selectedChannel}
-                onSelectChannel={handleSelectChannel}
-                onCreateChannel={handleCreateChannel}
-                onUpdateChannel={handleUpdateChannel}
-                onDeleteChannel={handleDeleteChannel}
-                onUpdateServer={handleUpdateServer}
-                onDeleteServer={handleDeleteServer}
-                onAddUser={handleSendFriendRequest}
-                onAddBot={handleCreateChatWithBot}
-                onDeleteChat={handleDeleteChat}
-                // Message props
-                dmMessages={messages}
-                onSendDM={handleSendMessage}
-                onEditDM={editMessage}
-                onDeleteDM={deleteMessage}
-                channelMessages={channelMessages}
-                onSendChannelMessage={sendChannelMessage}
-                onEditChannelMessage={editChannelMessage}
-                onDeleteChannelMessage={deleteChannelMessage}
-            />
-        </SidebarProvider>
+        <MobileLayout 
+            user={user}
+            servers={servers}
+            chats={chats}
+            selectedServer={selectedServer}
+            selectedChat={selectedChat}
+            onSelectServer={handleSelectServer}
+            onSelectChat={handleSelectChat}
+            onCreateServer={handleCreateServer}
+            // Pass down all props needed by sub-components
+            channels={channels}
+            members={members}
+            selectedChannel={selectedChannel}
+            onSelectChannel={handleSelectChannel}
+            onCreateChannel={handleCreateChannel}
+            onUpdateChannel={handleUpdateChannel}
+            onDeleteChannel={handleDeleteChannel}
+            onUpdateServer={handleUpdateServer}
+            onDeleteServer={handleDeleteServer}
+            onAddUser={handleSendFriendRequest}
+            onAddBot={handleCreateChatWithBot}
+            onDeleteChat={handleDeleteChat}
+            // Message props
+            dmMessages={messages}
+            onSendDM={handleSendMessage}
+            onEditDM={editMessage}
+            onDeleteDM={deleteMessage}
+            channelMessages={channelMessages}
+            onSendChannelMessage={sendChannelMessage}
+            onEditChannelMessage={editChannelMessage}
+            onDeleteChannelMessage={deleteChannelMessage}
+        />
     )
   }
 

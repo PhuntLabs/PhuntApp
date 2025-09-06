@@ -73,45 +73,30 @@ export function MobileLayout({
     ...sidebarProps
 }: MobileLayoutProps) {
   const [activeView, setActiveView] = useState<MainView>('home');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { authUser, logout } = useAuth();
-  
+
+  const handleSelectChat = (chat: PopulatedChat) => {
+    onSelectChat(chat);
+  };
+
   const handleSelectChannel = (channel: Channel) => {
     sidebarProps.onSelectChannel(channel);
-    setIsSidebarOpen(false);
-  }
+  };
   
-  const handleSelectChat = (chat: PopulatedChat) => {
-      onSelectChat(chat);
-      setIsSidebarOpen(false);
+  const handleSelectServer = (server: Server | null) => {
+      onSelectServer(server);
+      // When a server is selected, ensure we are on the home tab
+      setActiveView('home');
   }
 
   const handleSelectHome = () => {
     setActiveView('home');
-    onSelectServer(null); // This is the key fix: reset to DMs when home is clicked
-  }
-
+    onSelectServer(null);
+  };
+  
   const onJumpToMessage = () => {} // Placeholder
 
-  const renderMainContent = () => {
-    if (activeView === 'notifications') {
-         return (
-              <div className="flex-1 flex flex-col">
-                 <div className="p-4 border-b">
-                    <h1 className="text-2xl font-bold">Mentions</h1>
-                </div>
-                 <MentionsDialog onJumpToMessage={onJumpToMessage}>
-                    <div className="p-4">Your mentions will appear here. (Content is in a dialog for now)</div>
-                 </MentionsDialog>
-              </div>
-          );
-    }
-
-    if (activeView === 'settings') {
-        return <MobileSettingsPage />;
-    }
-
-    // Default to home view (chatting)
+  const renderHomeContent = () => {
     if (selectedChat && authUser) {
       return (
         <Chat
@@ -138,20 +123,9 @@ export function MobileLayout({
         />
       );
     }
-
-    // Fallback screen for home tab when no chat is selected
-    // This now renders the DM list by default
-    return (
-        <MobileDMList 
-            chats={chats} 
-            onSelectChat={handleSelectChat} 
-            onAddUser={sidebarProps.onAddUser}
-        />
-    );
-  };
-
-  const renderSidebarContent = () => {
-      if (selectedServer) {
+    
+    // Default Home view: The list of DMs or Channels
+    if (selectedServer) {
         return (
             <MobileServerView
                 server={selectedServer}
@@ -161,43 +135,57 @@ export function MobileLayout({
                 onSelectChannel={handleSelectChannel}
                 {...sidebarProps}
             />
-        );
+        )
+    }
+
+    return (
+      <MobileDMList 
+        chats={chats} 
+        onSelectChat={handleSelectChat} 
+        onAddUser={sidebarProps.onAddUser}
+      />
+    );
+  };
+  
+  const renderMainContent = () => {
+      if (activeView === 'home') {
+          return (
+             <div className="flex h-full">
+                <Servers
+                    servers={servers}
+                    loading={false}
+                    onCreateServer={onCreateServer}
+                    selectedServer={selectedServer}
+                    onSelectServer={handleSelectServer}
+                    onSelectChat={handleSelectChat}
+                />
+                <div className="flex-1 min-w-0">
+                    {renderHomeContent()}
+                </div>
+            </div>
+          )
       }
-      return (
-          <MobileDMList 
-            chats={chats} 
-            onSelectChat={handleSelectChat} 
-            onAddUser={sidebarProps.onAddUser}
-        />
-      );
+      if (activeView === 'notifications') {
+         return (
+              <div className="flex-1 flex flex-col">
+                 <div className="p-4 border-b">
+                    <h1 className="text-2xl font-bold">Mentions</h1>
+                </div>
+                 <MentionsDialog onJumpToMessage={onJumpToMessage}>
+                    <div className="p-4">Your mentions will appear here. (Content is in a dialog for now)</div>
+                 </MentionsDialog>
+              </div>
+          );
+    }
+
+    if (activeView === 'settings') {
+        return <MobileSettingsPage />;
+    }
   }
 
+
   return (
-    <div className="h-screen bg-background flex">
-      <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-full flex gap-0 max-w-[85vw] sm:max-w-sm">
-             <Servers
-                servers={servers}
-                loading={false}
-                onCreateServer={onCreateServer}
-                selectedServer={selectedServer}
-                onSelectServer={(server) => {
-                  setActiveView('home');
-                  onSelectServer(server);
-                }}
-                onSelectChat={handleSelectChat}
-            />
-            <div className="flex-1 flex flex-col bg-secondary/30">
-                <main className="flex-1 overflow-y-auto">
-                    {renderSidebarContent()}
-                </main>
-                 <footer className="bg-background/50 p-2 border-t border-border">
-                    <UserNav user={user} logout={logout}/>
-                 </footer>
-            </div>
-        </SheetContent>
-      
-      <div className="flex-1 flex flex-col min-w-0 h-full">
+    <div className="h-screen bg-background flex flex-col">
         <main className="flex-1 min-h-0">{renderMainContent()}</main>
 
         <nav className="flex items-center justify-around p-2 border-t bg-secondary/30">
@@ -232,8 +220,6 @@ export function MobileLayout({
               <span className="text-xs">You</span>
           </button>
         </nav>
-      </div>
-    </Sheet>
     </div>
   );
 }
