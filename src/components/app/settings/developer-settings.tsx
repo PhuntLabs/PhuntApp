@@ -5,9 +5,16 @@ import { useMobileView } from "@/hooks/use-mobile-view";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 export function DeveloperSettings() {
-    const { isMobileView, setIsMobileView } = useMobileView();
+    const { isMobileView, setIsMobileView, isPwaMode } = useMobileView();
+
+    const handleToggle = () => {
+        if (isPwaMode) return;
+        setIsMobileView(!isMobileView);
+    }
 
     return (
         <div className="space-y-6">
@@ -26,14 +33,25 @@ export function DeveloperSettings() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex items-center space-x-2">
+                    <div 
+                        onClick={handleToggle}
+                        className="flex items-center space-x-2"
+                    >
                         <Switch 
                             id="mobile-view-toggle"
                             checked={isMobileView}
-                            onCheckedChange={(checked) => setIsMobileView(checked)}
+                            disabled={isPwaMode}
                         />
                         <Label htmlFor="mobile-view-toggle">Enable Mobile UI</Label>
                     </div>
+                     {isPwaMode && (
+                        <Alert className="mt-4">
+                            <Info className="h-4 w-4" />
+                            <AlertDescription>
+                                Mobile UI is permanently enabled when running in app mode.
+                            </AlertDescription>
+                        </Alert>
+                    )}
                 </CardContent>
             </Card>
         </div>
