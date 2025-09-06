@@ -177,54 +177,58 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                 </Tooltip>
 
                  {/* Discovery Button */}
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Link href="/discovery" className="relative group">
-                             <div 
-                                className={cn(
-                                    "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
-                                    isDiscoveryActive ? "h-9" : "group-hover:h-5"
-                                )} 
-                            />
-                            <Avatar className={cn(
-                                "size-12 rounded-3xl bg-secondary transition-all duration-200 group-hover:rounded-2xl",
-                                isDiscoveryActive ? 'rounded-2xl bg-green-600' : 'group-hover:bg-green-600'
-                            )}>
-                                <AvatarFallback className={cn("bg-transparent text-green-400 transition-colors duration-200", isDiscoveryActive ? "text-white" : "group-hover:text-white")}>
-                                    <Compass size={24} />
-                                </AvatarFallback>
-                            </Avatar>
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                        <p>Discover Servers</p>
-                    </TooltipContent>
-                </Tooltip>
+                <Link href="/discovery" legacyBehavior={false}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                             <div className="relative group">
+                                 <div 
+                                    className={cn(
+                                        "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
+                                        isDiscoveryActive ? "h-9" : "group-hover:h-5"
+                                    )} 
+                                />
+                                <Avatar className={cn(
+                                    "size-12 rounded-3xl bg-secondary transition-all duration-200 group-hover:rounded-2xl",
+                                    isDiscoveryActive ? 'rounded-2xl bg-green-600' : 'group-hover:bg-green-600'
+                                )}>
+                                    <AvatarFallback className={cn("bg-transparent text-green-400 transition-colors duration-200", isDiscoveryActive ? "text-white" : "group-hover:text-white")}>
+                                        <Compass size={24} />
+                                    </AvatarFallback>
+                                </Avatar>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                            <p>Discover Servers</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </Link>
 
                  {/* Games Button */}
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                         <Link href="/games" className="relative group">
-                             <div 
-                                className={cn(
-                                    "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
-                                    isGamesActive ? "h-9" : "group-hover:h-5"
-                                )} 
-                            />
-                            <Avatar className={cn(
-                                "size-12 rounded-3xl bg-secondary transition-all duration-200 group-hover:rounded-2xl",
-                                isGamesActive ? 'rounded-2xl bg-green-600' : 'group-hover:bg-green-600'
-                            )}>
-                                <AvatarFallback className={cn("bg-transparent text-green-400 transition-colors duration-200", isGamesActive ? "text-white" : "group-hover:text-white")}>
-                                    <Gamepad2 size={24} />
-                                </AvatarFallback>
-                            </Avatar>
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                        <p>Game Hub</p>
-                    </TooltipContent>
-                </Tooltip>
+                <Link href="/games" legacyBehavior={false}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                             <div className="relative group">
+                                 <div 
+                                    className={cn(
+                                        "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
+                                        isGamesActive ? "h-9" : "group-hover:h-5"
+                                    )} 
+                                />
+                                <Avatar className={cn(
+                                    "size-12 rounded-3xl bg-secondary transition-all duration-200 group-hover:rounded-2xl",
+                                    isGamesActive ? 'rounded-2xl bg-green-600' : 'group-hover:bg-green-600'
+                                )}>
+                                    <AvatarFallback className={cn("bg-transparent text-green-400 transition-colors duration-200", isGamesActive ? "text-white" : "group-hover:text-white")}>
+                                        <Gamepad2 size={24} />
+                                    </AvatarFallback>
+                                </Avatar>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                            <p>Game Hub</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </Link>
             </div>
         </TooltipProvider>
     );
