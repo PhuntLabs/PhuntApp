@@ -1,41 +1,30 @@
 {
-  "name": "Firebase Studio App",
-  "short_name": "Studio App",
-  "description": "A chat application built with Firebase Studio.",
+  "name": "WhisperChat",
+  "short_name": "Whisper",
+  "description": "A modern chat application.",
   "start_url": "/?m=true",
   "display": "standalone",
-  "background_color": "#09090b",
+  "background_color": "#111111",
   "theme_color": "#7c3aed",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/maskable-icon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "src": "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z'/%3e%3c/svg%3e",
+      "sizes": "any",
+      "type": "image/svg+xml"
     }
   ],
   "shortcuts": [
     {
       "name": "Discover Servers",
       "short_name": "Discover",
-      "description": "Find new communities to join",
+      "description": "Find new communities to join.",
       "url": "/discovery?m=true",
       "icons": [{ "src": "/icons/discover.png", "sizes": "192x192" }]
     },
     {
       "name": "Game Hub",
       "short_name": "Games",
-      "description": "Launch and play games",
+      "description": "Launch and play games.",
       "url": "/games?m=true",
       "icons": [{ "src": "/icons/games.png", "sizes": "192x192" }]
     }
