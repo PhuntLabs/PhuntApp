@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { PopulatedChat, Message, UserProfile, Emoji, CustomEmoji, BadgeType } from '@/lib/types';
-import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, Code, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake } from 'lucide-react';
+import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, Code, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, Menu } from 'lucide-react';
 import { UserNav } from './user-nav';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { SidebarTrigger } from '../ui/sidebar';
 
 const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, className: string }> = {
     developer: { label: 'Developer', icon: Code, className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
@@ -121,6 +122,11 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   return (
     <div className="flex flex-col h-screen">
       <header className="p-4 flex items-center gap-2 border-b">
+         <SidebarTrigger>
+            <Button variant="ghost" size="icon" className="md:hidden mr-2">
+                <Menu />
+            </Button>
+         </SidebarTrigger>
          <UserNav user={otherMember as UserProfile} as="trigger">
             <div className="flex items-center gap-2 cursor-pointer">
                  <Avatar className="size-8">

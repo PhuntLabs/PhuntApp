@@ -119,12 +119,12 @@ export default function Home() {
     // This effect handles the very first load of the app
     if (serversLoading || !authReady || !initialLoad) return;
     
-    if (servers.length > 0 && !selectedServer) {
+    if (servers.length > 0 && !selectedServer && chats.length === 0) {
       handleSelectServer(servers[0]);
     }
     setInitialLoad(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [servers, serversLoading, authReady, initialLoad]);
+  }, [servers, serversLoading, authReady, initialLoad, chats]);
 
 
   const handleSendMessage = async (text: string, imageUrl?: string, replyTo?: Message['replyTo']) => {

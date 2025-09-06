@@ -79,46 +79,7 @@ export function MobileLayout({
     onDeleteChannelMessage,
     ...sidebarProps
 }: MobileLayoutProps) {
-  const [mainView, setMainView] = useState<MainView>(selectedServer ? 'server' : 'dms');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  const { incomingRequests, acceptFriendRequest, declineFriendRequest } = useFriendRequests(true);
-  const { toast } = useToast();
-
-  const handleSelectChat = (chat: PopulatedChat) => {
-    onSelectChat(chat);
-    setIsSidebarOpen(false);
-  }
-
-  const handleSelectChannel = (channel: Channel) => {
-    sidebarProps.onSelectChannel(channel);
-    setIsSidebarOpen(false);
-  }
-  
-  const handleSelectServer = (server: Server | null) => {
-    onSelectServer(server);
-    setMainView(server ? 'server' : 'dms');
-  }
-  
-  const handleAccept = async (requestId: string, fromUser: { id: string, displayName: string }) => {
-     try {
-        await acceptFriendRequest(requestId, fromUser);
-        toast({ title: 'Friend Added!', description: `You and ${fromUser.displayName} are now friends.` });
-    } catch(e: any) {
-        toast({ variant: 'destructive', title: 'Error', description: e.message });
-    }
-  }
-
-  const handleDecline = async (requestId: string) => {
-    try {
-        await declineFriendRequest(requestId);
-        toast({ title: 'Request Declined' });
-    } catch(e: any) {
-        toast({ variant: 'destructive', title: 'Error', description: e.message });
-    }
-  }
-
-
   const renderChatContent = () => {
       if (selectedChat && user.uid) {
          return <Chat
@@ -142,69 +103,47 @@ export function MobileLayout({
             onDeleteMessage={onDeleteChannelMessage}
             />
       }
+      // This is the initial state before any chat is selected.
+      // We can return a specific component here, or the sidebar can handle it.
+      // For now, let's keep the main content area blank and let the sidebar be the focus.
       return (
-        <div className="flex h-full items-center justify-center bg-muted/30">
-            <div className="text-center">
-                <h2 className="text-xl font-semibold">No Chat Selected</h2>
-                <p className="text-muted-foreground">Select a channel or DM to start talking.</p>
+        <div className="flex-1 flex flex-col">
+            <div className="p-4 border-b flex items-center">
+                <SidebarTrigger>
+                    <Button variant="ghost" size="icon">
+                        <Menu />
+                    </Button>
+                </SidebarTrigger>
+                <h2 className="ml-2 font-semibold">Select a Conversation</h2>
+            </div>
+            <div className="flex-1 bg-muted/30 flex items-center justify-center">
+                 <p className="text-muted-foreground">Select a server or DM to start</p>
             </div>
         </div>
       );
   }
   
-  const renderSidebarContent = () => {
-    switch (mainView) {
-        case 'dms':
-            return (
-                <div className="p-2">
-                     {incomingRequests.length > 0 && (
-                        <PendingRequests
-                            requests={incomingRequests}
-                            onAccept={handleAccept}
-                            onDecline={handleDecline}
-                        />
-                    )}
-                    <DirectMessages
-                        directMessages={chats}
-                        selectedChat={selectedChat}
-                        onSelectChat={handleSelectChat}
-                        onAddUser={sidebarProps.onAddUser}
-                        onAddBot={sidebarProps.onAddBot}
-                        onDeleteChat={sidebarProps.onDeleteChat}
-                        loading={false}
-                    />
-                </div>
-            );
-        case 'server':
-             if (selectedServer) {
-                return <ServerSidebar 
-                    server={selectedServer}
-                    channels={sidebarProps.channels}
-                    selectedChannel={sidebarProps.selectedChannel}
-                    members={sidebarProps.members}
-                    onSelectChannel={handleSelectChannel}
-                    {...sidebarProps}
-                />;
-             }
-             return null;
-        case 'notifications':
-             return (
-                <div className="p-4">
-                    <h1 className="text-2xl font-bold">Notifications</h1>
-                    <p className="text-muted-foreground">Coming Soon!</p>
-                </div>
-            );
-        case 'settings':
-            return <MobileSettingsPage />;
-        default:
-            return null;
-    }
-  };
+  const { setOpenMobile } = useSidebar();
   
+  const handleSelectChat = (chat: PopulatedChat) => {
+    onSelectChat(chat);
+    setOpenMobile(false);
+  }
+
+  const handleSelectChannel = (channel: Channel) => {
+    sidebarProps.onSelectChannel(channel);
+    setOpenMobile(false);
+  }
+  
+  const handleSelectServer = (server: Server | null) => {
+    onSelectServer(server);
+    // Don't close sidebar, let user pick a channel
+  }
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-            <SheetContent side="left" className="flex gap-0 p-0 w-[calc(100vw-3.5rem)]">
+        <Sidebar>
+             <div className="flex h-full">
                 <Servers 
                     servers={servers}
                     loading={false}
@@ -215,38 +154,37 @@ export function MobileLayout({
                 />
                 <div className="flex-1 flex flex-col bg-secondary/30">
                     <main className="flex-1 overflow-y-auto">
-                        {renderSidebarContent()}
+                        {selectedServer ? (
+                            <ServerSidebar 
+                                server={selectedServer}
+                                channels={sidebarProps.channels}
+                                selectedChannel={sidebarProps.selectedChannel}
+                                members={sidebarProps.members}
+                                onSelectChannel={handleSelectChannel}
+                                {...sidebarProps}
+                            />
+                        ) : (
+                            <div className="p-2">
+                                <DirectMessages
+                                    directMessages={chats}
+                                    selectedChat={selectedChat}
+                                    onSelectChat={handleSelectChat}
+                                    onAddUser={sidebarProps.onAddUser}
+                                    onAddBot={sidebarProps.onAddBot}
+                                    onDeleteChat={sidebarProps.onDeleteChat}
+                                    loading={false}
+                                />
+                            </div>
+                        )}
                     </main>
-                    <footer className="flex items-center justify-around border-t bg-background/50 p-2">
-                        <button 
-                          onClick={() => setMainView(selectedServer ? 'server' : 'dms')}
-                          className={cn("flex flex-col items-center gap-1 p-2 rounded-lg", (mainView === 'dms' || mainView === 'server') ? "text-primary" : "text-muted-foreground")}
-                        >
-                          <MessageSquare className="size-6" />
-                        </button>
-                        <button 
-                            onClick={() => setMainView('notifications')}
-                            className={cn("flex flex-col items-center gap-1 p-2 rounded-lg", mainView === 'notifications' ? "text-primary" : "text-muted-foreground")}
-                        >
-                          <Bell className="size-6" />
-                        </button>
-                        <button 
-                             onClick={() => setMainView('settings')}
-                             className={cn("flex flex-col items-center gap-1 p-2 rounded-lg", mainView === 'settings' ? "text-primary" : "text-muted-foreground")}
-                        >
-                            <UserIcon className="size-6" />
-                        </button>
+                    <footer className="bg-background/50 p-2 border-t border-border">
+                        <UserNav user={user} logout={() => {}}/>
                     </footer>
                 </div>
-            </SheetContent>
-        </Sheet>
+            </div>
+        </Sidebar>
         
-        <main className="flex-1 flex flex-col min-w-0 relative">
-            <header className="absolute top-0 left-0 p-2">
-                 <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
-                    <Menu />
-                 </Button>
-            </header>
+        <main className="flex-1 flex flex-col min-w-0">
             {renderChatContent()}
         </main>
     </div>
