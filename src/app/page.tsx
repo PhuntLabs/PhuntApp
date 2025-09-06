@@ -325,52 +325,54 @@ export default function Home() {
   
   if (isMobileView) {
     return (
-        <MobileLayout 
-            user={user}
-            servers={servers}
-            chats={chats}
-            selectedServer={selectedServer}
-            selectedChat={selectedChat}
-            onSelectServer={handleSelectServer}
-            onSelectChat={handleSelectChat}
-            onCreateServer={handleCreateServer}
-            mainContent={
-              selectedChat && user ? (
-                <Chat
-                    chat={selectedChat}
-                    messages={messages}
-                    onSendMessage={handleSendMessage}
-                    onEditMessage={editMessage}
-                    onDeleteMessage={deleteMessage}
-                    currentUser={authUser}
-                />
-              ) : server && selectedChannel && authUser ? (
-                <ChannelChat 
-                  channel={selectedChannel} 
-                  server={server} 
-                  currentUser={authUser}
-                  members={members}
-                  messages={channelMessages}
-                  onSendMessage={sendChannelMessage}
-                  onEditMessage={editChannelMessage}
-                  onDeleteMessage={deleteChannelMessage}
-                />
-              ) : null
-            }
-            // Sidebar props
-            channels={channels}
-            members={members}
-            selectedChannel={selectedChannel}
-            onSelectChannel={handleSelectChannel}
-            onCreateChannel={handleCreateChannel}
-            onUpdateChannel={handleUpdateChannel}
-            onDeleteChannel={handleDeleteChannel}
-            onUpdateServer={handleUpdateServer}
-            onDeleteServer={handleDeleteServer}
-            onAddUser={handleSendFriendRequest}
-            onAddBot={handleCreateChatWithBot}
-            onDeleteChat={handleDeleteChat}
-        />
+        <SidebarProvider>
+            <MobileLayout 
+                user={user}
+                servers={servers}
+                chats={chats}
+                selectedServer={selectedServer}
+                selectedChat={selectedChat}
+                onSelectServer={handleSelectServer}
+                onSelectChat={handleSelectChat}
+                onCreateServer={handleCreateServer}
+                mainContent={
+                  selectedChat && user ? (
+                    <Chat
+                        chat={selectedChat}
+                        messages={messages}
+                        onSendMessage={handleSendMessage}
+                        onEditMessage={editMessage}
+                        onDeleteMessage={deleteMessage}
+                        currentUser={authUser}
+                    />
+                  ) : server && selectedChannel && authUser ? (
+                    <ChannelChat 
+                      channel={selectedChannel} 
+                      server={server} 
+                      currentUser={authUser}
+                      members={members}
+                      messages={channelMessages}
+                      onSendMessage={sendChannelMessage}
+                      onEditMessage={editChannelMessage}
+                      onDeleteMessage={deleteChannelMessage}
+                    />
+                  ) : null
+                }
+                // Sidebar props
+                channels={channels}
+                members={members}
+                selectedChannel={selectedChannel}
+                onSelectChannel={handleSelectChannel}
+                onCreateChannel={handleCreateChannel}
+                onUpdateChannel={handleUpdateChannel}
+                onDeleteChannel={handleDeleteChannel}
+                onUpdateServer={handleUpdateServer}
+                onDeleteServer={handleDeleteServer}
+                onAddUser={handleSendFriendRequest}
+                onAddBot={handleCreateChatWithBot}
+                onDeleteChat={handleDeleteChat}
+            />
+        </SidebarProvider>
     )
   }
 
