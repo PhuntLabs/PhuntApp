@@ -6,31 +6,42 @@ import { useIsMobile } from './use-mobile';
 
 const LOCAL_STORAGE_KEY = 'mobile-view-enabled';
 
+// This function safely gets the value from localStorage, only running on the client.
+const getInitialTestMode = (): boolean => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem(LOCAL_STORAGE_KEY) === 'true';
+  }
+  return false;
+};
+
 export function useMobileView() {
   const isSystemMobile = useIsMobile();
-  const [isTestMode, setIsTestMode] = useState(false);
-  const [hasCheckedStorage, setHasCheckedStorage] = useState(false);
+  // Initialize state directly from localStorage.
+  const [isTestMode, setIsTestMode] = useState(getInitialTestMode);
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
-    // This effect runs once on component mount to check localStorage.
-    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    setIsTestMode(saved === 'true');
-    setHasCheckedStorage(true);
-  }, []); // Empty dependency array ensures it runs only once on mount.
+    setHasMounted(true);
+    // Sync state if localStorage was changed in another tab.
+    const handleStorageChange = () => {
+      setIsTestMode(getInitialTestMode());
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const handleSetIsMobileView = useCallback((enabled: boolean) => {
     localStorage.setItem(LOCAL_STORAGE_KEY, String(enabled));
-    setIsTestMode(enabled);
-    // We might need to force a reload to apply all layout changes correctly
+    // The reload is necessary to re-evaluate the entire component tree
+    // with the new mobile/desktop view setting.
     window.location.reload();
   }, []);
 
-  // Don't render a decision until we've checked localStorage.
-  // This prevents a flash of incorrect UI on initial load.
-  if (!hasCheckedStorage) {
+  // On the server or before the client has mounted, default to system's value to avoid hydration mismatches.
+  if (!hasMounted) {
     return {
-        isMobileView: isSystemMobile, // Default to system value before storage is checked
-        setIsMobileView: handleSetIsMobileView
+      isMobileView: isSystemMobile,
+      setIsMobileView: () => {},
     };
   }
 
