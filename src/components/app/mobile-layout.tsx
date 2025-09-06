@@ -50,10 +50,10 @@ interface MobileLayoutProps {
     channelMessages: any[];
     onSendChannelMessage: any;
     onEditChannelMessage: any;
-    onDeleteChannelMessage: any;
+onylsonDeleteChannelMessage: any;
 }
 
-type Panel = 'servers' | 'main' | 'chat' | 'settings';
+type MainView = 'dms' | 'server' | 'notifications' | 'settings';
 
 export function MobileLayout({
     user,
@@ -75,7 +75,7 @@ export function MobileLayout({
     onDeleteChannelMessage,
     ...sidebarProps
 }: MobileLayoutProps) {
-  const [activeTab, setActiveTab] = useState<'home' | 'notifications' | 'you'>('home');
+  const [mainView, setMainView] = useState<MainView>('dms');
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
@@ -88,6 +88,7 @@ export function MobileLayout({
   
   const handleSelectChat = (chat: PopulatedChat | null) => {
       onSelectServer(null);
+      setMainView('dms');
       onSelectChat(chat);
   }
   
@@ -95,46 +96,54 @@ export function MobileLayout({
       onSelectChat(null);
       sidebarProps.onSelectChannel(channel);
   }
+  
+  const handleSelectServer = (server: Server | null) => {
+    onSelectChat(null);
+    onSelectServer(server);
+    if(server) {
+        setMainView('server');
+    } else {
+        setMainView('dms');
+    }
+  }
+
 
   const renderMainPanelContent = () => {
-    if (activeTab === 'you') {
-        return <MobileSettingsPage />;
+    switch (mainView) {
+        case 'dms':
+            return <MobileDMList 
+                        chats={chats}
+                        onSelectChat={handleSelectChat}
+                        onAddUser={sidebarProps.onAddUser}
+                    />;
+        case 'server':
+             if (selectedServer) {
+                return <MobileServerView 
+                    server={selectedServer}
+                    channels={sidebarProps.channels}
+                    selectedChannel={sidebarProps.selectedChannel}
+                    onSelectChannel={handleSelectChannel}
+                    members={sidebarProps.members}
+                    onUpdateServer={sidebarProps.onUpdateServer}
+                    onDeleteServer={sidebarProps.onDeleteServer}
+                    onCreateChannel={sidebarProps.onCreateChannel}
+                    onUpdateChannel={sidebarProps.onUpdateChannel}
+                    onDeleteChannel={sidebarProps.onDeleteChannel}
+                />;
+             }
+             return null;
+        case 'notifications':
+             return (
+                <div className="p-4">
+                    <h1 className="text-2xl font-bold">Notifications</h1>
+                    <p className="text-muted-foreground">Coming Soon!</p>
+                </div>
+            );
+        case 'settings':
+            return <MobileSettingsPage />;
+        default:
+            return null;
     }
-    
-    if (activeTab === 'notifications') {
-        return (
-             <div className="p-4">
-                <h1 className="text-2xl font-bold">Notifications</h1>
-                <p className="text-muted-foreground">Coming Soon!</p>
-            </div>
-        )
-    }
-
-    if (selectedServer) {
-      return (
-        <MobileServerView 
-            server={selectedServer}
-            channels={sidebarProps.channels}
-            selectedChannel={sidebarProps.selectedChannel}
-            onSelectChannel={handleSelectChannel}
-            members={sidebarProps.members}
-            onUpdateServer={sidebarProps.onUpdateServer}
-            onDeleteServer={sidebarProps.onDeleteServer}
-            onCreateChannel={sidebarProps.onCreateChannel}
-            onUpdateChannel={sidebarProps.onUpdateChannel}
-            onDeleteChannel={sidebarProps.onDeleteChannel}
-        />
-      );
-    }
-    
-    // Default to DM list
-    return (
-        <MobileDMList 
-            chats={chats}
-            onSelectChat={handleSelectChat}
-            onAddUser={sidebarProps.onAddUser}
-        />
-    );
   };
   
   const renderChatContent = () => {
@@ -164,12 +173,6 @@ export function MobileLayout({
       return null;
   }
   
-  const handleTabSelect = (tab: 'home' | 'notifications' | 'you') => {
-      setActiveTab(tab);
-      onSelectServer(null);
-      onSelectChat(null);
-  }
-
   return (
     <div className="flex h-screen bg-background overflow-hidden">
         <Servers 
@@ -177,11 +180,7 @@ export function MobileLayout({
             loading={false}
             onCreateServer={onCreateServer}
             selectedServer={selectedServer}
-            onSelectServer={(server) => {
-                onSelectServer(server);
-                onSelectChat(null); // Deselect chat when server changes
-                setActiveTab('home'); // Ensure home tab is active when a server is clicked
-            }}
+            onSelectServer={handleSelectServer}
             onSelectChat={handleSelectChat}
         />
         
@@ -191,20 +190,20 @@ export function MobileLayout({
             </main>
             <footer className="flex items-center justify-around border-t bg-secondary/50 p-2">
                 <button 
-                  onClick={() => handleTabSelect('home')}
-                  className={cn("flex flex-col items-center gap-1 p-2 rounded-lg", activeTab === 'home' ? "text-primary" : "text-muted-foreground")}
+                  onClick={() => setMainView(selectedServer ? 'server' : 'dms')}
+                  className={cn("flex flex-col items-center gap-1 p-2 rounded-lg", (mainView === 'dms' || mainView === 'server') ? "text-primary" : "text-muted-foreground")}
                 >
                   <MessageSquare className="size-6" />
                 </button>
                 <button 
-                    onClick={() => handleTabSelect('notifications')}
-                    className={cn("flex flex-col items-center gap-1 p-2 rounded-lg", activeTab === 'notifications' ? "text-primary" : "text-muted-foreground")}
+                    onClick={() => setMainView('notifications')}
+                    className={cn("flex flex-col items-center gap-1 p-2 rounded-lg", mainView === 'notifications' ? "text-primary" : "text-muted-foreground")}
                 >
                   <Bell className="size-6" />
                 </button>
                 <button 
-                     onClick={() => handleTabSelect('you')}
-                     className={cn("flex flex-col items-center gap-1 p-2 rounded-lg", activeTab === 'you' ? "text-primary" : "text-muted-foreground")}
+                     onClick={() => setMainView('settings')}
+                     className={cn("flex flex-col items-center gap-1 p-2 rounded-lg", mainView === 'settings' ? "text-primary" : "text-muted-foreground")}
                 >
                     <UserIcon className="size-6" />
                 </button>
