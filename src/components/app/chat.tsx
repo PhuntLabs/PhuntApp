@@ -21,7 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { SidebarTrigger } from '../ui/sidebar';
+import { SheetTrigger } from '../ui/sheet';
 
 const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, className: string }> = {
     developer: { label: 'Developer', icon: Code, className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
@@ -122,11 +122,11 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   return (
     <div className="flex flex-col h-screen">
       <header className="p-4 flex items-center gap-2 border-b">
-         <SidebarTrigger>
+         <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="md:hidden mr-2">
                 <Menu />
             </Button>
-         </SidebarTrigger>
+         </SheetTrigger>
          <UserNav user={otherMember as UserProfile} as="trigger">
             <div className="flex items-center gap-2 cursor-pointer">
                  <Avatar className="size-8">

@@ -20,7 +20,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { SidebarTrigger } from '../ui/sidebar';
+import { SheetTrigger } from '../ui/sheet';
 
 
 const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, className: string }> = {
@@ -161,11 +161,11 @@ export function ChannelChat({
     return (
         <div className="flex flex-col h-full">
             <header className="p-4 border-b flex items-center gap-2 flex-shrink-0">
-                <SidebarTrigger>
+                <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" className="md:hidden mr-2">
                         <Menu />
                     </Button>
-                </SidebarTrigger>
+                </SheetTrigger>
                 <Hash className="size-6 text-muted-foreground" />
                 <div className="flex-1">
                     <h1 className="text-xl font-semibold">{displayName}</h1>
