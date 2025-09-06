@@ -20,7 +20,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { SheetTrigger } from '../ui/sheet';
 
 
 const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, className: string }> = {
@@ -42,6 +41,7 @@ interface ChannelChatProps {
     onSendMessage: (text: string, imageUrl?: string, embed?: Embed | { embed: Embed, reactions?: string[] }, replyTo?: Message['replyTo']) => void;
     onEditMessage: (messageId: string, newText: string) => void;
     onDeleteMessage: (messageId: string) => void;
+    sidebarTrigger?: React.ReactNode;
 }
 
 export function ChannelChat({ 
@@ -53,6 +53,7 @@ export function ChannelChat({
     onSendMessage,
     onEditMessage,
     onDeleteMessage,
+    sidebarTrigger,
 }: ChannelChatProps) {
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingText, setEditingText] = useState('');
@@ -161,11 +162,7 @@ export function ChannelChat({
     return (
         <div className="flex flex-col h-full">
             <header className="p-4 border-b flex items-center gap-2 flex-shrink-0">
-                <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="md:hidden mr-2">
-                        <Menu />
-                    </Button>
-                </SheetTrigger>
+                {sidebarTrigger}
                 <Hash className="size-6 text-muted-foreground" />
                 <div className="flex-1">
                     <h1 className="text-xl font-semibold">{displayName}</h1>

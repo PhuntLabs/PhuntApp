@@ -13,8 +13,9 @@ import { MobileSettingsPage } from './mobile/mobile-settings-page';
 import { Chat } from './chat';
 import { ChannelChat } from './channel-chat';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
-import { UserNav } from './user-nav';
 import { MentionsDialog } from './mentions-dialog';
+import { UserNav } from './user-nav';
+import { Button } from '../ui/button';
 
 interface MobileLayoutProps {
     user: UserProfile;
@@ -73,7 +74,9 @@ export function MobileLayout({
     ...sidebarProps
 }: MobileLayoutProps) {
   const [activeView, setActiveView] = useState<MainView>('home');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { authUser, logout } = useAuth();
+
 
   const handleSelectChat = (chat: PopulatedChat) => {
     onSelectChat(chat);
@@ -81,22 +84,30 @@ export function MobileLayout({
 
   const handleSelectChannel = (channel: Channel) => {
     sidebarProps.onSelectChannel(channel);
+    setIsSidebarOpen(false);
   };
   
   const handleSelectServer = (server: Server | null) => {
       onSelectServer(server);
-      // When a server is selected, ensure we are on the home tab
       setActiveView('home');
   }
 
   const handleSelectHome = () => {
     setActiveView('home');
-    onSelectServer(null);
+    onSelectServer(null); // Go to DMs when home is clicked from another tab
   };
   
   const onJumpToMessage = () => {} // Placeholder
 
   const renderHomeContent = () => {
+    const sidebarTrigger = (
+       <SheetTrigger asChild>
+          <Button variant="ghost" size="icon" className="md:hidden mr-2">
+              <Menu />
+          </Button>
+      </SheetTrigger>
+    );
+    
     if (selectedChat && authUser) {
       return (
         <Chat
@@ -106,6 +117,7 @@ export function MobileLayout({
           onEditMessage={onEditDM}
           onDeleteMessage={onDeleteDM}
           currentUser={authUser}
+          sidebarTrigger={sidebarTrigger}
         />
       );
     }
@@ -120,13 +132,24 @@ export function MobileLayout({
           onSendMessage={onSendChannelMessage}
           onEditMessage={onEditChannelMessage}
           onDeleteMessage={onDeleteChannelMessage}
+          sidebarTrigger={sidebarTrigger}
         />
       );
     }
     
-    // Default Home view: The list of DMs or Channels
-    if (selectedServer) {
-        return (
+    return (
+       <div className="flex flex-col h-full">
+         <div className="p-4 border-b">
+            <h1 className="text-2xl font-bold">Select a Conversation</h1>
+             <p className="text-muted-foreground text-sm">You shouldn't be seeing this. It's a bug!</p>
+        </div>
+      </div>
+    );
+  };
+  
+  const renderSidebarContent = () => {
+      if (selectedServer) {
+           return (
             <MobileServerView
                 server={selectedServer}
                 channels={sidebarProps.channels}
@@ -136,33 +159,42 @@ export function MobileLayout({
                 {...sidebarProps}
             />
         )
-    }
+      }
+      return (
+          <MobileDMList 
+            chats={chats} 
+            onSelectChat={(chat) => {
+                handleSelectChat(chat);
+                setIsSidebarOpen(false);
+            }} 
+            onAddUser={sidebarProps.onAddUser}
+          />
+      );
+  }
 
-    return (
-      <MobileDMList 
-        chats={chats} 
-        onSelectChat={handleSelectChat} 
-        onAddUser={sidebarProps.onAddUser}
-      />
-    );
-  };
-  
   const renderMainContent = () => {
       if (activeView === 'home') {
           return (
-             <div className="flex h-full">
-                <Servers
-                    servers={servers}
-                    loading={false}
-                    onCreateServer={onCreateServer}
-                    selectedServer={selectedServer}
-                    onSelectServer={handleSelectServer}
-                    onSelectChat={handleSelectChat}
-                />
-                <div className="flex-1 min-w-0">
-                    {renderHomeContent()}
+             <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                <div className="flex h-full">
+                    <div className="flex-1 min-w-0">
+                        {renderHomeContent()}
+                    </div>
                 </div>
-            </div>
+                 <SheetContent side="left" className="p-0 w-[85vw] max-w-sm flex">
+                    <Servers
+                        servers={servers}
+                        loading={false}
+                        onCreateServer={onCreateServer}
+                        selectedServer={selectedServer}
+                        onSelectServer={handleSelectServer}
+                        onSelectChat={handleSelectChat}
+                    />
+                    <div className="flex-1">
+                        {renderSidebarContent()}
+                    </div>
+                </SheetContent>
+            </Sheet>
           )
       }
       if (activeView === 'notifications') {
