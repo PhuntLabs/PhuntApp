@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -29,8 +30,14 @@ export default function RootLayout({
                 const theme = localStorage.getItem('app-theme') || 'dark';
                 const font = localStorage.getItem('app-theme-font') || 'inter';
                 const customColor = localStorage.getItem('app-theme-custom-color');
+                const isMobileTestMode = localStorage.getItem('mobile-view-enabled') === 'true';
 
-                document.documentElement.className = theme + ' font-' + font;
+                let classes = theme + ' font-' + font;
+                if (isMobileTestMode) {
+                  classes += ' mobile-test-mode';
+                }
+                document.documentElement.className = classes;
+
 
                 if (theme === 'custom' && customColor) {
                   const hexToHsl = (hex) => {

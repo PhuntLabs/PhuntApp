@@ -16,24 +16,35 @@ const getInitialTestMode = (): boolean => {
 
 export function useMobileView() {
   const isSystemMobile = useIsMobile();
-  const [isTestMode, setIsTestMode] = useState(getInitialTestMode);
-
-  // When the component mounts on the client, sync state from localStorage
+  const [isTestMode, setIsTestMode] = useState(false);
+  
+  // On initial client-side mount, sync the state from localStorage.
   useEffect(() => {
     setIsTestMode(getInitialTestMode());
   }, []);
 
-  const handleSetIsMobileView = useCallback((enabled: boolean) => {
-    // 1. Update the state
-    setIsTestMode(enabled);
-    // 2. Persist to localStorage
+
+  const setIsMobileView = useCallback((enabled: boolean) => {
+    // 1. Update the local storage value immediately.
     localStorage.setItem(LOCAL_STORAGE_KEY, String(enabled));
-    // 3. Reload to apply layout changes across the app
+    
+    // 2. Force the class on the document to reflect the change visually before reload.
+    // This makes the change feel instant and fixes the state issue.
+    if (enabled) {
+        document.documentElement.classList.add('mobile-test-mode');
+    } else {
+        document.documentElement.classList.remove('mobile-test-mode');
+    }
+
+    // 3. Update the React state.
+    setIsTestMode(enabled);
+
+    // 4. Reload to apply the correct layout across the entire application.
     window.location.reload();
   }, []);
 
   return {
     isMobileView: isSystemMobile || isTestMode,
-    setIsMobileView: handleSetIsMobileView,
+    setIsMobileView,
   };
 }

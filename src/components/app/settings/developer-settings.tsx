@@ -22,7 +22,7 @@ export function DeveloperSettings() {
                 <CardHeader>
                     <CardTitle>Mobile App Testing (Beta)</CardTitle>
                     <CardDescription>
-                        Force the mobile user interface to appear on your desktop client. This is useful for testing mobile layouts without resizing your window.
+                        Force the mobile user interface to appear on your desktop client. This is useful for testing mobile layouts without resizing your window. A refresh is required.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -30,7 +30,7 @@ export function DeveloperSettings() {
                         <Switch 
                             id="mobile-view-toggle"
                             checked={isMobileView}
-                            onCheckedChange={setIsMobileView}
+                            onCheckedChange={(checked) => setIsMobileView(checked)}
                         />
                         <Label htmlFor="mobile-view-toggle">Enable Mobile UI</Label>
                     </div>
