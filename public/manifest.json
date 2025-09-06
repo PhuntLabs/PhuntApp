@@ -1,15 +1,15 @@
 {
   "name": "phunt",
   "short_name": "phunt",
-  "description": "The best place to hang out with friends and communities.",
-  "start_url": "/?m=true",
+  "description": "A new way to chat and hang out with communities and friends.",
+  "start_url": "/",
   "display": "standalone",
   "display_override": [
     "standalone",
     "minimal-ui"
   ],
-  "background_color": "#12182B",
-  "theme_color": "#5DADE2",
+  "background_color": "#1c1c1c",
+  "theme_color": "#7c3aed",
   "orientation": "portrait",
   "scope": "/",
   "lang": "en-US",
@@ -17,94 +17,74 @@
   "id": "/?m=true",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235DADE2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'%3E%3C/path%3E%3C/svg%3E",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1tZXNzYWdlLXNxdWFyZSI+PHBhdGggZD0iTTIxIDE1YTIgMiAwIDAgMS0yIDJINGExIDEgMCAwIDEtMS0xVjRBMiAyIDAgMCAxIDQgMmgxMGEyIDIgMCAwIDEgMiAybDQiLz48L3N2Zz4=",
       "sizes": "any",
       "type": "image/svg+xml"
     },
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot1.png",
       "type": "image/png",
-      "purpose": "any maskable"
+      "sizes": "1080x1920",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/screenshot2.png",
+      "type": "image/png",
+      "sizes": "1080x1920",
+      "form_factor": "narrow"
     }
   ],
   "shortcuts": [
     {
-      "name": "Discover Servers",
+      "name": "Discover New Servers",
       "short_name": "Discover",
-      "description": "Find new communities to join",
-      "url": "/discovery?m=true",
+      "description": "Find new communities to join.",
+      "url": "/discovery?utm_source=homescreen",
       "icons": [{ "src": "/icons/shortcut-discover.png", "sizes": "96x96" }]
     },
     {
       "name": "Game Hub",
       "short_name": "Games",
-      "description": "Launch and play games",
-      "url": "/games?m=true",
+      "description": "Launch and play browser games.",
+      "url": "/games?utm_source=homescreen",
       "icons": [{ "src": "/icons/shortcut-games.png", "sizes": "96x96" }]
     }
   ],
   "categories": [
     "social",
     "chat",
-    "games",
-    "entertainment"
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/screenshot1.png",
-      "sizes": "1080x2340",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Main chat view"
-    },
-    {
-      "src": "/screenshots/screenshot2.png",
-      "sizes": "1284x2778",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Server discovery page"
-    }
+    "games"
   ],
   "launch_handler": {
-    "client_mode": "focus-existing"
-  },
-  "file_handlers": [
-    {
-      "action": "/?m=true&handle-file",
-      "accept": {
-        "image/*": [".png", ".gif", ".jpeg", ".jpg"]
-      }
-    }
-  ],
-  "share_target": {
-    "action": "/?m=true&share-target",
-    "method": "GET",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
+    "client_mode": ["focus-existing", "auto"]
   },
   "related_applications": [
     {
       "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=com.example.phunt",
-      "id": "com.example.phunt"
+      "url": "https://play.google.com/store/apps/details?id=com.phuntindustries.phuntapp",
+      "id": "com.phuntindustries.phuntapp"
     },
     {
       "platform": "itunes",
-      "url": "https://itunes.apple.com/app/example-phunt/id123456789"
+      "url": "https://itunes.apple.com/app/phunt/id123456789"
+    },
+    {
+      "platform": "webapp",
+      "url": "https://phuntapp.netlify.app/manifest.json"
     }
   ],
-  "iarc_rating_id": "YOUR_IARC_RATING_ID",
-  "scope_extensions": [
-    { "origin": "https://games.phunt.app" }
-  ]
+  "prefer_related_applications": false,
+  "iarc_rating_id": "b5ee8c39-4c74-47f5-a138-f8a7a8d5690b"
 }
