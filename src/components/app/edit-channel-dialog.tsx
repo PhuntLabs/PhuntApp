@@ -22,12 +22,15 @@ import { Switch } from '../ui/switch';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useMobileView } from '@/hooks/use-mobile-view';
+import { MobileChannelSettings } from './mobile/mobile-channel-settings';
 
 interface EditChannelDialogProps {
   children: React.ReactNode;
   channel: Channel;
   server: Server;
   onUpdateChannel: (channelId: string, data: Partial<Channel>) => Promise<void>;
+  onClose?: () => void;
 }
 
 const channelTypes: { value: ChannelType; label: string; icon: React.ElementType }[] = [
@@ -37,14 +40,28 @@ const channelTypes: { value: ChannelType; label: string; icon: React.ElementType
   { value: 'forum', label: 'Forum', icon: MessageSquare },
 ];
 
-export function EditChannelDialog({ children, channel, server, onUpdateChannel }: EditChannelDialogProps) {
+export function EditChannelDialog({ children, channel, server, onUpdateChannel, onClose }: EditChannelDialogProps) {
+  const { isMobileView } = useMobileView();
+  const [isOpen, setIsOpen] = useState(false);
+  
+  if (isMobileView) {
+      return (
+          <MobileChannelSettings 
+            channel={channel}
+            server={server}
+            onUpdateChannel={onUpdateChannel}
+            trigger={children}
+            onClose={onClose}
+        />
+      )
+  }
+  
   const [channelName, setChannelName] = useState(channel.name);
   const [channelType, setChannelType] = useState(channel.type || 'text');
   const [channelTopic, setChannelTopic] = useState(channel.topic || '');
   const [permissionOverwrites, setPermissionOverwrites] = useState(channel.permissionOverwrites || {});
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
-  const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {

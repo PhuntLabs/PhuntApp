@@ -1,18 +1,18 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Home, AtSign, User as UserIcon, ChevronLeft } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Home, Bell, User as UserIcon, MessageSquare, Cog } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { DirectMessages } from './direct-messages';
-import type { PopulatedChat, Server, UserProfile, Channel } from '@/lib/types';
+import type { PopulatedChat, Server, UserProfile, Channel, Game } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { Servers } from './servers';
-import { ScrollArea } from '../ui/scroll-area';
-import { ServerSidebar } from './server-sidebar';
-import { SettingsDialog } from './settings-dialog';
-import { AccountSettings } from './settings/account-settings';
-import { Button } from '../ui/button';
+import { AnimatePresence, motion } from 'framer-motion';
+import { MobileDMList } from './mobile/mobile-dm-list';
+import { MobileServerView } from './mobile/mobile-server-view';
+import { MobileSettingsPage } from './mobile/mobile-settings-page';
+import { Chat } from './chat';
+import { ChannelChat } from './channel-chat';
 
 interface MobileLayoutProps {
     user: UserProfile;
@@ -23,6 +23,8 @@ interface MobileLayoutProps {
     onSelectServer: (server: Server | null) => void;
     onSelectChat: (chat: PopulatedChat) => void;
     onCreateServer: (name: string) => Promise<void>;
+
+    // Chat content props
     mainContent: React.ReactNode;
     
     // Props for sidebar content
@@ -38,9 +40,20 @@ interface MobileLayoutProps {
     onAddUser: (username: string) => void;
     onAddBot: () => void;
     onDeleteChat: (chatId: string) => void;
+    
+    // Message props passed down to chat views
+    dmMessages: any[];
+    onSendDM: any;
+    onEditDM: any;
+    onDeleteDM: any;
+    
+    channelMessages: any[];
+    onSendChannelMessage: any;
+    onEditChannelMessage: any;
+    onDeleteChannelMessage: any;
 }
 
-type View = 'chat' | 'sidebar' | 'settings';
+type Panel = 'servers' | 'main' | 'chat' | 'settings';
 
 export function MobileLayout({
     user,
@@ -52,124 +65,163 @@ export function MobileLayout({
     onSelectChat,
     onCreateServer,
     mainContent,
+    dmMessages,
+    onSendDM,
+    onEditDM,
+    onDeleteDM,
+    channelMessages,
+    onSendChannelMessage,
+    onEditChannelMessage,
+    onDeleteChannelMessage,
     ...sidebarProps
 }: MobileLayoutProps) {
-  const [viewStack, setViewStack] = useState<View[]>(['sidebar']);
-  const activeView = viewStack[viewStack.length - 1];
-
-  const navigateTo = (view: View) => {
-    setViewStack(prev => [...prev, view]);
-  }
-  
-  const goBack = () => {
-    setViewStack(prev => prev.length > 1 ? prev.slice(0, -1) : prev);
-  }
+  const [activeTab, setActiveTab] = useState<'home' | 'notifications' | 'you'>('home');
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
-    // When the user selects a chat or channel, switch back to the chat view
     if (selectedChat || sidebarProps.selectedChannel) {
-        setViewStack(['chat']);
+      setIsChatOpen(true);
     }
   }, [selectedChat, sidebarProps.selectedChannel]);
-
-
-  const renderMainContent = () => {
-     switch(activeView) {
-        case 'sidebar':
-            return (
-                <div className="h-full flex">
-                    <Servers 
-                        servers={servers}
-                        loading={false} 
-                        onCreateServer={onCreateServer} 
-                        selectedServer={selectedServer}
-                        onSelectServer={onSelectServer}
-                        onSelectChat={onSelectChat}
-                    />
-                     <div className="flex-1 overflow-y-auto bg-secondary/30">
-                        {selectedServer ? (
-                             <ServerSidebar 
-                                server={selectedServer}
-                                channels={sidebarProps.channels}
-                                members={sidebarProps.members}
-                                selectedChannel={sidebarProps.selectedChannel}
-                                onSelectChannel={sidebarProps.onSelectChannel}
-                                onCreateChannel={sidebarProps.onCreateChannel}
-                                onUpdateChannel={sidebarProps.onUpdateChannel}
-                                onDeleteChannel={sidebarProps.onDeleteChannel}
-                                onUpdateServer={sidebarProps.onUpdateServer}
-                                onDeleteServer={sidebarProps.onDeleteServer}
-                            />
-                        ) : (
-                             <div className="p-2">
-                                <DirectMessages
-                                    directMessages={chats}
-                                    selectedChat={selectedChat}
-                                    onSelectChat={onSelectChat}
-                                    onAddUser={sidebarProps.onAddUser}
-                                    onAddBot={sidebarProps.onAddBot}
-                                    onDeleteChat={sidebarProps.onDeleteChat}
-                                    loading={false}
-                                />
-                             </div>
-                        )}
-                     </div>
-                </div>
-            );
-        case 'settings':
-            return (
-                 <div className="h-full bg-background p-4 overflow-y-auto">
-                    <Button variant="ghost" className="mb-4" onClick={goBack}>
-                        <ChevronLeft /> Back
-                    </Button>
-                    <AccountSettings />
-                 </div>
-            )
-        case 'chat':
-        default:
-            return mainContent;
-    }
+  
+  const handleCloseChat = () => {
+    setIsChatOpen(false);
+    // Important: we deselect server/chat when closing the chat view to have a clean state
+    onSelectServer(null); 
+    onSelectChat(null);
   }
 
-  const handleTabClick = (view: View) => {
-    if (activeView === view) {
-        // If current view is already the tab, go to its root
-        if (view === 'sidebar') setViewStack(['sidebar']);
-    } else {
-        setViewStack([view]);
+  const renderMainPanelContent = () => {
+    if (activeTab === 'you') {
+        return <MobileSettingsPage />;
     }
-  }
+    
+    if (activeTab === 'notifications') {
+        return (
+             <div className="p-4">
+                <h1 className="text-2xl font-bold">Notifications</h1>
+                <p className="text-muted-foreground">Coming Soon!</p>
+            </div>
+        )
+    }
 
+    if (selectedServer) {
+      return (
+        <MobileServerView 
+            server={selectedServer}
+            channels={sidebarProps.channels}
+            selectedChannel={sidebarProps.selectedChannel}
+            onSelectChannel={sidebarProps.onSelectChannel}
+            members={sidebarProps.members}
+            onUpdateServer={sidebarProps.onUpdateServer}
+            onDeleteServer={sidebarProps.onDeleteServer}
+            onCreateChannel={sidebarProps.onCreateChannel}
+            onUpdateChannel={sidebarProps.onUpdateChannel}
+            onDeleteChannel={sidebarProps.onDeleteChannel}
+        />
+      );
+    }
+    
+    // Default to DM list
+    return (
+        <MobileDMList 
+            chats={chats}
+            onSelectChat={onSelectChat}
+            onAddUser={sidebarProps.onAddUser}
+        />
+    );
+  };
+  
+  const renderChatContent = () => {
+      if (!isChatOpen) return null;
+      if (selectedChat && user.uid) {
+         return <Chat
+            chat={selectedChat}
+            messages={dmMessages}
+            onSendMessage={onSendDM}
+            onEditMessage={onEditDM}
+            onDeleteMessage={onDeleteDM}
+            currentUser={{ uid: user.uid } as any}
+        />
+      }
+      if (selectedServer && sidebarProps.selectedChannel && user.uid) {
+        return <ChannelChat 
+            channel={sidebarProps.selectedChannel} 
+            server={selectedServer} 
+            currentUser={{ uid: user.uid } as any}
+            members={sidebarProps.members}
+            messages={channelMessages}
+            onSendMessage={onSendChannelMessage}
+            onEditMessage={onEditChannelMessage}
+            onDeleteMessage={onDeleteChannelMessage}
+            />
+      }
+      return null;
+  }
+  
+  const handleTabSelect = (tab: 'home' | 'notifications' | 'you') => {
+      setActiveTab(tab);
+      setIsChatOpen(false); // Close any open chat when switching main tabs
+      onSelectServer(null); // Deselect server
+  }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <main className="flex-1 overflow-hidden">
-        {renderMainContent()}
-      </main>
-      
-      <footer className="flex items-center justify-around border-t bg-secondary/50 p-2">
-        <button 
-          onClick={() => handleTabClick('sidebar')}
-          className={cn("flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground", activeView === 'sidebar' && "text-primary")}
-        >
-          <Home className="size-6" />
-          <span className="text-xs">Home</span>
-        </button>
-        <button 
-            disabled 
-            className="flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground/50"
-        >
-          <AtSign className="size-6" />
-          <span className="text-xs">Mentions</span>
-        </button>
-        <button 
-             onClick={() => handleTabClick('settings')}
-             className={cn("flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground", activeView === 'settings' && "text-primary")}
-        >
-            <UserIcon className="size-6" />
-            <span className="text-xs">You</span>
-        </button>
-      </footer>
+    <div className="flex h-screen bg-background overflow-hidden">
+        <Servers 
+            servers={servers}
+            loading={false}
+            onCreateServer={onCreateServer}
+            selectedServer={selectedServer}
+            onSelectServer={(server) => {
+                onSelectServer(server);
+                setActiveTab('home'); // Ensure home tab is active when a server is clicked
+                if (server) { // If a server is selected, close any open DM chat
+                   setIsChatOpen(false);
+                }
+            }}
+            onSelectChat={onSelectChat}
+        />
+        
+        <div className="flex-1 flex flex-col min-w-0">
+            <main className="flex-1 overflow-y-auto">
+                {renderMainPanelContent()}
+            </main>
+            <footer className="flex items-center justify-around border-t bg-secondary/50 p-2">
+                <button 
+                  onClick={() => handleTabSelect('home')}
+                  className={cn("flex flex-col items-center gap-1 p-2 rounded-lg", activeTab === 'home' ? "text-primary" : "text-muted-foreground")}
+                >
+                  <MessageSquare className="size-6" />
+                </button>
+                <button 
+                    onClick={() => handleTabSelect('notifications')}
+                    className={cn("flex flex-col items-center gap-1 p-2 rounded-lg", activeTab === 'notifications' ? "text-primary" : "text-muted-foreground")}
+                >
+                  <Bell className="size-6" />
+                </button>
+                <button 
+                     onClick={() => handleTabSelect('you')}
+                     className={cn("flex flex-col items-center gap-1 p-2 rounded-lg", activeTab === 'you' ? "text-primary" : "text-muted-foreground")}
+                >
+                    <UserIcon className="size-6" />
+                </button>
+            </footer>
+        </div>
+
+        <AnimatePresence>
+            {isChatOpen && (
+                <motion.div
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    className="absolute top-0 left-0 w-full h-full bg-background z-20"
+                    onDoubleClick={handleCloseChat} // Easy close gesture
+                >
+                    {renderChatContent()}
+                </motion.div>
+            )}
+        </AnimatePresence>
     </div>
   );
 }

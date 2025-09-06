@@ -28,7 +28,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
     const pathname = usePathname();
     const { user, authUser } = useAuth();
     const isDiscoveryActive = pathname === '/discovery';
-    const isGamesActive = pathname === '/games';
+    const isGamesActive = pathname.startsWith('/games');
 
     const { chats } = useChats(!!authUser);
 

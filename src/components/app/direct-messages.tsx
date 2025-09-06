@@ -3,7 +3,7 @@
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSkeleton } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Bot, X, CircleDot, Moon, XCircle, MessageCircleMore } from 'lucide-react';
+import { PlusCircle, Bot, X, CircleDot, Moon, XCircle, MessageCircleMore, Gamepad2 } from 'lucide-react';
 import type { PopulatedChat, UserProfile, UserStatus } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '../ui/badge';
@@ -73,8 +73,18 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
           const chatAvatar = otherMember?.photoURL || chat.photoURL;
           const isBotChat = otherMember?.isBot;
           const status = otherMember?.status || 'offline';
-          const customStatus = otherMember?.customStatus;
-          const statusLabel = statusConfig[status].label;
+          
+          let subtext = statusConfig[status].label;
+          let SubIcon = null;
+
+          if (otherMember?.currentGame) {
+            subtext = `Playing ${otherMember.currentGame.name}`;
+            SubIcon = Gamepad2;
+          } else if (otherMember?.customStatus) {
+            subtext = otherMember.customStatus;
+          }
+
+
           const hasUnread = chat.unreadCount && chat.unreadCount[user?.uid || ''] > 0;
           
           return (
@@ -105,8 +115,9 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
                         </Badge>
                     )}
                   </div>
-                  <p className={cn("text-xs truncate", hasUnread ? "text-white/70" : "text-muted-foreground")}>
-                    {customStatus || statusLabel}
+                  <p className={cn("text-xs truncate flex items-center gap-1", hasUnread ? "text-white/70" : "text-muted-foreground")}>
+                    {SubIcon && <SubIcon className="size-3 shrink-0"/>}
+                    {subtext}
                   </p>
                 </div>
               </SidebarMenuButton>

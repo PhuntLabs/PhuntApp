@@ -74,11 +74,6 @@ export function AccountSettings() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">My Account</h2>
-        <p className="text-muted-foreground">Manage your account settings.</p>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>User Profile</CardTitle>

@@ -65,6 +65,8 @@ export default function Home() {
   const { toast } = useToast();
 
   const handleSelectChat = (chat: PopulatedChat) => {
+    setSelectedServer(null); // Make sure no server is selected when a DM is chosen
+    setSelectedChannel(null);
     setSelectedChat(chat);
     // When a user selects a chat, clear their unread count for it.
     if (user && chat.unreadCount?.[user.uid] > 0) {
@@ -325,54 +327,39 @@ export default function Home() {
   
   if (isMobileView) {
     return (
-        <SidebarProvider>
-            <MobileLayout 
-                user={user}
-                servers={servers}
-                chats={chats}
-                selectedServer={selectedServer}
-                selectedChat={selectedChat}
-                onSelectServer={handleSelectServer}
-                onSelectChat={handleSelectChat}
-                onCreateServer={handleCreateServer}
-                mainContent={
-                  selectedChat && user ? (
-                    <Chat
-                        chat={selectedChat}
-                        messages={messages}
-                        onSendMessage={handleSendMessage}
-                        onEditMessage={editMessage}
-                        onDeleteMessage={deleteMessage}
-                        currentUser={authUser}
-                    />
-                  ) : server && selectedChannel && authUser ? (
-                    <ChannelChat 
-                      channel={selectedChannel} 
-                      server={server} 
-                      currentUser={authUser}
-                      members={members}
-                      messages={channelMessages}
-                      onSendMessage={sendChannelMessage}
-                      onEditMessage={editChannelMessage}
-                      onDeleteMessage={deleteChannelMessage}
-                    />
-                  ) : null
-                }
-                // Sidebar props
-                channels={channels}
-                members={members}
-                selectedChannel={selectedChannel}
-                onSelectChannel={handleSelectChannel}
-                onCreateChannel={handleCreateChannel}
-                onUpdateChannel={handleUpdateChannel}
-                onDeleteChannel={handleDeleteChannel}
-                onUpdateServer={handleUpdateServer}
-                onDeleteServer={handleDeleteServer}
-                onAddUser={handleSendFriendRequest}
-                onAddBot={handleCreateChatWithBot}
-                onDeleteChat={handleDeleteChat}
-            />
-        </SidebarProvider>
+        <MobileLayout 
+            user={user}
+            servers={servers}
+            chats={chats}
+            selectedServer={selectedServer}
+            selectedChat={selectedChat}
+            onSelectServer={handleSelectServer}
+            onSelectChat={handleSelectChat}
+            onCreateServer={handleCreateServer}
+            // Pass down all props needed by sub-components
+            channels={channels}
+            members={members}
+            selectedChannel={selectedChannel}
+            onSelectChannel={handleSelectChannel}
+            onCreateChannel={handleCreateChannel}
+            onUpdateChannel={handleUpdateChannel}
+            onDeleteChannel={handleDeleteChannel}
+            onUpdateServer={handleUpdateServer}
+            onDeleteServer={handleDeleteServer}
+            onAddUser={handleSendFriendRequest}
+            onAddBot={handleCreateChatWithBot}
+            onDeleteChat={handleDeleteChat}
+            // Message props
+            dmMessages={messages}
+            onSendDM={handleSendMessage}
+            onEditDM={editMessage}
+            onDeleteDM={deleteMessage}
+            channelMessages={channelMessages}
+            onSendChannelMessage={sendChannelMessage}
+            onEditChannelMessage={editChannelMessage}
+            onDeleteChannelMessage={deleteChannelMessage}
+            mainContent={<></>} // mainContent is now handled inside MobileLayout
+        />
     )
   }
 

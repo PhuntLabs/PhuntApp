@@ -41,6 +41,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Checkbox } from '../ui/checkbox';
+import { useMobileView } from '@/hooks/use-mobile-view';
+import { MobileServerSettings } from './mobile/mobile-server-settings';
 
 function generateRandomHexColor() {
   return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
@@ -77,9 +79,29 @@ interface EditServerDialogProps {
   onUpdateServer: (serverId: string, data: Partial<Omit<Server, 'id'>>) => Promise<void>;
   onDeleteServer: (serverId: string) => Promise<void>;
   members: Partial<UserProfile>[];
+  onClose?: () => void; // For mobile
 }
 
-export function EditServerDialog({ children, server, onUpdateServer, onDeleteServer, members }: EditServerDialogProps) {
+export function EditServerDialog({ children, server, onUpdateServer, onDeleteServer, members, onClose }: EditServerDialogProps) {
+  const { isMobileView } = useMobileView();
+  const [isOpen, setIsOpen] = useState(false);
+  
+  if (isMobileView) {
+      // This is a bit of a hack to get the trigger to work with the mobile sheet
+      // The dialog trigger will be the child, and it will open the mobile sheet
+      return (
+        <MobileServerSettings 
+            server={server}
+            onUpdateServer={onUpdateServer}
+            onDeleteServer={onDeleteServer}
+            members={members}
+            trigger={children}
+            onClose={onClose}
+        />
+      )
+  }
+
+  // The rest of the component is for desktop view
   const [serverName, setServerName] = useState(server.name);
   const [serverIcon, setServerIcon] = useState(server.photoURL || '');
   const [serverBanner, setServerBanner] = useState(server.bannerURL || '');
@@ -96,7 +118,6 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
   const [newEmojiUrl, setNewEmojiUrl] = useState('');
   const [newEmojiFile, setNewEmojiFile] = useState<File | null>(null);
 
-  const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
