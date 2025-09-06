@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -64,12 +65,12 @@ export default function Home() {
 
   const { toast } = useToast();
 
-  const handleSelectChat = (chat: PopulatedChat) => {
+  const handleSelectChat = (chat: PopulatedChat | null) => {
     setSelectedServer(null); // Make sure no server is selected when a DM is chosen
     setSelectedChannel(null);
     setSelectedChat(chat);
     // When a user selects a chat, clear their unread count for it.
-    if (user && chat.unreadCount?.[user.uid] > 0) {
+    if (user && chat && chat.unreadCount?.[user.uid] > 0) {
       const chatRef = doc(db, 'chats', chat.id);
       updateDoc(chatRef, { [`unreadCount.${user.uid}`]: 0 });
     }
@@ -108,7 +109,7 @@ export default function Home() {
         const currentTime = (current.lastMessageTimestamp as any)?.toMillis() || (current.createdAt as any)?.toMillis() || 0;
         return (prevTime > currentTime) ? prev : current;
       });
-      handleSelectChat(mostRecentChat);
+      if(!isMobileView) handleSelectChat(mostRecentChat);
     } else if (chats.length === 0 && !selectedServer) {
         setSelectedChat(null);
     }
