@@ -21,7 +21,7 @@ interface MobileLayoutProps {
     selectedServer: Server | null;
     selectedChat: PopulatedChat | null;
     onSelectServer: (server: Server | null) => void;
-    onSelectChat: (chat: PopulatedChat) => void;
+    onSelectChat: (chat: PopulatedChat | null) => void;
     onCreateServer: (name: string) => Promise<void>;
 
     // Chat content props
@@ -81,14 +81,19 @@ export function MobileLayout({
   useEffect(() => {
     if (selectedChat || sidebarProps.selectedChannel) {
       setIsChatOpen(true);
+    } else {
+      setIsChatOpen(false);
     }
   }, [selectedChat, sidebarProps.selectedChannel]);
   
-  const handleCloseChat = () => {
-    setIsChatOpen(false);
-    // Important: we deselect server/chat when closing the chat view to have a clean state
-    onSelectServer(null); 
-    onSelectChat(null);
+  const handleSelectChat = (chat: PopulatedChat | null) => {
+      onSelectServer(null);
+      onSelectChat(chat);
+  }
+  
+  const handleSelectChannel = (channel: Channel) => {
+      onSelectChat(null);
+      sidebarProps.onSelectChannel(channel);
   }
 
   const renderMainPanelContent = () => {
@@ -111,7 +116,7 @@ export function MobileLayout({
             server={selectedServer}
             channels={sidebarProps.channels}
             selectedChannel={sidebarProps.selectedChannel}
-            onSelectChannel={sidebarProps.onSelectChannel}
+            onSelectChannel={handleSelectChannel}
             members={sidebarProps.members}
             onUpdateServer={sidebarProps.onUpdateServer}
             onDeleteServer={sidebarProps.onDeleteServer}
@@ -126,7 +131,7 @@ export function MobileLayout({
     return (
         <MobileDMList 
             chats={chats}
-            onSelectChat={onSelectChat}
+            onSelectChat={handleSelectChat}
             onAddUser={sidebarProps.onAddUser}
         />
     );
@@ -161,8 +166,8 @@ export function MobileLayout({
   
   const handleTabSelect = (tab: 'home' | 'notifications' | 'you') => {
       setActiveTab(tab);
-      setIsChatOpen(false); // Close any open chat when switching main tabs
-      onSelectServer(null); // Deselect server
+      onSelectServer(null);
+      onSelectChat(null);
   }
 
   return (
@@ -174,12 +179,10 @@ export function MobileLayout({
             selectedServer={selectedServer}
             onSelectServer={(server) => {
                 onSelectServer(server);
+                onSelectChat(null); // Deselect chat when server changes
                 setActiveTab('home'); // Ensure home tab is active when a server is clicked
-                if (server) { // If a server is selected, close any open DM chat
-                   setIsChatOpen(false);
-                }
             }}
-            onSelectChat={onSelectChat}
+            onSelectChat={handleSelectChat}
         />
         
         <div className="flex-1 flex flex-col min-w-0">
@@ -215,8 +218,7 @@ export function MobileLayout({
                     animate={{ x: 0 }}
                     exit={{ x: '100%' }}
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    className="absolute top-0 left-0 w-full h-full bg-background z-20"
-                    onDoubleClick={handleCloseChat} // Easy close gesture
+                    className="absolute top-0 left-16 w-[calc(100%-4rem)] h-full bg-background z-20"
                 >
                     {renderChatContent()}
                 </motion.div>
