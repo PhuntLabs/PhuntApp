@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Home, AtSign, User as UserIcon, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PopulatedChat, Server, UserProfile, Channel } from '@/lib/types';
@@ -15,6 +15,8 @@ import { ChannelChat } from './channel-chat';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { MentionsDialog } from './mentions-dialog';
 import { Button } from '../ui/button';
+import Link from 'next/link';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface MobileLayoutProps {
     user: UserProfile;
@@ -77,6 +79,14 @@ export function MobileLayout({
   
   const isChatOpen = !!selectedChat || !!sidebarProps.selectedChannel;
 
+  useEffect(() => {
+    // When navigating away from home or closing a chat, close the sidebar.
+    if (activeView !== 'home' || !isChatOpen) {
+      setIsSidebarOpen(false);
+    }
+  }, [activeView, isChatOpen]);
+
+
   const handleSelectChat = (chat: PopulatedChat) => {
     onSelectChat(chat);
     setIsSidebarOpen(false);
@@ -89,14 +99,8 @@ export function MobileLayout({
   
   const handleSelectServer = (server: Server | null) => {
       onSelectServer(server);
-      setActiveView('home');
   }
 
-  const handleSelectHome = () => {
-    onSelectServer(null); // Go to DMs when home is clicked
-    setActiveView('home');
-  };
-  
   const handleBack = () => {
     onSelectChat(null);
     sidebarProps.onSelectChannel(null as any);
@@ -106,16 +110,20 @@ export function MobileLayout({
 
   const renderHomeContent = () => {
     const sidebarTrigger = (
-      <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={handleBack}>
-        <Menu />
-      </Button>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden mr-2">
+            <Menu />
+        </Button>
+      </SheetTrigger>
     );
 
-    if (selectedChat && authUser) {
-        return <Chat chat={selectedChat} messages={dmMessages} onSendMessage={onSendDM} onEditMessage={onEditDM} onDeleteMessage={onDeleteDM} currentUser={authUser} sidebarTrigger={sidebarTrigger} />;
-    }
-    if (selectedServer && sidebarProps.selectedChannel && authUser) {
-        return <ChannelChat channel={sidebarProps.selectedChannel} server={selectedServer} currentUser={authUser} members={sidebarProps.members} messages={channelMessages} onSendMessage={onSendChannelMessage} onEditMessage={onEditChannelMessage} onDeleteMessage={onDeleteChannelMessage} sidebarTrigger={sidebarTrigger} />;
+    if (isChatOpen) {
+       if (selectedChat && authUser) {
+           return <Chat chat={selectedChat} messages={dmMessages} onSendMessage={onSendDM} onEditMessage={onEditDM} onDeleteMessage={onDeleteDM} currentUser={authUser} sidebarTrigger={sidebarTrigger} />;
+       }
+       if (selectedServer && sidebarProps.selectedChannel && authUser) {
+           return <ChannelChat channel={sidebarProps.selectedChannel} server={selectedServer} currentUser={authUser} members={sidebarProps.members} messages={channelMessages} onSendMessage={onSendChannelMessage} onEditMessage={onEditChannelMessage} onDeleteMessage={onDeleteChannelMessage} sidebarTrigger={sidebarTrigger} />;
+       }
     }
     
     // Default Home View (List view)
@@ -137,6 +145,7 @@ export function MobileLayout({
                         selectedChannel={sidebarProps.selectedChannel}
                         members={sidebarProps.members}
                         onSelectChannel={handleSelectChannel}
+                        onClose={() => setIsSidebarOpen(false)}
                         {...sidebarProps}
                     />
                 ) : (
@@ -176,11 +185,56 @@ export function MobileLayout({
 
   return (
     <div className="h-screen bg-background flex flex-col">
-        <main className="flex-1 min-h-0">{renderMainContent()}</main>
+       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+            <main className="flex-1 min-h-0">{renderMainContent()}</main>
+
+            <SheetContent side="left" className="p-0 w-[85vw] max-w-sm flex">
+                 <AnimatePresence>
+                     {isSidebarOpen && (
+                         <motion.div
+                            key={selectedServer?.id || 'dms'}
+                            initial={{ opacity: 0, x: -50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -50 }}
+                            transition={{ duration: 0.3 }}
+                            className="w-full flex"
+                          >
+                            <Servers
+                                servers={servers}
+                                loading={false}
+                                onCreateServer={onCreateServer}
+                                selectedServer={selectedServer}
+                                onSelectServer={handleSelectServer}
+                                onSelectChat={handleSelectChat}
+                            />
+                            <div className="flex-1 border-l">
+                                {selectedServer ? (
+                                     <MobileServerView
+                                        server={selectedServer}
+                                        channels={sidebarProps.channels}
+                                        selectedChannel={sidebarProps.selectedChannel}
+                                        members={sidebarProps.members}
+                                        onSelectChannel={handleSelectChannel}
+                                        onClose={() => setIsSidebarOpen(false)}
+                                        {...sidebarProps}
+                                    />
+                                ) : (
+                                    <MobileDMList 
+                                        chats={chats} 
+                                        onSelectChat={handleSelectChat}
+                                        onAddUser={sidebarProps.onAddUser}
+                                    />
+                                )}
+                            </div>
+                        </motion.div>
+                     )}
+                 </AnimatePresence>
+            </SheetContent>
+        </Sheet>
 
         <nav className="flex items-center justify-around p-2 border-t bg-secondary/30">
           <button
-              onClick={handleSelectHome}
+              onClick={() => setActiveView('home')}
               className={cn(
                   "flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground w-1/3",
                   activeView === 'home' && 'text-primary'

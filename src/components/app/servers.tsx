@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useChats } from '@/hooks/use-chats';
 import Image from 'next/image';
 import { useMobileView } from '@/hooks/use-mobile-view';
+import Link from 'next/link';
 
 interface ServersProps {
     servers: Server[];
@@ -178,7 +179,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                  {/* Discovery Button */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                         <button onClick={() => router.push('/discovery')} className="relative group">
+                        <Link href="/discovery" className="relative group">
                              <div 
                                 className={cn(
                                     "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
@@ -193,7 +194,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                     <Compass size={24} />
                                 </AvatarFallback>
                             </Avatar>
-                        </button>
+                        </Link>
                     </TooltipTrigger>
                     <TooltipContent side="right">
                         <p>Discover Servers</p>
@@ -203,7 +204,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                  {/* Games Button */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                         <button onClick={() => router.push('/games')} className="relative group">
+                         <Link href="/games" className="relative group">
                              <div 
                                 className={cn(
                                     "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
@@ -218,7 +219,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                     <Gamepad2 size={24} />
                                 </AvatarFallback>
                             </Avatar>
-                        </button>
+                        </Link>
                     </TooltipTrigger>
                     <TooltipContent side="right">
                         <p>Game Hub</p>
