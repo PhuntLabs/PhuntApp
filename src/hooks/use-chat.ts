@@ -114,6 +114,10 @@ export function useChat(chat: PopulatedChat | null) {
       
       await updateDoc(chatRef, {
         lastMessageTimestamp: serverTimestamp(),
+        lastMessage: {
+          text: text || 'Sent an image',
+          senderId: authUser.uid
+        },
         ...unreadUpdates
       });
       

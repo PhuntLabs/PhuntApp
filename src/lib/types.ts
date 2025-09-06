@@ -65,6 +65,10 @@ export interface ChatDocument {
   photoURL?: string;
   createdAt?: Timestamp;
   lastMessageTimestamp?: Timestamp;
+  lastMessage?: {
+    text: string;
+    senderId: string;
+  };
   unreadCount?: { [userId: string]: number };
 }
 

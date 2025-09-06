@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,6 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { AddUserDialog } from '../add-user-dialog';
+import { useAuth } from '@/hooks/use-auth';
 
 interface MobileDMListProps {
   chats: PopulatedChat[];
@@ -59,15 +61,16 @@ const ActiveNowCard = ({ user }: { user: Partial<UserProfile> }) => {
 }
 
 export function MobileDMList({ chats, onSelectChat, onAddUser }: MobileDMListProps) {
+  const { authUser } = useAuth();
   const [search, setSearch] = useState('');
 
   const filteredChats = chats.filter(chat => {
-    const otherMember = chat.members.find(m => m.id !== 'currentUser'); // replace with actual current user id
+    const otherMember = chat.members.find(m => m.id !== authUser?.uid);
     return otherMember?.displayName?.toLowerCase().includes(search.toLowerCase());
   });
   
   const activeUsers = chats
-    .map(c => c.members.find(m => m.id !== 'currentUser' && m.currentGame))
+    .map(c => c.members.find(m => m.id !== authUser?.uid && m.currentGame))
     .filter(Boolean) as UserProfile[];
 
 
@@ -111,10 +114,12 @@ export function MobileDMList({ chats, onSelectChat, onAddUser }: MobileDMListPro
             <h2 className="text-lg font-semibold mb-2">Recent Conversations</h2>
             <div className="space-y-1">
                 {filteredChats.map(chat => {
-                    const otherMember = chat.members.find(m => m.id !== 'currentUser');
+                    const otherMember = chat.members.find(m => m.id !== authUser?.uid);
                     if (!otherMember) return null;
 
                     const status = otherMember.status || 'offline';
+                    
+                    const lastMessagePrefix = chat.lastMessage?.senderId === authUser?.uid ? 'You: ' : '';
 
                     return (
                         <button key={chat.id} onClick={() => onSelectChat(chat)} className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-accent text-left">
@@ -133,7 +138,7 @@ export function MobileDMList({ chats, onSelectChat, onAddUser }: MobileDMListPro
                                     </p>
                                 </div>
                                 <p className="text-sm text-muted-foreground truncate">
-                                    You: This is the last message...
+                                    {lastMessagePrefix}{chat.lastMessage?.text || 'No messages yet.'}
                                 </p>
                             </div>
                         </button>
