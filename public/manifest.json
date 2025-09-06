@@ -1,45 +1,84 @@
-
 {
-    "theme_color": "#2dd4bf",
-    "background_color": "#0a0a0a",
-    "display": "standalone",
-    "scope": "/",
-    "start_url": "/?m=true",
-    "name": "phunt",
-    "short_name": "phunt",
-    "description": "A modern chat application.",
-    "icons": [
-        {
-            "src": "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232dd4bf' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M7.9 20A9 9 0 1 0 4 16.1L2 22Z'%3e%3c/path%3e%3c/svg%3e",
-            "sizes": "any",
-            "type": "image/svg+xml"
-        },
-        {
-            "src": "/icons/icon-192x192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "/icons/icon-512x512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
-    ],
-    "shortcuts": [
-        {
-            "name": "Discover",
-            "short_name": "Discover",
-            "description": "Find new servers and bots",
-            "url": "/discovery?m=true",
-            "icons": [{ "src": "/icons/discover.png", "sizes": "192x192" }]
-        },
-        {
-            "name": "Game Hub",
-            "short_name": "Games",
-            "description": "Play browser games",
-            "url": "/games?m=true",
-            "icons": [{ "src": "/icons/games.png", "sizes": "192x192" }]
-        }
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/?m=true",
+  "name": "phunt",
+  "short_name": "phunt",
+  "description": "Chat with friends and play games.",
+  "id": "/?m=true&id=phunt-pwa-1",
+  "lang": "en-US",
+  "dir": "ltr",
+  "orientation": "portrait-primary",
+  "categories": [
+    "chat",
+    "games",
+    "social"
+  ],
+  "display_override": [
+    "standalone",
+    "fullscreen"
+  ],
+  "launch_handler": {
+    "client_mode": [
+      "focus-existing",
+      "auto"
     ]
+  },
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z'/%3E%3C/svg%3E",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://picsum.photos/seed/pwa-screenshot1/1080/1920",
+      "type": "image/jpeg",
+      "sizes": "1080x1920",
+      "form_factor": "narrow",
+      "label": "App Screenshot 1"
+    },
+    {
+      "src": "https://picsum.photos/seed/pwa-screenshot2/1080/1920",
+      "type": "image/jpeg",
+      "sizes": "1080x1920",
+      "form_factor": "narrow",
+      "label": "App Screenshot 2"
+    },
+     {
+      "src": "https://picsum.photos/seed/pwa-screenshot3/1280/800",
+      "type": "image/jpeg",
+      "sizes": "1280x800",
+      "form_factor": "wide",
+      "label": "App Screenshot 3"
+    }
+  ]
 }
-    
