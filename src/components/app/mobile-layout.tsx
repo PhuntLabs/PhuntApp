@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -7,7 +6,6 @@ import { cn } from '@/lib/utils';
 import type { PopulatedChat, Server, UserProfile, Channel, Game } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { Servers } from './servers';
-import { AnimatePresence, motion } from 'framer-motion';
 import { MobileDMList } from './mobile/mobile-dm-list';
 import { MobileServerView } from './mobile/mobile-server-view';
 import { MobileSettingsPage } from './mobile/mobile-settings-page';
@@ -21,6 +19,7 @@ import { PendingRequests } from './pending-requests';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { useToast } from '@/hooks/use-toast';
 import { ServerSidebar } from './server-sidebar';
+import { UserNav } from './user-nav';
 
 interface MobileLayoutProps {
     user: UserProfile;
