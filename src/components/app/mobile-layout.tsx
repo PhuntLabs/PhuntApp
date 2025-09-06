@@ -15,7 +15,7 @@ import { Chat } from './chat';
 import { ChannelChat } from './channel-chat';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { Button } from '../ui/button';
-import { SidebarTrigger, useSidebar } from '../ui/sidebar';
+import { SidebarTrigger, useSidebar, Sidebar } from '../ui/sidebar';
 import { DirectMessages } from './direct-messages';
 import { PendingRequests } from './pending-requests';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
