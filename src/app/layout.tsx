@@ -34,7 +34,8 @@ export default function RootLayout({
                 let isMobileTestMode = false;
                 
                 try {
-                  isMobileTestMode = localStorage.getItem('mobile-view-enabled') === 'true';
+                  const urlParams = new URLSearchParams(window.location.search);
+                  isMobileTestMode = localStorage.getItem('mobile-view-enabled') === 'true' || urlParams.get('m') === 'true';
                 } catch(e) {}
 
 
@@ -71,6 +72,24 @@ export default function RootLayout({
                   document.documentElement.style.setProperty('--primary', hexToHsl(customColor));
                 }
               })();
+            `,
+          }}
+        />
+         <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined') {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('m') === 'true' && 'serviceWorker' in navigator) {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                      console.log('Service Worker registration successful with scope: ', registration.scope);
+                    }, function(err) {
+                      console.log('Service Worker registration failed: ', err);
+                    });
+                  });
+                }
+              }
             `,
           }}
         />
