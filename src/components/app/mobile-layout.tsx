@@ -1,35 +1,52 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Home, AtSign, User as UserIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DirectMessages } from './direct-messages';
-import type { PopulatedChat, Server, UserProfile } from '@/lib/types';
+import type { PopulatedChat, Server, UserProfile, Channel } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { Servers } from './servers';
 import { ScrollArea } from '../ui/scroll-area';
-import { AddUserDialog } from './add-user-dialog';
-import { Button } from '../ui/button';
-import { PlusCircle } from 'lucide-react';
-import { MentionsDialog } from './mentions-dialog';
+import { ServerSidebar } from './server-sidebar';
 import { SettingsDialog } from './settings-dialog';
-
+import { AccountSettings } from './settings/account-settings';
+import { ProfileSettings } from './settings/profile-settings';
+import { GameActivitySettings } from './settings/game-activity-settings';
+import { SecuritySettings } from './settings/security-settings';
+import { ThemeSettings } from './settings/theme-settings';
+import { DeveloperSettings } from './settings/developer-settings';
+import { BugReportSettings } from './settings/bug-report-settings';
+import { Button } from '../ui/button';
+import { ChevronLeft } from 'lucide-react';
 
 interface MobileLayoutProps {
-  user: UserProfile;
-  servers: Server[];
-  chats: PopulatedChat[];
-  selectedServer: Server | null;
-  selectedChat: PopulatedChat | null;
-  onSelectServer: (server: Server | null) => void;
-  onSelectChat: (chat: PopulatedChat) => void;
-  onCreateServer: (name: string) => Promise<void>;
-  onJumpToMessage: (context: any) => void;
-  mainContent: React.ReactNode;
+    user: UserProfile;
+    servers: Server[];
+    chats: PopulatedChat[];
+    selectedServer: Server | null;
+    selectedChat: PopulatedChat | null;
+    onSelectServer: (server: Server | null) => void;
+    onSelectChat: (chat: PopulatedChat) => void;
+    onCreateServer: (name: string) => Promise<void>;
+    mainContent: React.ReactNode;
+    
+    // Props for sidebar content
+    channels: Channel[];
+    members: Partial<UserProfile>[];
+    selectedChannel: Channel | null;
+    onSelectChannel: (channel: Channel) => void;
+    onCreateChannel: (name: string) => Promise<void>;
+    onUpdateChannel: (channelId: string, data: Partial<Channel>) => Promise<void>;
+    onDeleteChannel: (channelId: string) => Promise<void>;
+    onUpdateServer: (serverId: string, data: Partial<Omit<Server, 'id'>>) => Promise<void>;
+    onDeleteServer: (serverId: string) => Promise<void>;
+    onAddUser: (username: string) => void;
+    onAddBot: () => void;
+    onDeleteChat: (chatId: string) => void;
 }
 
-type ActiveTab = 'home' | 'mentions' | 'you';
+type ActiveView = 'chat' | 'sidebar' | 'settings';
 
 export function MobileLayout({
     user,
@@ -40,17 +57,25 @@ export function MobileLayout({
     onSelectServer,
     onSelectChat,
     onCreateServer,
-    onJumpToMessage,
     mainContent,
+    ...sidebarProps
 }: MobileLayoutProps) {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
+  const [activeView, setActiveView] = useState<ActiveView>('chat');
 
-  const renderContent = () => {
-    switch(activeTab) {
-        case 'home':
+  useEffect(() => {
+    // When the user selects a chat or channel, switch back to the chat view
+    if (selectedChat || sidebarProps.selectedChannel) {
+        setActiveView('chat');
+    }
+  }, [selectedChat, sidebarProps.selectedChannel]);
+
+
+  const renderMainContent = () => {
+     switch(activeView) {
+        case 'sidebar':
             return (
-                <div className="flex h-full">
-                     <Servers 
+                <div className="h-full flex">
+                    <Servers 
                         servers={servers}
                         loading={false} 
                         onCreateServer={onCreateServer} 
@@ -58,34 +83,46 @@ export function MobileLayout({
                         onSelectServer={onSelectServer}
                         onSelectChat={onSelectChat}
                     />
-                    <div className="flex-1">
-                        {mainContent}
-                    </div>
+                     <div className="flex-1 overflow-y-auto bg-secondary/30">
+                        {selectedServer ? (
+                             <ServerSidebar 
+                                server={selectedServer}
+                                channels={sidebarProps.channels}
+                                members={sidebarProps.members}
+                                selectedChannel={sidebarProps.selectedChannel}
+                                onSelectChannel={sidebarProps.onSelectChannel}
+                                onCreateChannel={sidebarProps.onCreateChannel}
+                                onUpdateChannel={sidebarProps.onUpdateChannel}
+                                onDeleteChannel={sidebarProps.onDeleteChannel}
+                                onUpdateServer={sidebarProps.onUpdateServer}
+                                onDeleteServer={sidebarProps.onDeleteServer}
+                            />
+                        ) : (
+                             <div className="p-2">
+                                <DirectMessages
+                                    directMessages={chats}
+                                    selectedChat={selectedChat}
+                                    onSelectChat={onSelectChat}
+                                    onAddUser={sidebarProps.onAddUser}
+                                    onAddBot={sidebarProps.onAddBot}
+                                    onDeleteChat={sidebarProps.onDeleteChat}
+                                    loading={false}
+                                />
+                             </div>
+                        )}
+                     </div>
                 </div>
             );
-        case 'mentions':
+        case 'settings':
             return (
-                 <div className="h-full bg-background p-4">
-                    <h1 className="text-2xl font-bold mb-4">Mentions</h1>
-                    <MentionsDialog onJumpToMessage={onJumpToMessage}>
-                        <div className="h-full">
-                            {/* This is a simplified view. The MentionsDialog hook handles fetching */}
-                           <p className="text-muted-foreground">Your recent mentions will appear here.</p>
-                        </div>
-                    </MentionsDialog>
+                 <div className="h-full bg-background p-4 overflow-y-auto">
+                    <Button variant="ghost" className="mb-4" onClick={() => setActiveView('chat')}>
+                        <ChevronLeft /> Back to Chat
+                    </Button>
+                    <AccountSettings />
                  </div>
             )
-        case 'you':
-            return (
-                 <div className="h-full bg-background p-4">
-                     <SettingsDialog defaultSection="account">
-                        <div className="h-full">
-                           <h1 className="text-2xl font-bold mb-4">Settings</h1>
-                           <p className="text-muted-foreground">Manage your account, profile, and app settings.</p>
-                        </div>
-                    </SettingsDialog>
-                 </div>
-            )
+        case 'chat':
         default:
             return mainContent;
     }
@@ -94,32 +131,32 @@ export function MobileLayout({
   return (
     <div className="flex flex-col h-screen bg-background">
       <main className="flex-1 overflow-hidden">
-        {renderContent()}
+        {renderMainContent()}
       </main>
       
       <footer className="flex items-center justify-around border-t bg-secondary/50 p-2">
         <button 
-          onClick={() => setActiveTab('home')}
-          className={cn("flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground", activeTab === 'home' && "text-primary")}
+          onClick={() => setActiveView('sidebar')}
+          className={cn("flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground", activeView === 'sidebar' && "text-primary")}
         >
           <Home className="size-6" />
           <span className="text-xs">Home</span>
         </button>
         <button 
-          onClick={() => setActiveTab('mentions')}
-          className={cn("flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground", activeTab === 'mentions' && "text-primary")}
+            disabled 
+            className="flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground/50"
         >
           <AtSign className="size-6" />
           <span className="text-xs">Mentions</span>
         </button>
-        <SettingsDialog defaultSection="account">
-             <button className={cn("flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground")}>
-                <UserIcon className="size-6" />
-                <span className="text-xs">You</span>
-            </button>
-        </SettingsDialog>
+        <button 
+             onClick={() => setActiveView('settings')}
+             className={cn("flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground", activeView === 'settings' && "text-primary")}
+        >
+            <UserIcon className="size-6" />
+            <span className="text-xs">You</span>
+        </button>
       </footer>
     </div>
   );
 }
-

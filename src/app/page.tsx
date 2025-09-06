@@ -334,9 +334,17 @@ export default function Home() {
             onSelectServer={handleSelectServer}
             onSelectChat={handleSelectChat}
             onCreateServer={handleCreateServer}
-            onJumpToMessage={handleJumpToMessage}
             mainContent={
-              server && selectedChannel && authUser ? (
+              selectedChat && user ? (
+                <Chat
+                    chat={selectedChat}
+                    messages={messages}
+                    onSendMessage={handleSendMessage}
+                    onEditMessage={editMessage}
+                    onDeleteMessage={deleteMessage}
+                    currentUser={authUser}
+                />
+              ) : server && selectedChannel && authUser ? (
                 <ChannelChat 
                   channel={selectedChannel} 
                   server={server} 
@@ -347,17 +355,21 @@ export default function Home() {
                   onEditMessage={editChannelMessage}
                   onDeleteMessage={deleteChannelMessage}
                 />
-              ) : selectedChat && user ? (
-                <Chat
-                    chat={selectedChat}
-                    messages={messages}
-                    onSendMessage={handleSendMessage}
-                    onEditMessage={editMessage}
-                    onDeleteMessage={deleteMessage}
-                    currentUser={authUser}
-                />
               ) : null
             }
+            // Sidebar props
+            channels={channels}
+            members={members}
+            selectedChannel={selectedChannel}
+            onSelectChannel={handleSelectChannel}
+            onCreateChannel={handleCreateChannel}
+            onUpdateChannel={handleUpdateChannel}
+            onDeleteChannel={handleDeleteChannel}
+            onUpdateServer={handleUpdateServer}
+            onDeleteServer={handleDeleteServer}
+            onAddUser={handleSendFriendRequest}
+            onAddBot={handleCreateChatWithBot}
+            onDeleteChat={handleDeleteChat}
         />
     )
   }
