@@ -17,7 +17,7 @@ import {
   X,
   Sparkles,
   Gamepad,
-  Link,
+  Code,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountSettings } from './settings/account-settings';
@@ -26,18 +26,17 @@ import { ThemeSettings } from './settings/theme-settings';
 import { BugReportSettings } from './settings/bug-report-settings';
 import { ProfileSettings } from './settings/profile-settings';
 import { GameActivitySettings } from './settings/game-activity-settings';
-import { ConnectionsSettings } from './settings/connections-settings';
-import { Separator } from '../ui/separator';
+import { DeveloperSettings } from './settings/developer-settings';
 
-type Section = 'account' | 'profiles' | 'security' | 'theme' | 'bugs' | 'game-activity';
+type Section = 'account' | 'profiles' | 'security' | 'theme' | 'bugs' | 'game-activity' | 'developer';
 
 const sections = [
   { id: 'account', label: 'My Account', icon: User },
   { id: 'profiles', label: 'Profiles', icon: Sparkles },
-  // { id: 'connections', label: 'Connections', icon: Link }, // Temporarily disabled
   { id: 'game-activity', label: 'Game Activity', icon: Gamepad },
   { id: 'security', label: 'Security', icon: Shield },
   { id: 'theme', label: 'Theme', icon: Paintbrush },
+  { id: 'developer', label: 'Developer', icon: Code },
   { id: 'bugs', label: 'Bugs & Feedback', icon: Bug },
 ] as const;
 
@@ -57,14 +56,14 @@ export function SettingsDialog({ children, defaultSection = 'account', onOpenCha
         return <AccountSettings />;
       case 'profiles':
         return <ProfileSettings />;
-      // case 'connections':
-      //   return <ConnectionsSettings />;
       case 'game-activity':
         return <GameActivitySettings />;
       case 'security':
         return <SecuritySettings />;
       case 'theme':
         return <ThemeSettings />;
+      case 'developer':
+        return <DeveloperSettings />;
       case 'bugs':
         return <BugReportSettings />;
       default:

@@ -31,11 +31,14 @@ import { MemberList } from '@/components/app/member-list';
 import { SettingsDialog } from '@/components/app/settings-dialog';
 import { UpdateLog } from '@/components/app/update-log';
 import { MentionsDialog } from '@/components/app/mentions-dialog';
+import { useMobileView } from '@/hooks/use-mobile-view';
+import { MobileLayout } from '@/components/app/mobile-layout';
 
 
 export default function Home() {
   const { user, authUser, loading, logout } = useAuth();
   const router = useRouter();
+  const { isMobileView } = useMobileView();
   
   // Only initialize hooks if auth has loaded and user exists
   const authReady = !loading && !!authUser;
@@ -318,6 +321,45 @@ export default function Home() {
         <p>Loading...</p>
       </div>
     );
+  }
+  
+  if (isMobileView) {
+    return (
+        <MobileLayout 
+            user={user}
+            servers={servers}
+            chats={chats}
+            selectedServer={selectedServer}
+            selectedChat={selectedChat}
+            onSelectServer={handleSelectServer}
+            onSelectChat={handleSelectChat}
+            onCreateServer={handleCreateServer}
+            onJumpToMessage={handleJumpToMessage}
+            mainContent={
+              server && selectedChannel && authUser ? (
+                <ChannelChat 
+                  channel={selectedChannel} 
+                  server={server} 
+                  currentUser={authUser}
+                  members={members}
+                  messages={channelMessages}
+                  onSendMessage={sendChannelMessage}
+                  onEditMessage={editChannelMessage}
+                  onDeleteMessage={deleteChannelMessage}
+                />
+              ) : selectedChat && user ? (
+                <Chat
+                    chat={selectedChat}
+                    messages={messages}
+                    onSendMessage={handleSendMessage}
+                    onEditMessage={editMessage}
+                    onDeleteMessage={deleteMessage}
+                    currentUser={authUser}
+                />
+              ) : null
+            }
+        />
+    )
   }
 
   return (
