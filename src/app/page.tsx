@@ -327,39 +327,40 @@ export default function Home() {
   
   if (isMobileView) {
     return (
-        <MobileLayout 
-            user={user}
-            servers={servers}
-            chats={chats}
-            selectedServer={selectedServer}
-            selectedChat={selectedChat}
-            onSelectServer={handleSelectServer}
-            onSelectChat={handleSelectChat}
-            onCreateServer={handleCreateServer}
-            // Pass down all props needed by sub-components
-            channels={channels}
-            members={members}
-            selectedChannel={selectedChannel}
-            onSelectChannel={handleSelectChannel}
-            onCreateChannel={handleCreateChannel}
-            onUpdateChannel={handleUpdateChannel}
-            onDeleteChannel={handleDeleteChannel}
-            onUpdateServer={handleUpdateServer}
-            onDeleteServer={handleDeleteServer}
-            onAddUser={handleSendFriendRequest}
-            onAddBot={handleCreateChatWithBot}
-            onDeleteChat={handleDeleteChat}
-            // Message props
-            dmMessages={messages}
-            onSendDM={handleSendMessage}
-            onEditDM={editMessage}
-            onDeleteDM={deleteMessage}
-            channelMessages={channelMessages}
-            onSendChannelMessage={sendChannelMessage}
-            onEditChannelMessage={editChannelMessage}
-            onDeleteChannelMessage={deleteChannelMessage}
-            mainContent={<></>} // mainContent is now handled inside MobileLayout
-        />
+        <SidebarProvider>
+            <MobileLayout 
+                user={user}
+                servers={servers}
+                chats={chats}
+                selectedServer={selectedServer}
+                selectedChat={selectedChat}
+                onSelectServer={handleSelectServer}
+                onSelectChat={handleSelectChat}
+                onCreateServer={handleCreateServer}
+                // Pass down all props needed by sub-components
+                channels={channels}
+                members={members}
+                selectedChannel={selectedChannel}
+                onSelectChannel={handleSelectChannel}
+                onCreateChannel={handleCreateChannel}
+                onUpdateChannel={handleUpdateChannel}
+                onDeleteChannel={handleDeleteChannel}
+                onUpdateServer={handleUpdateServer}
+                onDeleteServer={handleDeleteServer}
+                onAddUser={handleSendFriendRequest}
+                onAddBot={handleCreateChatWithBot}
+                onDeleteChat={handleDeleteChat}
+                // Message props
+                dmMessages={messages}
+                onSendDM={handleSendMessage}
+                onEditDM={editMessage}
+                onDeleteDM={deleteMessage}
+                channelMessages={channelMessages}
+                onSendChannelMessage={sendChannelMessage}
+                onEditChannelMessage={editChannelMessage}
+                onDeleteChannelMessage={deleteChannelMessage}
+            />
+        </SidebarProvider>
     )
   }
 
