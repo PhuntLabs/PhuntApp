@@ -15,7 +15,6 @@ import { ChannelChat } from './channel-chat';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { MentionsDialog } from './mentions-dialog';
 import { Button } from '../ui/button';
-import { useSidebar } from '../ui/sidebar';
 
 interface MobileLayoutProps {
     user: UserProfile;
@@ -74,8 +73,7 @@ export function MobileLayout({
 }: MobileLayoutProps) {
   const [activeView, setActiveView] = useState<MainView>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { authUser, logout } = useAuth();
-
+  const { authUser } = useAuth();
 
   const handleSelectChat = (chat: PopulatedChat) => {
     onSelectChat(chat);
@@ -90,12 +88,11 @@ export function MobileLayout({
   const handleSelectServer = (server: Server | null) => {
       onSelectServer(server);
       setActiveView('home');
-      // Do not close sidebar here, let the user pick a channel
   }
 
   const handleSelectHome = () => {
+    onSelectServer(null); // Go to DMs when home is clicked
     setActiveView('home');
-    onSelectServer(null);
   };
   
   const onJumpToMessage = () => {} // Placeholder
@@ -128,6 +125,7 @@ export function MobileLayout({
                 selectedChannel={sidebarProps.selectedChannel}
                 members={sidebarProps.members}
                 onSelectChannel={handleSelectChannel}
+                onClose={() => setIsSidebarOpen(false)}
                 {...sidebarProps}
             />
         )
@@ -145,8 +143,20 @@ export function MobileLayout({
       if (activeView === 'home') {
           return (
              <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-                <div className="h-full">
-                    {renderHomeContent()}
+                <div className="flex h-full">
+                    <div className="hidden sm:flex">
+                        <Servers
+                            servers={servers}
+                            loading={false}
+                            onCreateServer={onCreateServer}
+                            selectedServer={selectedServer}
+                            onSelectServer={handleSelectServer}
+                            onSelectChat={handleSelectChat}
+                        />
+                    </div>
+                    <div className="flex-1">
+                        {renderHomeContent()}
+                    </div>
                 </div>
                  <SheetContent side="left" className="p-0 w-[85vw] max-w-sm flex">
                     <Servers

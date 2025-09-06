@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -6,12 +7,9 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChevronDown, Plus, Settings, Trash, UserPlus, Pencil, MoreVertical } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ServerSidebar } from '../server-sidebar';
 import { MobileServerSettings } from './mobile-server-settings';
 import { MobileChannelSettings } from './mobile-channel-settings';
-import { EditServerDialog } from '../edit-server-dialog';
 import { AddChannelDialog } from '../add-channel-dialog';
-import { EditChannelDialog } from '../edit-channel-dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +33,7 @@ interface MobileServerViewProps {
   onCreateChannel: (name: string) => Promise<void>;
   onUpdateChannel: (channelId: string, data: Partial<Channel>) => Promise<void>;
   onDeleteChannel: (channelId: string) => Promise<void>;
+  onClose?: () => void;
 }
 
 export function MobileServerView({ 
@@ -47,9 +46,9 @@ export function MobileServerView({
     onDeleteServer,
     onCreateChannel,
     onUpdateChannel,
-    onDeleteChannel
+    onDeleteChannel,
+    onClose
 }: MobileServerViewProps) {
-  const [sheetOpen, setSheetOpen] = useState<'server' | 'channel' | null>(null);
 
   return (
     <div className="flex flex-col h-full">
@@ -62,9 +61,7 @@ export function MobileServerView({
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end">
           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-              <EditServerDialog server={server} members={members} onUpdateServer={onUpdateServer} onDeleteServer={onDeleteServer}>
-                <div className="w-full flex items-center"><Settings className="mr-2 h-4 w-4" />Server Settings</div>
-              </EditServerDialog>
+              <MobileServerSettings server={server} members={members} onUpdateServer={onUpdateServer} onDeleteServer={onDeleteServer} trigger={<div className="w-full flex items-center"><Settings className="mr-2 h-4 w-4" />Server Settings</div>} onClose={onClose}/>
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
             <AddChannelDialog onCreateChannel={onCreateChannel}>
@@ -98,9 +95,7 @@ export function MobileServerView({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                      <EditChannelDialog channel={channel} server={server} onUpdateChannel={onUpdateChannel}>
-                        <div className="w-full flex items-center"><Pencil className="mr-2 size-4" />Edit Channel</div>
-                      </EditChannelDialog>
+                     <MobileChannelSettings channel={channel} server={server} onUpdateChannel={onUpdateChannel} trigger={<div className="w-full flex items-center"><Pencil className="mr-2 size-4" />Edit Channel</div>} onClose={onClose}/>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator/>
                     <AlertDialog>

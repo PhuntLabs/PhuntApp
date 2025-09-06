@@ -122,7 +122,7 @@ export default function Home() {
     // This effect handles the very first load of the app
     if (serversLoading || !authReady || !initialLoad) return;
     
-    if (servers.length > 0 && !selectedServer && chats.length === 0) {
+    if (servers.length > 0 && !selectedServer && chats.length === 0 && !isMobileView) {
       handleSelectServer(servers[0]);
     }
     setInitialLoad(false);
@@ -330,7 +330,6 @@ export default function Home() {
   
   if (isMobileView) {
     return (
-      <SidebarProvider>
         <MobileLayout 
             user={user}
             servers={servers}
@@ -363,7 +362,6 @@ export default function Home() {
             onEditChannelMessage={editChannelMessage}
             onDeleteChannelMessage={deleteChannelMessage}
         />
-    </SidebarProvider>
     )
   }
 
