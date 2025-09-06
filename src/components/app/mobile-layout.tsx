@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { MentionsDialog } from './mentions-dialog';
 import { UserNav } from './user-nav';
 import { Button } from '../ui/button';
+import { useSidebar } from '../ui/sidebar';
 
 interface MobileLayoutProps {
     user: UserProfile;
@@ -48,7 +49,7 @@ interface MobileLayoutProps {
     channelMessages: any[];
     onSendChannelMessage: any;
     onEditChannelMessage: any;
-    onDeleteChannelMessage: any;
+ onDeleteChannelMessage: any;
     
 }
 
@@ -94,57 +95,29 @@ export function MobileLayout({
 
   const handleSelectHome = () => {
     setActiveView('home');
-    onSelectServer(null); // Go to DMs when home is clicked from another tab
+    onSelectServer(null);
   };
   
   const onJumpToMessage = () => {} // Placeholder
 
   const renderHomeContent = () => {
-    const sidebarTrigger = (
-       <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden mr-2">
-              <Menu />
-          </Button>
-      </SheetTrigger>
+      const sidebarTrigger = (
+        <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="md:hidden mr-2">
+                <Menu />
+            </Button>
+        </SheetTrigger>
     );
-    
+
     if (selectedChat && authUser) {
-      return (
-        <Chat
-          chat={selectedChat}
-          messages={dmMessages}
-          onSendMessage={onSendDM}
-          onEditMessage={onEditDM}
-          onDeleteMessage={onDeleteDM}
-          currentUser={authUser}
-          sidebarTrigger={sidebarTrigger}
-        />
-      );
+        return <Chat chat={selectedChat} messages={dmMessages} onSendMessage={onSendDM} onEditMessage={onEditDM} onDeleteMessage={onDeleteDM} currentUser={authUser} sidebarTrigger={sidebarTrigger} />;
     }
     if (selectedServer && sidebarProps.selectedChannel && authUser) {
-      return (
-        <ChannelChat
-          channel={sidebarProps.selectedChannel}
-          server={selectedServer}
-          currentUser={authUser}
-          members={sidebarProps.members}
-          messages={channelMessages}
-          onSendMessage={onSendChannelMessage}
-          onEditMessage={onEditChannelMessage}
-          onDeleteMessage={onDeleteChannelMessage}
-          sidebarTrigger={sidebarTrigger}
-        />
-      );
+        return <ChannelChat channel={sidebarProps.selectedChannel} server={selectedServer} currentUser={authUser} members={sidebarProps.members} messages={channelMessages} onSendMessage={onSendChannelMessage} onEditMessage={onEditChannelMessage} onDeleteMessage={onDeleteChannelMessage} sidebarTrigger={sidebarTrigger} />;
     }
-    
-    return (
-       <div className="flex flex-col h-full">
-         <div className="p-4 border-b">
-            <h1 className="text-2xl font-bold">Select a Conversation</h1>
-             <p className="text-muted-foreground text-sm">You shouldn't be seeing this. It's a bug!</p>
-        </div>
-      </div>
-    );
+
+    // Default to DM list if no chat/channel is selected
+    return <MobileDMList chats={chats} onSelectChat={handleSelectChat} onAddUser={sidebarProps.onAddUser} />;
   };
   
   const renderSidebarContent = () => {
@@ -177,6 +150,14 @@ export function MobileLayout({
           return (
              <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                 <div className="flex h-full">
+                     <Servers
+                        servers={servers}
+                        loading={false}
+                        onCreateServer={onCreateServer}
+                        selectedServer={selectedServer}
+                        onSelectServer={handleSelectServer}
+                        onSelectChat={handleSelectChat}
+                    />
                     <div className="flex-1 min-w-0">
                         {renderHomeContent()}
                     </div>
@@ -187,8 +168,14 @@ export function MobileLayout({
                         loading={false}
                         onCreateServer={onCreateServer}
                         selectedServer={selectedServer}
-                        onSelectServer={handleSelectServer}
-                        onSelectChat={handleSelectChat}
+                        onSelectServer={(server) => {
+                            handleSelectServer(server);
+                            setIsSidebarOpen(false);
+                        }}
+                        onSelectChat={(chat) => {
+                            handleSelectChat(chat);
+                            setIsSidebarOpen(false);
+                        }}
                     />
                     <div className="flex-1">
                         {renderSidebarContent()}

@@ -104,8 +104,6 @@ export default function Home() {
     }
     
     if (initialLoad && (!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0 && !selectedServer) {
-        // On mobile, we don't auto-select a chat to show the DM list first.
-        // On desktop, we do.
         if (!isMobileView) {
             const mostRecentChat = chats.reduce((prev, current) => {
                 const prevTime = (prev.lastMessageTimestamp as any)?.toMillis() || (prev.createdAt as any)?.toMillis() || 0;
@@ -332,6 +330,7 @@ export default function Home() {
   
   if (isMobileView) {
     return (
+      <SidebarProvider>
         <MobileLayout 
             user={user}
             servers={servers}
@@ -364,6 +363,7 @@ export default function Home() {
             onEditChannelMessage={editChannelMessage}
             onDeleteChannelMessage={deleteChannelMessage}
         />
+    </SidebarProvider>
     )
   }
 
