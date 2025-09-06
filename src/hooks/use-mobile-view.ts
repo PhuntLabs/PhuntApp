@@ -16,34 +16,21 @@ const getInitialTestMode = (): boolean => {
 
 export function useMobileView() {
   const isSystemMobile = useIsMobile();
-  // Initialize state directly from localStorage.
   const [isTestMode, setIsTestMode] = useState(getInitialTestMode);
-  const [hasMounted, setHasMounted] = useState(false);
 
+  // When the component mounts on the client, sync state from localStorage
   useEffect(() => {
-    setHasMounted(true);
-    // Sync state if localStorage was changed in another tab.
-    const handleStorageChange = () => {
-      setIsTestMode(getInitialTestMode());
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    setIsTestMode(getInitialTestMode());
   }, []);
 
   const handleSetIsMobileView = useCallback((enabled: boolean) => {
+    // 1. Update the state
+    setIsTestMode(enabled);
+    // 2. Persist to localStorage
     localStorage.setItem(LOCAL_STORAGE_KEY, String(enabled));
-    // The reload is necessary to re-evaluate the entire component tree
-    // with the new mobile/desktop view setting.
+    // 3. Reload to apply layout changes across the app
     window.location.reload();
   }, []);
-
-  // On the server or before the client has mounted, default to system's value to avoid hydration mismatches.
-  if (!hasMounted) {
-    return {
-      isMobileView: isSystemMobile,
-      setIsMobileView: () => {},
-    };
-  }
 
   return {
     isMobileView: isSystemMobile || isTestMode,
