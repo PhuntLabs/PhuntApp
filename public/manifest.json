@@ -1,75 +1,22 @@
 {
-  "name": "phunt",
-  "short_name": "phunt",
-  "description": "A new way to chat and hang out with communities and friends.",
-  "start_url": "/",
-  "display": "standalone",
-  "display_override": [
-    "standalone",
-    "minimal-ui"
-  ],
-  "background_color": "#1c1c1c",
   "theme_color": "#7c3aed",
-  "orientation": "portrait",
+  "background_color": "#111111",
+  "display": "standalone",
   "scope": "/",
+  "start_url": "/?m=true",
+  "name": "Phunt",
+  "short_name": "Phunt",
+  "description": "A new way to chat and hang out with communities and friends.",
+  "orientation": "portrait",
+  "id": "/?m=true",
   "lang": "en-US",
   "dir": "ltr",
-  "id": "/?m=true",
-  "icons": [
-    {
-      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1tZXNzYWdlLXNxdWFyZSI+PHBhdGggZD0iTTIxIDE1YTIgMiAwIDAgMS0yIDJINGExIDEgMCAwIDEtMS0xVjRBMiAyIDAgMCAxIDQgMmgxMGEyIDIgMCAwIDEgMiAybDQiLz48L3N2Zz4=",
-      "sizes": "any",
-      "type": "image/svg+xml"
-    },
-    {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/screenshot1.png",
-      "type": "image/png",
-      "sizes": "1080x1920",
-      "form_factor": "narrow"
-    },
-    {
-      "src": "/screenshots/screenshot2.png",
-      "type": "image/png",
-      "sizes": "1080x1920",
-      "form_factor": "narrow"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Discover New Servers",
-      "short_name": "Discover",
-      "description": "Find new communities to join.",
-      "url": "/discovery?utm_source=homescreen",
-      "icons": [{ "src": "/icons/shortcut-discover.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Game Hub",
-      "short_name": "Games",
-      "description": "Launch and play browser games.",
-      "url": "/games?utm_source=homescreen",
-      "icons": [{ "src": "/icons/shortcut-games.png", "sizes": "96x96" }]
-    }
-  ],
   "categories": [
     "social",
     "chat",
-    "games"
+    "games",
+    "entertainment"
   ],
-  "launch_handler": {
-    "client_mode": ["focus-existing", "auto"]
-  },
   "related_applications": [
     {
       "platform": "play",
@@ -78,13 +25,103 @@
     },
     {
       "platform": "itunes",
-      "url": "https://itunes.apple.com/app/phunt/id123456789"
-    },
-    {
-      "platform": "webapp",
-      "url": "https://phuntapp.netlify.app/manifest.json"
+      "url": "https://phuntapp.netlify.app"
     }
   ],
-  "prefer_related_applications": false,
-  "iarc_rating_id": "b5ee8c39-4c74-47f5-a138-f8a7a8d5690b"
+  "iarc_rating_id": "13+",
+  "scope_extensions": [
+    { "origin": "*.phuntapp.netlify.app" },
+    { "origin": "*.google.com" },
+    { "origin": "*.firebaseapp.com" }
+  ],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "launch_handler": {
+    "client_mode": ["focus-existing", "auto"]
+  },
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW1lc3NhZ2Utc3F1YXJlIj48cGF0aCBkPSJNMjEgMTUgdi0xMGEyIDIgMCAwIDAtMi0ySDVhMiAyIDAgMCAwLTIgM3YxMGEyIDIgMCAwIDAgMiAybDEuMDIxLS45MjdhMSAxIDAgMCAxIDEuNDI0IDBMOC4yIDIzLjUzYTEgMSAwIDAgMCAxLjYgMGwzLjM1NjYtMy4wNjhBMSAxIDAgMCAxIDE0Ljc4MiAyMGwxLjcwNS0xLjU1YTQgNCAwIDAgMC0uMTctLjQ0OCIvPjwvc3ZnPg==",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Discover Servers",
+      "short_name": "Discover",
+      "description": "Find new communities to join.",
+      "url": "/discovery?m=true",
+      "icons": [{ "src": "/icons/icon-512x512.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Game Hub",
+      "short_name": "Games",
+      "description": "Launch and play games.",
+      "url": "/games?m=true",
+      "icons": [{ "src": "/icons/icon-512x512.png", "sizes": "512x512" }]
+    }
+  ],
+  "share_target": {
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": ["image/*"]
+        }
+      ]
+    }
+  },
+  "file_handlers": [
+    {
+      "action": "/file-handler",
+      "accept": {
+        "image/*": [".png", ".jpg", ".jpeg", ".gif"]
+      },
+      "icons": [{ "src": "/icons/icon-512x512.png", "sizes": "512x512" }]
+    }
+  ],
+  "widgets": [
+    {
+      "name": "Recent Chats",
+      "description": "Quickly access your recent conversations.",
+      "tag": "recent-chats",
+      "template": "chats-template",
+      "ms_ac_template": "chats-template.json",
+      "icons": [{ "src": "/icons/icon-512x512.png", "sizes": "512x512" }]
+    }
+  ]
 }
