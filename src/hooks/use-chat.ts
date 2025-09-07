@@ -81,8 +81,42 @@ export function useChat(chat: PopulatedChat | null) {
   }, [chatId, authUser]);
 
   const sendMessage = useCallback(
-    async (text: string, imageUrl?: string, replyTo?: Message['replyTo']): Promise<Message | null> => {
+    async (text: string, file?: File, replyTo?: Message['replyTo']): Promise<Message | null> => {
       if (!chatId || !authUser || !chat || !user) return null;
+      
+      let imageUrl: string | undefined = undefined;
+      if (file) {
+        const formData = new FormData();
+        formData.append('fileToUpload', file);
+        try {
+          const response = await fetch('https://cdn-phunt.fwh.is/fileupload.php', {
+            method: 'POST',
+            body: formData,
+          });
+          const result = await response.json();
+          if (result.success && result.url) {
+            imageUrl = result.url;
+          } else {
+            throw new Error(result.message || 'File upload failed.');
+          }
+        } catch (error: any) {
+          toast({
+            variant: 'destructive',
+            title: 'Upload Error',
+            description: `Could not upload image: ${error.message}`
+          });
+          return null;
+        }
+      }
+      
+      if (!text && !imageUrl) {
+        toast({
+            variant: 'destructive',
+            title: 'Empty Message',
+            description: 'Cannot send an empty message.'
+        });
+        return null;
+      }
       
       const mentionedUserIds = await getMentionedUserIds(text);
 
@@ -147,7 +181,7 @@ export function useChat(chat: PopulatedChat | null) {
       const messageDoc = await getDoc(messageDocRef);
       return { id: messageDoc.id, ...messageDoc.data() } as Message;
     },
-    [chat, authUser, user]
+    [chat, authUser, user, toast]
   );
   
   const editMessage = useCallback(

@@ -132,26 +132,7 @@ export default function Home() {
 
   const handleSendMessage = async (text: string, file?: File, replyTo?: Message['replyTo']) => {
     if (!authUser || !selectedChat) return;
-
-    // NOTE TO USER: This is where you would add your file upload logic.
-    // For now, we'll just pass an empty URL.
-    let imageUrl: string | undefined = undefined;
-    if (file) {
-        // 1. Upload the file to your PHP server
-        // const formData = new FormData();
-        // formData.append('image', file);
-        // const response = await fetch('https://your-php-server.com/upload.php', { method: 'POST', body: formData });
-        // const result = await response.json();
-        // imageUrl = result.url;
-        toast({
-            title: 'File Upload (Not Implemented)',
-            description: 'This is where the upload to your PHP server would happen.'
-        });
-        // For demonstration, we'll just use a placeholder
-        imageUrl = "https://placehold.co/400x300?text=Uploaded+Image";
-    }
-
-    const sentMessage = await sendMessage(text, imageUrl, replyTo);
+    const sentMessage = await sendMessage(text, file, replyTo);
 
     if (sentMessage && !file) { // Don't echo images for now
         const echoBot = selectedChat.members.find(m => m.id === BOT_ID);
