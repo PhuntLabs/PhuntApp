@@ -9,14 +9,24 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/use-auth";
+import { BadgeManager } from "./badge-manager";
+import { Separator } from "@/components/ui/separator";
 
 export function DeveloperSettings() {
+    const { user } = useAuth();
     const { isMobileView, setIsMobileView, isPwaMode } = useMobileView();
 
-    const handleToggle = () => {
+    const handleToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
         if (isPwaMode) return;
-        setIsMobileView(!isMobileView);
+        
+        // This is a hack to get the underlying Switch's state
+        // because of the way the click event is handled on the label.
+        const currentChecked = (e.currentTarget.previousSibling as HTMLButtonElement)?.dataset?.state === 'checked';
+        setIsMobileView(!currentChecked);
     }
+
+    const isHeina = user?.displayName === 'heina';
 
     return (
         <div className="space-y-6">
@@ -35,16 +45,14 @@ export function DeveloperSettings() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div 
-                        onClick={handleToggle}
-                        className="flex items-center space-x-2"
-                    >
+                    <div className="flex items-center space-x-2">
                         <Switch 
                             id="mobile-view-toggle"
                             checked={isMobileView}
                             disabled={isPwaMode}
+                            onClick={(e) => { e.preventDefault(); handleToggle(e); }}
                         />
-                        <Label htmlFor="mobile-view-toggle">Enable Mobile UI</Label>
+                        <Label htmlFor="mobile-view-toggle" onClick={(e) => e.preventDefault()}>Enable Mobile UI</Label>
                     </div>
                      {isPwaMode && (
                         <Alert className="mt-4">
@@ -65,8 +73,13 @@ export function DeveloperSettings() {
                     )}
                 </CardContent>
             </Card>
+
+            {isHeina && (
+                <>
+                    <Separator />
+                    <BadgeManager />
+                </>
+            )}
         </div>
     );
 }
-
-    

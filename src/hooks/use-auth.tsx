@@ -37,10 +37,12 @@ import {
   getDocs,
   updateDoc,
   onSnapshot,
+  arrayUnion,
 } from 'firebase/firestore';
 import type { UserProfile, BadgeType, ServerProfile } from '@/lib/types';
 import { createWelcomeChat } from '@/ai/flows/welcome-chat-flow';
 import { v4 as uuidv4 } from 'uuid';
+import { findUserByUsername } from '@/lib/firebase-utils';
 
 
 interface AuthContextType {
@@ -58,6 +60,7 @@ interface AuthContextType {
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   updateServerProfile: (serverId: string, profile: ServerProfile) => Promise<void>;
   updateUserRolesInServer: (serverId: string, userId: string, roles: string[]) => Promise<void>;
+  addBadgeToUser: (username: string, badge: BadgeType) => Promise<void>;
   uploadFile: (file: File, path: string) => Promise<string>;
   sendPasswordReset: () => Promise<void>;
 }
@@ -198,6 +201,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const fieldPath = `memberDetails.${userId}.roles`;
       await updateDoc(serverRef, { [fieldPath]: roles });
   }, [authUser]);
+  
+  const addBadgeToUser = useCallback(async (username: string, badge: BadgeType) => {
+    if (user?.displayName !== 'heina') {
+        throw new Error('You are not authorized to perform this action.');
+    }
+    const targetUser = await findUserByUsername(username);
+    if (!targetUser) {
+        throw new Error(`User with username "${username}" not found.`);
+    }
+    const userRef = doc(db, 'users', targetUser.id);
+    await updateDoc(userRef, {
+        badges: arrayUnion(badge)
+    });
+  }, [user]);
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
       if (!authUser) throw new Error('Not authenticated');
@@ -308,6 +325,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateUserProfile,
     updateServerProfile,
     updateUserRolesInServer,
+    addBadgeToUser,
     uploadFile,
     sendPasswordReset,
   };
