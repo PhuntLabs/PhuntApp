@@ -8,11 +8,11 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 
 // Allow the necessary headers.
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 // Handle pre-flight OPTIONS request (sent by browsers to check CORS).
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
+    http_response_code(204); // Use 204 No Content for pre-flight
     exit();
 }
 // --- END: CORS Headers ---
@@ -48,11 +48,13 @@ if (isset($_FILES['fileToUpload']) && $_FILES['fileToUpload']['error'] === UPLOA
     } else {
         // Handle the case where the file could not be moved.
         header('Content-Type: application/json');
+        http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Failed to move the uploaded file.']);
     }
 } else {
     // Handle the case where no file was uploaded or there was an error.
     header('Content-Type: application/json');
+    http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'No file uploaded or an upload error occurred.']);
 }
 
