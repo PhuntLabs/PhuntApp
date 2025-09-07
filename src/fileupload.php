@@ -7,7 +7,7 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 
 // Allow the necessary headers that the browser might send.
-header('Access-control-allow-headers: content-type, authorization, x-requested-with');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 // Handle the browser's pre-flight OPTIONS request.
 // This is crucial. When the browser sees a cross-origin request, it first sends an OPTIONS request to check permissions.
