@@ -80,7 +80,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
   }, [server?.id, channelId]);
 
   const sendMessage = useCallback(
-    async (text: string, imageUrl?: string, embedPayload?: Embed | { embed: Embed, reactions?: string[] }, replyTo?: Message['replyTo']) => {
+    async (text: string, file?: File, embedPayload?: Embed | { embed: Embed, reactions?: string[] }, replyTo?: Message['replyTo']) => {
       if (!authUser || !server?.id || !channelId || !user) return;
 
       if (!hasPermission('sendMessages')) {
@@ -89,6 +89,24 @@ export function useChannelMessages(server: Server | null, channelId: string | un
 
       if (text.includes('@everyone') && !hasPermission('mentionEveryone')) {
         throw new Error("You don't have permission to mention @everyone.");
+      }
+      
+      // NOTE TO USER: This is where you would add your file upload logic.
+      // For now, we'll just pass an empty URL.
+      let imageUrl: string | undefined = undefined;
+      if (file) {
+          // 1. Upload the file to your PHP server
+          // const formData = new FormData();
+          // formData.append('image', file);
+          // const response = await fetch('https://your-php-server.com/upload.php', { method: 'POST', body: formData });
+          // const result = await response.json();
+          // imageUrl = result.url;
+          toast({
+              title: 'File Upload (Not Implemented)',
+              description: 'This is where the upload to your PHP server would happen.'
+          });
+          // For demonstration, we'll just use a placeholder
+          imageUrl = "https://placehold.co/400x300?text=Uploaded+Image";
       }
 
       const mentionedUserIds = await getMentionedUserIds(text, server);
@@ -153,7 +171,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
       }
 
     },
-    [authUser, server, channelId, hasPermission, user]
+    [authUser, server, channelId, hasPermission, user, toast]
   );
   
   const editMessage = useCallback(

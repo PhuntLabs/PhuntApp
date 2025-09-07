@@ -30,7 +30,7 @@ const tagIcons = {
 interface ChatProps {
   chat: PopulatedChat;
   messages: Message[];
-  onSendMessage: (text: string, imageUrl?: string, replyTo?: Message['replyTo']) => void;
+  onSendMessage: (text: string, file?: File, replyTo?: Message['replyTo']) => void;
   onEditMessage: (messageId: string, newText: string) => void;
   onDeleteMessage: (messageId: string) => void;
   currentUser: User;
@@ -80,7 +80,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
     handleCancelEdit();
   };
 
-  const handleSendMessageWrapper = (text: string, imageUrl?: string) => {
+  const handleSendMessageWrapper = (text: string, file?: File) => {
     let replyInfo: Message['replyTo'] | undefined = undefined;
     if (replyingTo) {
       const senderProfile = chat.members.find(m => m.id === replyingTo.sender);
@@ -91,7 +91,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
         text: replyingTo.text,
       };
     }
-    onSendMessage(text, imageUrl, replyInfo);
+    onSendMessage(text, file, replyInfo);
     setReplyingTo(null);
   }
 

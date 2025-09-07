@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -35,6 +34,7 @@ import { UpdateLog } from '@/components/app/update-log';
 import { MentionsDialog } from '@/components/app/mentions-dialog';
 import { useMobileView } from '@/hooks/use-mobile-view';
 import { MobileLayout } from '@/components/app/mobile-layout';
+import { ErrorBoundary } from '@/components/app/error-boundary';
 
 
 export default function Home() {
@@ -130,11 +130,30 @@ export default function Home() {
   }, [servers, serversLoading, authReady, initialLoad, chats]);
 
 
-  const handleSendMessage = async (text: string, imageUrl?: string, replyTo?: Message['replyTo']) => {
+  const handleSendMessage = async (text: string, file?: File, replyTo?: Message['replyTo']) => {
     if (!authUser || !selectedChat) return;
+
+    // NOTE TO USER: This is where you would add your file upload logic.
+    // For now, we'll just pass an empty URL.
+    let imageUrl: string | undefined = undefined;
+    if (file) {
+        // 1. Upload the file to your PHP server
+        // const formData = new FormData();
+        // formData.append('image', file);
+        // const response = await fetch('https://your-php-server.com/upload.php', { method: 'POST', body: formData });
+        // const result = await response.json();
+        // imageUrl = result.url;
+        toast({
+            title: 'File Upload (Not Implemented)',
+            description: 'This is where the upload to your PHP server would happen.'
+        });
+        // For demonstration, we'll just use a placeholder
+        imageUrl = "https://placehold.co/400x300?text=Uploaded+Image";
+    }
+
     const sentMessage = await sendMessage(text, imageUrl, replyTo);
 
-    if (sentMessage && !imageUrl) { // Don't echo images for now
+    if (sentMessage && !file) { // Don't echo images for now
         const echoBot = selectedChat.members.find(m => m.id === BOT_ID);
         if (echoBot) {
             processEcho({ chatId: selectedChat.id, message: { id: sentMessage.id, text, sender: authUser.uid }});
@@ -328,161 +347,161 @@ export default function Home() {
     );
   }
   
-  if (isMobileView) {
-    return (
-        <MobileLayout 
-            user={user}
-            servers={servers}
-            chats={chats}
-            selectedServer={selectedServer}
-            selectedChat={selectedChat}
-            onSelectServer={handleSelectServer}
-            onSelectChat={handleSelectChat}
-            onCreateServer={handleCreateServer}
-            // Pass down all props needed by sub-components
-            channels={channels}
-            members={members}
-            selectedChannel={selectedChannel}
-            onSelectChannel={handleSelectChannel}
-            onCreateChannel={handleCreateChannel}
-            onUpdateChannel={handleUpdateChannel}
-            onDeleteChannel={handleDeleteChannel}
-            onUpdateServer={handleUpdateServer}
-            onDeleteServer={handleDeleteServer}
-            onAddUser={handleSendFriendRequest}
-            onAddBot={handleCreateChatWithBot}
-            onDeleteChat={handleDeleteChat}
-            // Message props
-            dmMessages={messages}
-            onSendDM={handleSendMessage}
-            onEditDM={editMessage}
-            onDeleteDM={deleteMessage}
-            channelMessages={channelMessages}
-            onSendChannelMessage={sendChannelMessage}
-            onEditChannelMessage={editChannelMessage}
-            onDeleteChannelMessage={deleteChannelMessage}
-        />
-    )
-  }
-
   return (
-    <SidebarProvider>
-      <UpdateLog />
-      <div className="flex h-screen bg-background/70">
-        <Servers 
-          servers={servers}
-          loading={serversLoading} 
-          onCreateServer={handleCreateServer} 
-          selectedServer={selectedServer}
-          onSelectServer={handleSelectServer}
-          onSelectChat={handleSelectChat}
-        />
-        
-        <div className="flex flex-1 min-w-0">
-          <div className="w-64 flex-shrink-0 bg-secondary/30 flex flex-col hidden md:flex">
-              <div className="flex-1 overflow-y-auto">
-                  {server ? (
-                  <ServerSidebar 
-                      server={server}
-                      channels={channels}
-                      members={members as UserProfile[]}
-                      selectedChannel={selectedChannel}
-                      onSelectChannel={handleSelectChannel}
-                      onCreateChannel={handleCreateChannel}
-                      onUpdateChannel={handleUpdateChannel}
-                      onDeleteChannel={handleDeleteChannel}
-                      onUpdateServer={handleUpdateServer}
-                      onDeleteServer={handleDeleteServer}
-                  />
-                  ) : (
-                  <>
-                      <div className="p-4 border-b flex items-center justify-between">
-                          <h2 className="font-semibold text-lg truncate">Direct Messages</h2>
-                           <div className="flex items-center">
-                                <MentionsDialog onJumpToMessage={handleJumpToMessage}>
-                                    <Button variant="ghost" size="icon" className="size-7 text-muted-foreground"><AtSign className="size-4"/></Button>
-                                </MentionsDialog>
-                                <SidebarTrigger />
-                            </div>
-                      </div>
-                      <div className="py-2">
-                      {incomingRequests.length > 0 && (
-                          <PendingRequests
-                          requests={incomingRequests}
-                          onAccept={handleAcceptFriendRequest}
-                          onDecline={handleDeclineFriendRequest}
-                          />
-                      )}
-                      <DirectMessages
-                          directMessages={chats}
-                          selectedChat={selectedChat}
-                          onSelectChat={handleSelectChat}
-                          onAddUser={handleSendFriendRequest}
-                          onAddBot={handleCreateChatWithBot}
-                          onDeleteChat={handleDeleteChat}
-                          loading={chatsLoading}
-                      />
-                      </div>
-                  </>
-                  )}
-              </div>
-              <div className="bg-background/50 p-2 border-t border-border">
-                  <div className="flex items-center justify-between">
-                  <UserNav user={user} logout={logout}/>
-                  <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
-                      <SettingsDialog>
-                        <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
-                      </SettingsDialog>
-                  </div>
-                  </div>
-              </div>
-          </div>
-          
-          <main className="flex-1 flex flex-col bg-background/50 min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
-              {server && selectedChannel && authUser ? (
-              <ChannelChat 
-                channel={selectedChannel} 
-                server={server} 
-                currentUser={authUser}
+    <ErrorBoundary>
+        {isMobileView ? (
+            <MobileLayout 
+                user={user}
+                servers={servers}
+                chats={chats}
+                selectedServer={selectedServer}
+                selectedChat={selectedChat}
+                onSelectServer={handleSelectServer}
+                onSelectChat={handleSelectChat}
+                onCreateServer={handleCreateServer}
+                // Pass down all props needed by sub-components
+                channels={channels}
                 members={members}
-                messages={channelMessages}
-                onSendMessage={sendChannelMessage}
-                onEditMessage={editChannelMessage}
-                onDeleteMessage={deleteChannelMessage}
-              />
-              ) : server ? (
-              <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
-                  <div className="text-center">
-                  <h2 className="text-xl font-medium text-foreground">{`Welcome to ${server.name}`}</h2>
-                  <p className="text-muted-foreground">Select a channel to start talking.</p>
+                selectedChannel={selectedChannel}
+                onSelectChannel={handleSelectChannel}
+                onCreateChannel={handleCreateChannel}
+                onUpdateChannel={handleUpdateChannel}
+                onDeleteChannel={handleDeleteChannel}
+                onUpdateServer={handleUpdateServer}
+                onDeleteServer={handleDeleteServer}
+                onAddUser={handleSendFriendRequest}
+                onAddBot={handleCreateChatWithBot}
+                onDeleteChat={handleDeleteChat}
+                // Message props
+                dmMessages={messages}
+                onSendDM={handleSendMessage}
+                onEditDM={editMessage}
+                onDeleteDM={deleteMessage}
+                channelMessages={channelMessages}
+                onSendChannelMessage={sendChannelMessage}
+                onEditChannelMessage={editChannelMessage}
+                onDeleteChannelMessage={deleteChannelMessage}
+            />
+        ) : (
+            <SidebarProvider>
+            <UpdateLog />
+            <div className="flex h-screen bg-background/70">
+                <Servers 
+                servers={servers}
+                loading={serversLoading} 
+                onCreateServer={handleCreateServer} 
+                selectedServer={selectedServer}
+                onSelectServer={handleSelectServer}
+                onSelectChat={handleSelectChat}
+                />
+                
+                <div className="flex flex-1 min-w-0">
+                <div className="w-64 flex-shrink-0 bg-secondary/30 flex flex-col hidden md:flex">
+                    <div className="flex-1 overflow-y-auto">
+                        {server ? (
+                        <ServerSidebar 
+                            server={server}
+                            channels={channels}
+                            members={members as UserProfile[]}
+                            selectedChannel={selectedChannel}
+                            onSelectChannel={handleSelectChannel}
+                            onCreateChannel={handleCreateChannel}
+                            onUpdateChannel={handleUpdateChannel}
+                            onDeleteChannel={handleDeleteChannel}
+                            onUpdateServer={handleUpdateServer}
+                            onDeleteServer={handleDeleteServer}
+                        />
+                        ) : (
+                        <>
+                            <div className="p-4 border-b flex items-center justify-between">
+                                <h2 className="font-semibold text-lg truncate">Direct Messages</h2>
+                                <div className="flex items-center">
+                                    <MentionsDialog onJumpToMessage={handleJumpToMessage}>
+                                        <Button variant="ghost" size="icon" className="size-7 text-muted-foreground"><AtSign className="size-4"/></Button>
+                                    </MentionsDialog>
+                                    <SidebarTrigger />
+                                </div>
+                            </div>
+                            <div className="py-2">
+                            {incomingRequests.length > 0 && (
+                                <PendingRequests
+                                requests={incomingRequests}
+                                onAccept={handleAcceptFriendRequest}
+                                onDecline={handleDeclineFriendRequest}
+                                />
+                            )}
+                            <DirectMessages
+                                directMessages={chats}
+                                selectedChat={selectedChat}
+                                onSelectChat={handleSelectChat}
+                                onAddUser={handleSendFriendRequest}
+                                onAddBot={handleCreateChatWithBot}
+                                onDeleteChat={handleDeleteChat}
+                                loading={chatsLoading}
+                            />
+                            </div>
+                        </>
+                        )}
+                    </div>
+                    <div className="bg-background/50 p-2 border-t border-border">
+                        <div className="flex items-center justify-between">
+                        <UserNav user={user} logout={logout}/>
+                        <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
+                            <SettingsDialog>
+                                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
+                            </SettingsDialog>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <main className="flex-1 flex flex-col bg-background/50 min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
+                    {server && selectedChannel && authUser ? (
+                    <ChannelChat 
+                        channel={selectedChannel} 
+                        server={server} 
+                        currentUser={authUser}
+                        members={members}
+                        messages={channelMessages}
+                        onSendMessage={sendChannelMessage}
+                        onEditMessage={editChannelMessage}
+                        onDeleteMessage={deleteChannelMessage}
+                    />
+                    ) : server ? (
+                    <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
+                        <div className="text-center">
+                        <h2 className="text-xl font-medium text-foreground">{`Welcome to ${server.name}`}</h2>
+                        <p className="text-muted-foreground">Select a channel to start talking.</p>
 
-                  </div>
-              </div>
-              ) : selectedChat && user ? (
-              <Chat
-                  chat={selectedChat}
-                  messages={messages}
-                  onSendMessage={handleSendMessage}
-                  onEditMessage={editMessage}
-                  onDeleteMessage={deleteMessage}
-                  currentUser={authUser}
-              />
-              ) : (
-              <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
-                  <div className="text-center">
-                  <h2 className="text-xl font-medium text-foreground">No Chat Selected</h2>
-                  <p className="text-muted-foreground">Select a conversation from the sidebar or add a friend to start chatting.</p>
-                  </div>
-              </div>
-              )}
-          </main>
+                        </div>
+                    </div>
+                    ) : selectedChat && user ? (
+                    <Chat
+                        chat={selectedChat}
+                        messages={messages}
+                        onSendMessage={handleSendMessage}
+                        onEditMessage={editMessage}
+                        onDeleteMessage={deleteMessage}
+                        currentUser={authUser}
+                    />
+                    ) : (
+                    <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
+                        <div className="text-center">
+                        <h2 className="text-xl font-medium text-foreground">No Chat Selected</h2>
+                        <p className="text-muted-foreground">Select a conversation from the sidebar or add a friend to start chatting.</p>
+                        </div>
+                    </div>
+                    )}
+                </main>
 
-          {server && members.length > 0 && (
-              <MemberList server={server} members={members} loading={serverDetailsLoading} />
-          )}
-        </div>
-      </div>
-    </SidebarProvider>
+                {server && members.length > 0 && (
+                    <MemberList server={server} members={members} loading={serverDetailsLoading} />
+                )}
+                </div>
+            </div>
+            </SidebarProvider>
+        )}
+    </ErrorBoundary>
   );
 }

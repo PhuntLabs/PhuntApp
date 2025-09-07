@@ -21,12 +21,7 @@ import {
   User,
   UserCredential,
 } from 'firebase/auth';
-import { auth, db, storage } from '@/lib/firebase';
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-} from 'firebase/storage';
+import { auth, db } from '@/lib/firebase';
 import {
   doc,
   setDoc,
@@ -44,7 +39,6 @@ import {
 } from 'firebase/firestore';
 import type { UserProfile, Badge, ServerProfile, Server } from '@/lib/types';
 import { createWelcomeChat } from '@/ai/flows/welcome-chat-flow';
-import { v4 as uuidv4 } from 'uuid';
 import { findUserByUsername } from '@/lib/firebase-utils';
 
 
@@ -65,7 +59,6 @@ interface AuthContextType {
   updateUserRolesInServer: (serverId: string, userId: string, roles: string[]) => Promise<void>;
   addBadgeToUser: (username: string, badgeId: string) => Promise<void>;
   createBadge: (badgeData: Omit<Badge, 'id'>) => Promise<void>;
-  uploadFile: (file: File, path: string) => Promise<string>;
   sendPasswordReset: () => Promise<void>;
 }
 
@@ -210,21 +203,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await setDoc(badgeRef, badgeData);
   }, [user]);
 
-  const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
-      if (!authUser) throw new Error('Not authenticated');
-      
-      const fileId = uuidv4();
-      const fileExtension = file.name.split('.').pop();
-      const storagePath = `${path}/${fileId}.${fileExtension}`;
-      
-      const storageRef = ref(storage, storagePath);
-      
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      
-      return downloadURL;
-  }, [authUser]);
-
   const sendPasswordReset = useCallback(async () => {
     if (!authUser?.email) throw new Error('No email associated with this account.');
     await sendPasswordResetEmail(auth, authUser.email);
@@ -315,7 +293,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateUserRolesInServer,
     addBadgeToUser,
     createBadge,
-    uploadFile,
     sendPasswordReset,
   };
 

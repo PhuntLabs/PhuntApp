@@ -33,7 +33,7 @@ interface ChannelChatProps {
     currentUser: User;
     members: Partial<UserProfile>[];
     messages: Message[];
-    onSendMessage: (text: string, imageUrl?: string, embed?: Embed | { embed: Embed, reactions?: string[] }, replyTo?: Message['replyTo']) => void;
+    onSendMessage: (text: string, file?: File, embed?: Embed | { embed: Embed, reactions?: string[] }, replyTo?: Message['replyTo']) => void;
     onEditMessage: (messageId: string, newText: string) => void;
     onDeleteMessage: (messageId: string) => void;
     sidebarTrigger?: React.ReactNode;
@@ -94,7 +94,7 @@ export function ChannelChat({
         handleCancelEdit();
     };
 
-    const handleSendMessageWrapper = (text: string, imageUrl?: string, embed?: Embed | { embed: Embed, reactions?: string[] }) => {
+    const handleSendMessageWrapper = (text: string, file?: File, embed?: Embed | { embed: Embed, reactions?: string[] }) => {
         let replyInfo: Message['replyTo'] | undefined = undefined;
         if (replyingTo) {
             const senderProfile = getSenderProfile(replyingTo.sender);
@@ -105,7 +105,7 @@ export function ChannelChat({
                 text: replyingTo.text,
             };
         }
-        onSendMessage(text, imageUrl, embed, replyInfo);
+        onSendMessage(text, file, embed, replyInfo);
         setReplyingTo(null);
     }
     
