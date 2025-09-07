@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to handle uploading files to Gofile.
@@ -67,13 +68,14 @@ const uploadFileFlow = ai.defineFlow(
       body: body,
     });
     
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Gofile API Error:", response.status, errorText);
-        throw new Error(`Gofile upload failed with status ${response.status}: ${errorText}`);
-    }
-
     const responseText = await response.text();
+    console.log("Gofile Server Response:", responseText);
+
+    if (!response.ok) {
+        console.error("Gofile API Error:", response.status, responseText);
+        throw new Error(`Gofile upload failed with status ${response.status}: ${responseText}`);
+    }
+    
     let result;
     try {
         result = JSON.parse(responseText);
