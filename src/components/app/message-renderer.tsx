@@ -77,33 +77,15 @@ const MessageEmbed = ({ embed }: { embed: Embed }) => {
 }
 
 const FileEmbed = ({ fileInfo }: { fileInfo: NonNullable<Message['fileInfo']> }) => {
-    const isImage = fileInfo.type.startsWith('image/');
-
-    if (isImage) {
-        return (
-             <a href={fileInfo.url} target="_blank" rel="noopener noreferrer" className="mt-2 block max-w-xs">
-                <Image
-                src={fileInfo.url}
-                alt={fileInfo.name}
-                width={400}
-                height={300}
-                className="rounded-lg object-contain"
-                />
-            </a>
-        )
-    }
-
     return (
         <div className="flex items-center gap-3 bg-secondary/50 rounded-lg p-3 max-w-sm mt-2">
             <div className="bg-background p-3 rounded-md">
                 <File className="size-6 text-foreground" />
             </div>
             <div className="flex-1 overflow-hidden">
-                <p className="font-semibold text-blue-400 truncate hover:underline">
-                     <a href={fileInfo.url} target="_blank" rel="noopener noreferrer">
-                        {fileInfo.name}
-                     </a>
-                </p>
+                <a href={fileInfo.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-400 truncate hover:underline block">
+                   {fileInfo.name}
+                </a>
                 <p className="text-xs text-muted-foreground">{formatBytes(fileInfo.size)}</p>
             </div>
              <a href={fileInfo.url} target="_blank" rel="noopener noreferrer" download={fileInfo.name}>
