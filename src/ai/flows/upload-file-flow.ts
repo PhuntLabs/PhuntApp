@@ -42,21 +42,20 @@ const uploadFileFlow = ai.defineFlow(
     
     // Manually construct the multipart/form-data payload
     const boundary = `----WebKitFormBoundary${uuidv4().replace(/-/g, '')}`;
+    
     const bodyParts: (string | Buffer)[] = [];
-
     bodyParts.push(`--${boundary}`);
     bodyParts.push(`Content-Disposition: form-data; name="file"; filename="${fileName}"`);
     bodyParts.push(`Content-Type: ${fileType}`);
-    bodyParts.push(''); // Empty line before content
+    bodyParts.push('');
     bodyParts.push(fileBuffer);
     bodyParts.push(`--${boundary}--`);
-    bodyParts.push(''); // Final empty line
+    bodyParts.push('');
 
+    // Combine parts into a single buffer
     const body = bodyParts.reduce((acc, part) => {
-        if (typeof part === 'string') {
-            return Buffer.concat([acc, Buffer.from(part + '\r\n', 'utf-8')]);
-        }
-        return Buffer.concat([acc, part, Buffer.from('\r\n', 'utf-8')]);
+        const bufferPart = (typeof part === 'string') ? Buffer.from(part + '\r\n', 'utf-8') : Buffer.concat([part, Buffer.from('\r\n')]);
+        return Buffer.concat([acc, bufferPart]);
     }, Buffer.alloc(0));
     
     const response = await fetch('https://upload.gofile.io/uploadFile', {
@@ -77,8 +76,8 @@ const uploadFileFlow = ai.defineFlow(
     const result = await response.json();
 
     if (result.status !== 'ok' || !result.data?.directLink) {
-        console.error("Gofile API Error:", result);
-        throw new Error(result.message || 'Gofile upload failed. The response structure might have changed.');
+        console.error("Gofile API Error - Unexpected Response Structure:", result);
+        throw new Error(result.message || 'Gofile upload failed. The response from their server was not in the expected format.');
     }
 
     return { directLink: result.data.directLink };
