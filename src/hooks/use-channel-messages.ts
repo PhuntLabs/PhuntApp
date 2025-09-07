@@ -102,7 +102,6 @@ export function useChannelMessages(server: Server | null, channelId: string | un
         throw new Error("You don't have permission to mention @everyone.");
       }
       
-      let imageUrl: string | undefined = undefined;
       let fileInfo: Message['fileInfo'] | undefined = undefined;
 
       if (file) {
@@ -114,16 +113,12 @@ export function useChannelMessages(server: Server | null, channelId: string | un
                 fileContent: base64Content,
             });
 
-            if (result.type.startsWith('image/')) {
-                imageUrl = result.url;
-            } else {
-                 fileInfo = {
-                    name: result.name,
-                    size: result.size,
-                    type: result.type,
-                    url: result.url,
-                };
-            }
+            fileInfo = {
+                name: result.name,
+                size: result.size,
+                type: result.type,
+                url: result.url,
+            };
         } catch (error: any) {
             toast({
               variant: 'destructive',
@@ -134,7 +129,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
         }
       }
       
-      if (!text && !imageUrl && !embedPayload && !fileInfo) {
+      if (!text && !embedPayload && !fileInfo) {
         toast({
             variant: 'destructive',
             title: 'Empty Message',
@@ -152,7 +147,6 @@ export function useChannelMessages(server: Server | null, channelId: string | un
         mentions: mentionedUserIds,
       };
 
-      if (imageUrl) messagePayload.imageUrl = imageUrl;
       if (fileInfo) messagePayload.fileInfo = fileInfo;
       
       let initialReactions: Reaction[] | undefined;

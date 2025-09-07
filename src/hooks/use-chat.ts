@@ -97,7 +97,6 @@ export function useChat(chat: PopulatedChat | null) {
     async (text: string, file?: File, replyTo?: Message['replyTo']): Promise<Message | null> => {
       if (!chatId || !authUser || !chat || !user) return null;
       
-      let imageUrl: string | undefined = undefined;
       let fileInfo: Message['fileInfo'] | undefined = undefined;
 
       if (file) {
@@ -109,16 +108,13 @@ export function useChat(chat: PopulatedChat | null) {
                 fileContent: base64Content,
             });
             
-             if (result.type.startsWith('image/')) {
-                imageUrl = result.url;
-            } else {
-                 fileInfo = {
-                    name: result.name,
-                    size: result.size,
-                    type: result.type,
-                    url: result.url,
-                };
-            }
+            fileInfo = {
+                name: result.name,
+                size: result.size,
+                type: result.type,
+                url: result.url,
+            };
+
         } catch (error: any) {
           toast({
             variant: 'destructive',
@@ -129,7 +125,7 @@ export function useChat(chat: PopulatedChat | null) {
         }
       }
       
-      if (!text && !imageUrl && !fileInfo) {
+      if (!text && !fileInfo) {
         toast({
             variant: 'destructive',
             title: 'Empty Message',
@@ -147,7 +143,6 @@ export function useChat(chat: PopulatedChat | null) {
         mentions: mentionedUserIds,
       };
 
-      if (imageUrl) messagePayload.imageUrl = imageUrl;
       if (fileInfo) messagePayload.fileInfo = fileInfo;
       if (replyTo) messagePayload.replyTo = replyTo;
 
@@ -168,7 +163,6 @@ export function useChat(chat: PopulatedChat | null) {
       });
       
       let lastMessageText = text;
-      if (!text && imageUrl) lastMessageText = 'Sent an image';
       if (!text && fileInfo) lastMessageText = `Sent a file: ${fileInfo.name}`;
 
       await updateDoc(chatRef, {

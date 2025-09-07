@@ -268,7 +268,6 @@ export function ChannelChat({
                                             ) : (
                                                 <MessageRenderer 
                                                     content={message.text}
-                                                    imageUrl={message.imageUrl}
                                                     fileInfo={message.fileInfo}
                                                     embed={message.embed}
                                                     reactions={message.reactions}

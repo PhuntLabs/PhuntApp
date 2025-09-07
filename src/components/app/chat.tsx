@@ -223,7 +223,6 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                       ) : (
                           <MessageRenderer 
                             content={message.text} 
-                            imageUrl={message.imageUrl}
                             fileInfo={message.fileInfo}
                             reactions={message.reactions}
                             messageId={message.id}
