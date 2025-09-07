@@ -1,11 +1,11 @@
 <?php
 // --- START: CORS Headers ---
 // Allow requests from any origin. For better security, you could replace '*'
-// with your app's actual domain, e.g., 'https://your-app-name.web.app'.
+// with your app's actual domain.
 header('Access-Control-Allow-Origin: *');
 
 // Allow the necessary HTTP methods.
-header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 
 // Allow the necessary headers.
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
@@ -13,7 +13,7 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 // Handle pre-flight OPTIONS request (sent by browsers to check CORS).
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204); // Use 204 No Content for pre-flight
-    exit();
+    die(); // Stop script execution after sending headers for pre-flight
 }
 // --- END: CORS Headers ---
 
