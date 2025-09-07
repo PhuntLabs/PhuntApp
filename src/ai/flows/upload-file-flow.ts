@@ -36,12 +36,12 @@ const uploadFileFlow = ai.defineFlow(
       throw new Error("Gofile API token is not configured on the server.");
     }
     
-    // Convert base64 back to a Blob-like object for FormData
+    // Convert base64 back to a Buffer
     const fileBuffer = Buffer.from(fileContent, 'base64');
-    const blob = new Blob([fileBuffer], { type: fileType });
 
     const formData = new FormData();
-    formData.append('file', blob, fileName);
+    // Use the Buffer directly. The `fetch` implementation in Node.js can handle this.
+    formData.append('file', new Blob([fileBuffer], { type: fileType }), fileName);
 
     const response = await fetch('https://upload.gofile.io/uploadFile', {
       method: 'POST',
@@ -51,6 +51,12 @@ const uploadFileFlow = ai.defineFlow(
       body: formData,
     });
     
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Gofile API Error:", response.status, errorText);
+        throw new Error(`Gofile upload failed with status ${response.status}: ${errorText}`);
+    }
+
     const result = await response.json();
 
     if (result.status !== 'ok' || !result.data?.directLink) {
