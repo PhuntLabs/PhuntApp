@@ -87,16 +87,26 @@ export function useChat(chat: PopulatedChat | null) {
       if (file) {
         const formData = new FormData();
         formData.append('file', file);
-        try {
-          const response = await fetch('https://file.io', {
+        
+        const fetchOptions: RequestInit = {
             method: 'POST',
             body: formData,
-          });
+        };
+
+        const apiToken = process.env.NEXT_PUBLIC_GOFILE_API_TOKEN;
+        if (apiToken) {
+            fetchOptions.headers = {
+                'Authorization': `Bearer ${apiToken}`
+            };
+        }
+
+        try {
+          const response = await fetch('https://upload.gofile.io/uploadFile', fetchOptions);
           const result = await response.json();
-          if (result.success && result.link) {
-            imageUrl = result.link;
+          if (result.status === 'ok' && result.data && result.data.downloadPage) {
+            imageUrl = result.data.directLink || `https://gofile.io/d/${result.data.code}`;
           } else {
-            throw new Error(result.message || 'File upload failed.');
+            throw new Error(result.message || 'Gofile upload failed.');
           }
         } catch (error: any) {
           toast({
