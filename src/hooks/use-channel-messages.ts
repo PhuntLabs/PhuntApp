@@ -96,7 +96,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
           const formData = new FormData();
           formData.append('fileToUpload', file);
           try {
-            const response = await fetch('https://cdn-phunt.fwh.is/fileupload.php', {
+            const response = await fetch('http://cdn-phuntapp.fwh.is/fileupload.php', {
               method: 'POST',
               body: formData,
             });
