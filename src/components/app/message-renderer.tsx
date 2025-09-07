@@ -77,8 +77,24 @@ const MessageEmbed = ({ embed }: { embed: Embed }) => {
 }
 
 const FileEmbed = ({ fileInfo }: { fileInfo: NonNullable<Message['fileInfo']> }) => {
+    const isImage = fileInfo.type.startsWith('image/');
+
+    if (isImage) {
+        return (
+             <a href={fileInfo.url} target="_blank" rel="noopener noreferrer" className="mt-2 block max-w-xs">
+                <Image
+                src={fileInfo.url}
+                alt={fileInfo.name}
+                width={400}
+                height={300}
+                className="rounded-lg object-contain"
+                />
+            </a>
+        )
+    }
+
     return (
-        <div className="flex items-center gap-3 bg-secondary/50 rounded-lg p-3 max-w-sm">
+        <div className="flex items-center gap-3 bg-secondary/50 rounded-lg p-3 max-w-sm mt-2">
             <div className="bg-background p-3 rounded-md">
                 <File className="size-6 text-foreground" />
             </div>
@@ -191,11 +207,7 @@ export function MessageRenderer({ content, customEmojis = [], imageUrl, fileInfo
           </a>
         )}
 
-        {fileInfo && (
-            <div className="mt-2">
-                <FileEmbed fileInfo={fileInfo} />
-            </div>
-        )}
+        {fileInfo && <FileEmbed fileInfo={fileInfo} />}
 
         {embed && <MessageEmbed embed={embed} />}
 

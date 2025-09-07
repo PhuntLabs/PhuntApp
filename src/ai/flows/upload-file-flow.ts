@@ -15,9 +15,23 @@ const UploadFileInputSchema = z.object({
 });
 export type UploadFileInput = z.infer<typeof UploadFileInputSchema>;
 
-// Temporarily change output to a string to return the raw response
+const GofileResponseSchema = z.object({
+  status: z.string(),
+  data: z.object({
+    downloadPage: z.string(),
+    code: z.string().optional(), // Marking as optional
+    id: z.string(),
+    name: z.string(),
+    mimetype: z.string(),
+    size: z.number(),
+  }),
+});
+
 const UploadFileOutputSchema = z.object({
-  rawResponse: z.string(),
+  name: z.string(),
+  size: z.number(),
+  type: z.string(),
+  url: z.string(),
 });
 export type UploadFileOutput = z.infer<typeof UploadFileOutputSchema>;
 
@@ -36,7 +50,6 @@ const uploadFileFlow = ai.defineFlow(
   async ({ fileName, fileType, fileContent }) => {
     const apiToken = process.env.NEXT_PUBLIC_GOFILE_API_TOKEN;
     if (!apiToken) {
-      // This part is fine, the token is present.
       throw new Error("Gofile API token is not configured on the server.");
     }
     
@@ -68,7 +81,23 @@ const uploadFileFlow = ai.defineFlow(
     
     const responseText = await response.text();
 
-    // Instead of trying to parse it and crashing, just return the raw text.
-    return { rawResponse: responseText };
+    try {
+        const parsedJson = JSON.parse(responseText);
+        const validatedData = GofileResponseSchema.parse(parsedJson);
+
+        if (validatedData.status === 'ok') {
+            return {
+                name: validatedData.data.name,
+                size: validatedData.data.size,
+                type: validatedData.data.mimetype,
+                url: validatedData.data.downloadPage,
+            };
+        } else {
+            throw new Error(`Gofile API returned status: ${validatedData.status}`);
+        }
+    } catch (e: any) {
+        console.error("Failed to parse Gofile response. Raw text:", responseText);
+        throw new Error(`Failed to process Gofile response: ${e.message}`);
+    }
   }
 );
