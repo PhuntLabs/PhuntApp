@@ -89,7 +89,7 @@ export function useChat(chat: PopulatedChat | null) {
         const formData = new FormData();
         formData.append('fileToUpload', file);
         try {
-          const response = await fetch('https://yeahchat.online/fileupload.php', {
+          const response = await fetch('https://www.yeahchat.online/fileupload.php', {
             method: 'POST',
             body: formData,
           });
