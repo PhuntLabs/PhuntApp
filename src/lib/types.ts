@@ -8,6 +8,13 @@ export const ALL_BADGES = ['developer', 'bot', 'beta tester', 'youtuber', 'tikto
 export const BadgeType = z.enum(ALL_BADGES);
 export type BadgeType = z.infer<typeof BadgeType>;
 
+export interface Badge {
+    id: string;
+    name: string;
+    icon: string; // Lucide icon name
+    color: string; // Hex color
+}
+
 export type AvatarEffect = 'none' | 'rage' | 'glow' | 'orbit' | 'sparkle' | 'bounce';
 export type ProfileEffect = 'none' | 'rain' | 'snow' | 'aurora' | 'starfield' | 'confetti';
 
@@ -46,7 +53,7 @@ export interface UserProfile {
   isDiscoverable?: boolean;
   isVerified?: boolean;
   createdAt?: FieldValue;
-  badges?: BadgeType[];
+  badges?: string[]; // Now an array of badge IDs
   status?: UserStatus;
   customStatus?: string;
   avatarEffect?: AvatarEffect;

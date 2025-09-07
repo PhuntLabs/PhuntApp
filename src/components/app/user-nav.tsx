@@ -2,7 +2,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Code, Bot, Settings, Pencil, UserPlus, Moon, Sun, XCircle, CircleDot, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, MessageCircleMore, SmilePlus, Check, Gamepad2, Link as LinkIcon, Github, Youtube } from 'lucide-react';
+import { LogOut, Save, Settings, Pencil, UserPlus, Moon, XCircle, CircleDot, MessageCircleMore, Check, Gamepad2, Link as LinkIcon, Github, Youtube } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -27,13 +27,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import type { UserProfile, UserStatus, Server, BadgeType, Role, AvatarEffect, ProfileEffect, Game, CustomGame, Connection } from '@/lib/types';
+import type { UserProfile, UserStatus, Server, Role, AvatarEffect, ProfileEffect, Game, CustomGame, Connection } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { SettingsDialog } from './settings-dialog';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Checkbox } from '../ui/checkbox';
 import Link from 'next/link';
+import { useBadges } from '@/hooks/use-badges';
 
 interface UserNavProps {
     user: UserProfile; 
@@ -49,17 +50,6 @@ const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType,
     dnd: { label: 'Do Not Disturb', icon: XCircle, color: 'text-red-500' },
     offline: { label: 'Offline', icon: CircleDot, color: 'text-gray-500' },
 };
-
-const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, className: string }> = {
-    developer: { label: 'Developer', icon: Code, className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
-    bot: { label: 'Bot', icon: Bot, className: 'bg-gray-500/20 text-gray-300 border-gray-500/30' },
-    'beta tester': { label: 'Beta Tester', icon: Beaker, className: 'bg-teal-500/20 text-teal-300 border-teal-500/30' },
-    youtuber: { label: 'Youtuber', icon: PlaySquare, className: 'bg-red-500/20 text-red-300 border-red-500/30' },
-    tiktoker: { label: 'Tiktoker', icon: Clapperboard, className: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
-    goat: { label: 'The GOAT', icon: Award, className: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-    'early supporter': { label: 'Early Supporter', icon: HeartHandshake, className: 'bg-pink-500/20 text-pink-300 border-pink-500/30' },
-};
-
 
 // Profile Effects Components
 const RainEffect = () => (
@@ -150,6 +140,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const { sendFriendRequest } = useFriendRequests();
   const { hasPermission } = usePermissions(serverContext, null);
   const { toast } = useToast();
+  const { getBadgeDetails, getBadgeIcon } = useBadges();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -172,7 +163,6 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
 
 
   useEffect(() => {
-    // When the popover opens or user context changes, sync state
     if (isPopoverOpen) {
       if (serverContext && user) {
         const profile = serverContext?.memberDetails?.[user.uid]?.profile;
@@ -191,7 +181,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const handleStatusChange = async (status: UserStatus) => {
     if (!isCurrentUser || !authUser) return;
      try {
-        await updateUserProfile({ status, currentGame: null }); // Clear game when status is manually set
+        await updateUserProfile({ status, currentGame: null });
     } catch(error: any) {
         toast({
             variant: 'destructive',
@@ -204,7 +194,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const handleCustomStatusSave = async () => {
      if (!isCurrentUser || !authUser) return;
      try {
-        await updateUserProfile({ customStatus: customStatus.trim(), currentGame: null }); // Clear game when custom status is set
+        await updateUserProfile({ customStatus: customStatus.trim(), currentGame: null });
          toast({ title: 'Status Updated'});
     } catch(error: any) {
         toast({
@@ -259,7 +249,6 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
         toast({ title: "Roles Updated", description: `Successfully updated roles for ${user.displayName}.`});
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-        // Revert state on failure
         setManagedRoles(managedRoles);
     }
   };
@@ -297,14 +286,10 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
         </div>
     </button>
   ) : (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-    <div onClick={(e) => {
-        if (as === 'trigger') e.stopPropagation();
-    }}>{children}</div>
+    <div onClick={(e) => { if (as === 'trigger') e.stopPropagation(); }}>{children}</div>
   )
 
-  const allBadges = [...(user.badges || [])];
-  if (user.isBot) allBadges.push('bot');
+  const allBadges = user.isBot ? ['bot', ...(user.badges || [])] : user.badges || [];
 
   const memberRoles = serverContext?.memberDetails?.[user.uid!]?.roles || [];
   const serverRoles = serverContext?.roles
@@ -381,18 +366,19 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                             <div className="flex items-center gap-2">
                                 <h3 className="text-xl font-bold">{displayUser.displayName}</h3>
                                 <div className="flex items-center gap-1">
-                                {allBadges.map((badgeKey) => {
-                                    const badgeInfo = badgeConfig[badgeKey as BadgeType];
+                                {allBadges.map((badgeId) => {
+                                    const badgeInfo = getBadgeDetails(badgeId);
                                     if (!badgeInfo) return null;
-                                    const { label, icon: Icon, className } = badgeInfo;
+                                    const Icon = getBadgeIcon(badgeInfo.icon);
                                     return (
-                                        <Tooltip key={badgeKey}>
+                                        <Tooltip key={badgeId}>
                                             <TooltipTrigger>
-                                                <div className={cn("flex items-center justify-center size-5 rounded-full", className.replace(/border-.*$/, ''))}>
+                                                <div className={cn("flex items-center justify-center size-5 rounded-full")}
+                                                     style={{ color: badgeInfo.color, backgroundColor: `${badgeInfo.color}20` }}>
                                                     <Icon className="size-3" />
                                                 </div>
                                             </TooltipTrigger>
-                                            <TooltipContent><p>{label}</p></TooltipContent>
+                                            <TooltipContent><p>{badgeInfo.name}</p></TooltipContent>
                                         </Tooltip>
                                     )
                                 })}

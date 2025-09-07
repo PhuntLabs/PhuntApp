@@ -1,8 +1,8 @@
 
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, BadgeType, Embed } from '@/lib/types';
-import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Code, Beaker, PlaySquare, Clapperboard, Award, HeartHandshake, Menu } from 'lucide-react';
+import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, Embed } from '@/lib/types';
+import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Menu } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -20,17 +20,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { useBadges } from '@/hooks/use-badges';
 
-
-const badgeConfig: Record<BadgeType, { label: string; icon: React.ElementType, className: string }> = {
-    developer: { label: 'Developer', icon: Code, className: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
-    bot: { label: 'Bot', icon: Beaker, className: 'bg-gray-500/20 text-gray-300 border-gray-500/30' },
-    'beta tester': { label: 'Beta Tester', icon: Beaker, className: 'bg-teal-500/20 text-teal-300 border-teal-500/30' },
-    youtuber: { label: 'Youtuber', icon: PlaySquare, className: 'bg-red-500/20 text-red-300 border-red-500/30' },
-    tiktoker: { label: 'Tiktoker', icon: Clapperboard, className: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
-    goat: { label: 'The GOAT', icon: Award, className: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-    'early supporter': { label: 'Early Supporter', icon: HeartHandshake, className: 'bg-pink-500/20 text-pink-300 border-pink-500/30' },
-};
 
 interface ChannelChatProps {
     channel: Channel;
@@ -61,6 +52,7 @@ export function ChannelChat({
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const { handleTyping } = useTypingStatus(server.id, channel.id);
     const { hasPermission } = usePermissions(server, channel.id);
+    const { getBadgeDetails, getBadgeIcon } = useBadges();
 
     const canSendMessages = hasPermission('sendMessages');
     
@@ -78,7 +70,6 @@ export function ChannelChat({
     }, [messages, typingUsers]);
 
     useEffect(() => {
-        // Reset reply state if channel changes
         setReplyingTo(null);
     }, [channel.id]);
 
@@ -137,20 +128,18 @@ export function ChannelChat({
     const firstWritableChannel = useMemo(() => {
         const currentUserRoles = server.memberDetails?.[currentUser.uid]?.roles || [];
         return server.channels?.find(ch => {
-            if (server.ownerId === currentUser.uid) return true; // Owner can write anywhere
+            if (server.ownerId === currentUser.uid) return true;
             if (!ch.permissionOverwrites) {
                  return server.roles?.some(r => currentUserRoles.includes(r.id) && r.permissions.sendMessages);
             }
             
             let canWrite = false;
-            // Base roles
-             server.roles?.forEach(r => {
+            server.roles?.forEach(r => {
                 if (currentUserRoles.includes(r.id) && r.permissions.sendMessages) {
                     canWrite = true;
                 }
              });
-            // Overrides
-             currentUserRoles.forEach(roleId => {
+            currentUserRoles.forEach(roleId => {
                 if (ch.permissionOverwrites?.[roleId]?.sendMessages === true) canWrite = true;
                 if (ch.permissionOverwrites?.[roleId]?.sendMessages === false) canWrite = false;
              });
@@ -191,10 +180,9 @@ export function ChannelChat({
                                 const prevMessage = messages[index - 1];
                                 const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender || !!message.replyTo;
 
-                                if (!sender) return null; // Or show a fallback for deleted users
+                                if (!sender) return null;
 
-                                const allBadges = [...(sender.badges || [])];
-                                if (sender.isBot) allBadges.push('bot');
+                                const allBadges = sender.isBot ? ['bot', ...(sender.badges || [])] : sender.badges || [];
 
                                 return (
                                     <div
@@ -236,18 +224,21 @@ export function ChannelChat({
                                                         <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
                                                     </UserNav>
                                                     <div className="flex items-center gap-1">
-                                                        {allBadges.map((badgeKey) => {
-                                                            const badgeInfo = badgeConfig[badgeKey as BadgeType];
+                                                         {allBadges.map((badgeId) => {
+                                                            const badgeInfo = getBadgeDetails(badgeId);
                                                             if (!badgeInfo) return null;
-                                                            const { label, icon: Icon, className } = badgeInfo;
+                                                            const Icon = getBadgeIcon(badgeInfo.icon);
                                                             return (
-                                                                <Tooltip key={badgeKey}>
+                                                                <Tooltip key={badgeId}>
                                                                     <TooltipTrigger>
-                                                                        <Badge variant="outline" className={cn("h-5 px-1.5 flex items-center gap-1", className)}>
-                                                                            <Icon className="size-3" /> {label}
-                                                                        </Badge>
+                                                                        <div 
+                                                                            className="h-5 px-1.5 flex items-center gap-1 rounded-full text-xs font-semibold"
+                                                                            style={{ color: badgeInfo.color, backgroundColor: `${badgeInfo.color}20`}}
+                                                                        >
+                                                                            <Icon className="size-3" /> {badgeInfo.name}
+                                                                        </div>
                                                                     </TooltipTrigger>
-                                                                    <TooltipContent>{label}</TooltipContent>
+                                                                    <TooltipContent>{badgeInfo.name}</TooltipContent>
                                                                 </Tooltip>
                                                             )
                                                         })}

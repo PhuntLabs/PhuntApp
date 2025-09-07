@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -38,8 +39,9 @@ import {
   updateDoc,
   onSnapshot,
   arrayUnion,
+  addDoc,
 } from 'firebase/firestore';
-import type { UserProfile, BadgeType, ServerProfile } from '@/lib/types';
+import type { UserProfile, Badge, ServerProfile } from '@/lib/types';
 import { createWelcomeChat } from '@/ai/flows/welcome-chat-flow';
 import { v4 as uuidv4 } from 'uuid';
 import { findUserByUsername } from '@/lib/firebase-utils';
@@ -60,7 +62,8 @@ interface AuthContextType {
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   updateServerProfile: (serverId: string, profile: ServerProfile) => Promise<void>;
   updateUserRolesInServer: (serverId: string, userId: string, roles: string[]) => Promise<void>;
-  addBadgeToUser: (username: string, badge: BadgeType) => Promise<void>;
+  addBadgeToUser: (username: string, badgeId: string) => Promise<void>;
+  createBadge: (badgeData: Omit<Badge, 'id'>) => Promise<void>;
   uploadFile: (file: File, path: string) => Promise<string>;
   sendPasswordReset: () => Promise<void>;
 }
@@ -68,30 +71,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const developerEmails = ['raidensch0@gmail.com'];
-const developerUsernames = ['testacc', 'aura farmer', 'thatguy123'];
+const developerUsernames = ['testacc', 'aura farmer', 'thatguy123', 'heina'];
 
 function applySpecialBadges(profile: UserProfile): UserProfile {
-    const badges = new Set<BadgeType>(profile.badges || []);
-    const username = profile.displayName_lowercase || '';
+    const badges = new Set<string>(profile.badges || []);
 
-    // Developer badges
     if (
         (profile.email && developerEmails.includes(profile.email)) ||
-        (username && developerUsernames.includes(username))
+        (profile.displayName_lowercase && developerUsernames.includes(profile.displayName_lowercase))
     ) {
         badges.add('developer');
     }
-
-    // Heina's badges
-    if (username === 'heina') {
-        ['developer', 'beta tester', 'youtuber', 'tiktoker', 'goat', 'early supporter'].forEach(b => badges.add(b as BadgeType));
-    }
-
-    // RecBacon's badges
-    if (username === 'recbacon') {
-        ['early supporter', 'youtuber', 'beta tester', 'goat'].forEach(b => badges.add(b as BadgeType));
-    }
-
 
     return { ...profile, badges: Array.from(badges) };
 }
@@ -101,14 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Effect for handling online/offline status
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (auth.currentUser) {
         const userRef = doc(db, 'users', auth.currentUser.uid);
-        // Note: This is a best-effort attempt. `beforeunload` does not guarantee
-        // the completion of asynchronous operations like `updateDoc`.
-        // A more robust solution might use Realtime Database's onDisconnect or a backend service.
         updateDoc(userRef, { status: 'offline', currentGame: null });
       }
     };
@@ -127,7 +113,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthUser(firebaseUser);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         
-        // Set user online
         await setDoc(userDocRef, { status: 'online' }, { merge: true });
         
         const unsubscribeUser = onSnapshot(userDocRef, (userDoc) => {
@@ -164,7 +149,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { displayName, photoURL, ...firestoreData } = data;
 
-      // Update Firebase Auth profile if display name or photo URL changed
       const profileUpdates: { displayName?: string; photoURL?: string | null } = {};
       if (displayName !== undefined && displayName !== authUser.displayName) profileUpdates.displayName = displayName;
       if (photoURL !== undefined && photoURL !== authUser.photoURL) profileUpdates.photoURL = photoURL;
@@ -173,11 +157,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await updateProfile(authUser, profileUpdates);
       }
 
-      // Update Firestore document
       const userRef = doc(db, 'users', authUser.uid);
       await setDoc(userRef, firestoreData, { merge: true });
-
-      // Local state update is now handled by the onSnapshot listener
     },
     [authUser]
   );
@@ -191,7 +172,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await updateDoc(serverRef, {
         [fieldPath]: profile
     });
-    // Note: This won't update the local state immediately. The useServer hook's listener will catch this change.
 
   }, [authUser]);
 
@@ -202,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await updateDoc(serverRef, { [fieldPath]: roles });
   }, [authUser]);
   
-  const addBadgeToUser = useCallback(async (username: string, badge: BadgeType) => {
+  const addBadgeToUser = useCallback(async (username: string, badgeId: string) => {
     if (user?.displayName !== 'heina') {
         throw new Error('You are not authorized to perform this action.');
     }
@@ -212,8 +192,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const userRef = doc(db, 'users', targetUser.id);
     await updateDoc(userRef, {
-        badges: arrayUnion(badge)
+        badges: arrayUnion(badgeId)
     });
+  }, [user]);
+
+  const createBadge = useCallback(async (badgeData: Omit<Badge, 'id'>) => {
+      if(user?.displayName !== 'heina') {
+          throw new Error('You are not authorized to perform this action.');
+      }
+      const badgeId = badgeData.name.toLowerCase().replace(/\s+/g, '_');
+      const badgeRef = doc(db, 'badges', badgeId);
+      const badgeDoc = await getDoc(badgeRef);
+      if (badgeDoc.exists()) {
+          throw new Error(`A badge with the ID '${badgeId}' already exists.`);
+      }
+      await setDoc(badgeRef, badgeData);
   }, [user]);
 
   const uploadFile = useCallback(async (file: File, path: string): Promise<string> => {
@@ -238,7 +231,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const signup = async (email: string, pass: string, username: string) => {
-    // 1. Check if username is already taken
     try {
         const usernameQuery = query(collection(db, 'users'), where('displayName_lowercase', '==', username.toLowerCase()));
         const usernameSnapshot = await getDocs(usernameQuery);
@@ -249,7 +241,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(`Failed to check if username is taken. This is likely a security rule issue. Original error: ${e.message}`);
     }
 
-    // 2. Create the user in Firebase Auth
     let userCredential;
     try {
         userCredential = await createUserWithEmailAndPassword(auth, email, pass);
@@ -260,7 +251,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const firebaseUser = userCredential.user;
     const photoURL = `https://i.pravatar.cc/150?u=${firebaseUser.uid}`;
 
-    // 3. Update the Firebase Auth profile
     try {
         await updateProfile(firebaseUser, {
           displayName: username,
@@ -270,7 +260,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(`Failed to update auth profile: ${error.message}`);
     }
 
-    // 4. Create the user document in Firestore
     const userPayload: Omit<UserProfile, 'id'> = {
       displayName: username,
       displayName_lowercase: username.toLowerCase(),
@@ -287,10 +276,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Firestore user creation failed:", error);
         throw new Error(`Failed to create user profile in database. This is likely a security rule issue. Original error: ${e.message}`);
     }
-
-    // 5. Finalize session and welcome new user
+    
     await firebaseUser.reload();
-    // The onSnapshot listener will handle setting the user state.
     
     await createWelcomeChat({ userId: firebaseUser.uid, username: username });
 
@@ -326,6 +313,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateServerProfile,
     updateUserRolesInServer,
     addBadgeToUser,
+    createBadge,
     uploadFile,
     sendPasswordReset,
   };
