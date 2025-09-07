@@ -1,3 +1,4 @@
+
 'use client';
 
 import { User } from 'firebase/auth';
@@ -302,13 +303,12 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   
   const allServerRoles = serverContext?.roles?.sort((a,b) => a.priority - b.priority) || [];
   
-  const shouldShowServerTag = serverContext?.tag?.name && user.serverTags?.[serverContext?.id] !== false;
+  const isHeina = user.displayName?.toLowerCase() === 'heina';
+  const shouldShowServerTag = !isHeina && serverContext?.tag?.name && user.serverTags?.[serverContext?.id] !== false;
   const TagIcon = shouldShowServerTag ? (tagIcons as any)[serverContext!.tag!.icon] : null;
 
   const AvatarEffectComponent = user.avatarEffect ? avatarEffects[user.avatarEffect] : null;
   const ProfileEffectComponent = user.profileEffect ? profileEffects[user.profileEffect] : null;
-
-  const isHeina = user.displayName?.toLowerCase() === 'heina';
 
   return (
     <Popover open={isPopoverOpen} onOpenChange={(open) => {
@@ -374,18 +374,17 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                         <>
                             <div className="flex items-center gap-2">
                                 <h3 className="text-xl font-bold">{displayUser.displayName}</h3>
-                                {shouldShowServerTag && (
+                                {isHeina ? (
+                                    <Badge variant="outline" className="border-green-500/50 text-green-400 gap-1.5 h-5">
+                                        <BadgeCheck className="size-3" />
+                                        OWNER
+                                    </Badge>
+                                 ) : shouldShowServerTag && (
                                     <Badge variant="secondary" className="gap-1">
                                         {TagIcon && <TagIcon className="size-3" />}
                                         {serverContext!.tag!.name}
                                     </Badge>
                                 )}
-                                 {isHeina && (
-                                    <Badge variant="outline" className="border-green-500/50 text-green-400 gap-1.5 h-5">
-                                        <BadgeCheck className="size-3" />
-                                        OWNER
-                                    </Badge>
-                                 )}
                                 <div className="flex items-center gap-1">
                                 {allBadges.map((badgeId) => {
                                     const badgeInfo = getBadgeDetails(badgeId);

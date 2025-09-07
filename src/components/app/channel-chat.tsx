@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, Embed, ServerTag } from '@/lib/types';
@@ -186,7 +187,7 @@ export function ChannelChat({
                                 if (!sender) return null;
 
                                 const isHeina = sender.displayName?.toLowerCase() === 'heina';
-                                const shouldShowServerTag = server.tag?.name && sender.serverTags?.[server.id] !== false;
+                                const shouldShowServerTag = !isHeina && server.tag?.name && sender.serverTags?.[server.id] !== false;
                                 const TagIcon = shouldShowServerTag ? (tagIcons as any)[server.tag!.icon] : null;
 
 
@@ -229,16 +230,15 @@ export function ChannelChat({
                                                     <UserNav user={sender as UserProfile} as="trigger" serverContext={server}>
                                                         <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
                                                     </UserNav>
-                                                     {shouldShowServerTag && (
-                                                        <Badge variant="secondary" className="gap-1">
-                                                            {TagIcon && <TagIcon className="size-3" />}
-                                                            {server.tag!.name}
-                                                        </Badge>
-                                                     )}
-                                                     {isHeina && (
+                                                     {isHeina ? (
                                                         <Badge variant="outline" className="border-green-500/50 text-green-400 gap-1.5 h-5">
                                                             <BadgeCheck className="size-3" />
                                                             OWNER
+                                                        </Badge>
+                                                     ) : shouldShowServerTag && (
+                                                        <Badge variant="secondary" className="gap-1">
+                                                            {TagIcon && <TagIcon className="size-3" />}
+                                                            {server.tag!.name}
                                                         </Badge>
                                                      )}
                                                     <span className="text-xs text-muted-foreground">
