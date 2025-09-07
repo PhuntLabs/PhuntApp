@@ -45,6 +45,7 @@ import { Checkbox } from '../ui/checkbox';
 import { useMobileView } from '@/hooks/use-mobile-view';
 import { MobileServerSettings } from './mobile/mobile-server-settings';
 import { v4 as uuidv4 } from 'uuid';
+import { Badge } from '../ui/badge';
 
 function generateRandomHexColor() {
   return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');

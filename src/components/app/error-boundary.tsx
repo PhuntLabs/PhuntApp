@@ -12,7 +12,6 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
-  errorInfo?: ErrorInfo;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -20,34 +19,17 @@ export class ErrorBoundary extends Component<Props, State> {
     hasError: false,
   };
 
-  public static getDerivedStateFromError(_: Error): State {
-    return { hasError: true };
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // In a real app, you'd send this to a reporting service like Sentry, LogRocket, etc.
     console.error("Uncaught error:", error, errorInfo);
-    this.setState({ error, errorInfo });
   }
-
-  private handleReportCrash = () => {
-    const { error, errorInfo } = this.state;
-    const subject = "Phunt App Crash Report";
-    const body = `
-        A crash occurred. Please see the details below:\n
-        -------------------------------------------\n
-        Error: ${error?.toString()}\n
-        Stack: ${error?.stack}\n
-        Component Stack: ${errorInfo?.componentStack}\n
-        -------------------------------------------\n
-        Steps to reproduce (if known):\n
-        [Please add any details here]\n
-    `;
-
-    window.location.href = `mailto:your-email@example.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  };
   
-  private handleRestart = () => {
-    window.location.replace('/');
+  private handleReload = () => {
+    window.location.reload();
   }
 
   public render() {
@@ -55,16 +37,18 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-background text-center p-4">
           <Bot className="size-20 text-destructive mb-4" />
-          <h1 className="text-2xl font-bold">Oops, phunt has crashed.</h1>
+          <h1 className="text-2xl font-bold">Oops! Phunt has crashed.</h1>
+           {this.state.error && (
+            <p className="text-muted-foreground mt-2 max-w-md">
+              The error was: "{this.state.error.toString()}"
+            </p>
+          )}
           <p className="text-muted-foreground mt-2">
-            Restarting the app usually fixes the issue.
+            This error has been automatically reported. Please reload the app to continue.
           </p>
-          <div className="mt-6 flex flex-col sm:flex-row gap-4">
-            <Button onClick={this.handleRestart}>
-              Restart App
-            </Button>
-            <Button variant="secondary" onClick={this.handleReportCrash}>
-              Report Crash
+          <div className="mt-6">
+            <Button onClick={this.handleReload}>
+              Reload App
             </Button>
           </div>
         </div>
@@ -74,5 +58,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-
-    
