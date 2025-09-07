@@ -98,6 +98,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
           try {
             const response = await fetch('https://www.yeahchat.online/fileupload.php', {
               method: 'POST',
+              mode: 'no-cors', // Added for diagnostics
               body: formData,
             });
             const result = await response.json();
