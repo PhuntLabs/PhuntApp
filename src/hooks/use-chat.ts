@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -84,6 +85,8 @@ export function useChat(chat: PopulatedChat | null) {
       if (!chatId || !authUser || !chat || !user) return null;
       
       let imageUrl: string | undefined = undefined;
+      let fileInfo: Message['fileInfo'] | undefined = undefined;
+
       if (file) {
         const formData = new FormData();
         formData.append('file', file);
@@ -103,22 +106,31 @@ export function useChat(chat: PopulatedChat | null) {
         try {
           const response = await fetch('https://upload.gofile.io/uploadFile', fetchOptions);
           const result = await response.json();
-          if (result.status === 'ok' && result.data && result.data.downloadPage) {
-            imageUrl = result.data.directLink || `https://gofile.io/d/${result.data.code}`;
+          if (result.status === 'ok' && result.data?.directLink) {
+            if (file.type.startsWith('image/')) {
+                imageUrl = result.data.directLink;
+            } else {
+                fileInfo = {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    url: result.data.directLink,
+                }
+            }
           } else {
-            throw new Error(result.message || 'Gofile upload failed.');
+            throw new Error(result.message || 'Gofile upload failed. The response structure might have changed.');
           }
         } catch (error: any) {
           toast({
             variant: 'destructive',
             title: 'Upload Error',
-            description: `Could not upload image: ${error.message}`
+            description: `Could not upload file: ${error.message}`
           });
           return null;
         }
       }
       
-      if (!text && !imageUrl) {
+      if (!text && !imageUrl && !fileInfo) {
         toast({
             variant: 'destructive',
             title: 'Empty Message',
@@ -137,6 +149,7 @@ export function useChat(chat: PopulatedChat | null) {
       };
 
       if (imageUrl) messagePayload.imageUrl = imageUrl;
+      if (fileInfo) messagePayload.fileInfo = fileInfo;
       if (replyTo) messagePayload.replyTo = replyTo;
 
 
@@ -155,10 +168,14 @@ export function useChat(chat: PopulatedChat | null) {
         }
       });
       
+      let lastMessageText = text;
+      if (!text && imageUrl) lastMessageText = 'Sent an image';
+      if (!text && fileInfo) lastMessageText = `Sent a file: ${fileInfo.name}`;
+
       await updateDoc(chatRef, {
         lastMessageTimestamp: serverTimestamp(),
         lastMessage: {
-          text: text || 'Sent an image',
+          text: lastMessageText,
           senderId: authUser.uid
         },
         ...unreadUpdates

@@ -114,6 +114,12 @@ export interface Message {
   reactions?: Reaction[];
   mentions?: string[];
   imageUrl?: string;
+  fileInfo?: {
+    name: string;
+    size: number;
+    type: string;
+    url: string;
+  };
   embed?: Embed;
   replyTo?: {
     messageId: string;

@@ -8,7 +8,7 @@ import type { CustomEmoji, Message, Reaction, Embed } from '@/lib/types';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { SmilePlus } from 'lucide-react';
+import { SmilePlus, File, Download } from 'lucide-react';
 import { toggleReaction } from '@/ai/flows/reaction-flow';
 import { useAuth } from '@/hooks/use-auth';
 import { Card } from '../ui/card';
@@ -17,6 +17,7 @@ interface MessageRendererProps {
   content: string;
   customEmojis?: CustomEmoji[];
   imageUrl?: string;
+  fileInfo?: Message['fileInfo'];
   embed?: Embed;
   reactions?: Reaction[];
   messageId?: string;
@@ -33,6 +34,15 @@ const standardEmojiRegex = /(😀|😂|😭|🤔|👍|❤️|🔥|🚀)/;
 function hexToRgb(hex: string) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
+}
+
+function formatBytes(bytes: number, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 
@@ -66,10 +76,33 @@ const MessageEmbed = ({ embed }: { embed: Embed }) => {
     )
 }
 
-export function MessageRenderer({ content, customEmojis = [], imageUrl, embed, reactions, messageId, messageContext }: MessageRendererProps) {
+const FileEmbed = ({ fileInfo }: { fileInfo: NonNullable<Message['fileInfo']> }) => {
+    return (
+        <div className="flex items-center gap-3 bg-secondary/50 rounded-lg p-3 max-w-sm">
+            <div className="bg-background p-3 rounded-md">
+                <File className="size-6 text-foreground" />
+            </div>
+            <div className="flex-1 overflow-hidden">
+                <p className="font-semibold text-blue-400 truncate hover:underline">
+                     <a href={fileInfo.url} target="_blank" rel="noopener noreferrer">
+                        {fileInfo.name}
+                     </a>
+                </p>
+                <p className="text-xs text-muted-foreground">{formatBytes(fileInfo.size)}</p>
+            </div>
+             <a href={fileInfo.url} target="_blank" rel="noopener noreferrer" download={fileInfo.name}>
+                <Button variant="ghost" size="icon">
+                    <Download className="size-5 text-muted-foreground" />
+                </Button>
+            </a>
+        </div>
+    )
+}
+
+export function MessageRenderer({ content, customEmojis = [], imageUrl, fileInfo, embed, reactions, messageId, messageContext }: MessageRendererProps) {
   const { authUser } = useAuth();
   
-  if (!content && !imageUrl && !embed) return null;
+  if (!content && !imageUrl && !embed && !fileInfo) return null;
 
   const parts = content ? content.split(combinedRegex) : [''];
   
@@ -156,6 +189,12 @@ export function MessageRenderer({ content, customEmojis = [], imageUrl, embed, r
               className="rounded-lg object-contain"
             />
           </a>
+        )}
+
+        {fileInfo && (
+            <div className="mt-2">
+                <FileEmbed fileInfo={fileInfo} />
+            </div>
         )}
 
         {embed && <MessageEmbed embed={embed} />}
