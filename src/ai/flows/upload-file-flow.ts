@@ -15,8 +15,9 @@ const UploadFileInputSchema = z.object({
 });
 export type UploadFileInput = z.infer<typeof UploadFileInputSchema>;
 
+// Temporarily change output to a string to return the raw response
 const UploadFileOutputSchema = z.object({
-  directLink: z.string().url(),
+  rawResponse: z.string(),
 });
 export type UploadFileOutput = z.infer<typeof UploadFileOutputSchema>;
 
@@ -35,13 +36,11 @@ const uploadFileFlow = ai.defineFlow(
   async ({ fileName, fileType, fileContent }) => {
     const apiToken = process.env.NEXT_PUBLIC_GOFILE_API_TOKEN;
     if (!apiToken) {
+      // This part is fine, the token is present.
       throw new Error("Gofile API token is not configured on the server.");
     }
     
-    // Convert base64 back to a Buffer
     const fileBuffer = Buffer.from(fileContent, 'base64');
-    
-    // Manually construct the multipart/form-data payload
     const boundary = `----WebKitFormBoundary${uuidv4().replace(/-/g, '')}`;
     
     const bodyParts: (string | Buffer)[] = [];
@@ -53,7 +52,6 @@ const uploadFileFlow = ai.defineFlow(
     bodyParts.push(`--${boundary}--`);
     bodyParts.push('');
 
-    // Combine parts into a single buffer
     const body = bodyParts.reduce((acc, part) => {
         const bufferPart = (typeof part === 'string') ? Buffer.from(part + '\r\n', 'utf-8') : Buffer.concat([part, Buffer.from('\r\n')]);
         return Buffer.concat([acc, bufferPart]);
@@ -69,27 +67,8 @@ const uploadFileFlow = ai.defineFlow(
     });
     
     const responseText = await response.text();
-    console.log("Gofile Server Response:", responseText);
 
-    if (!response.ok) {
-        console.error("Gofile API Error:", response.status, responseText);
-        throw new Error(`Gofile upload failed with status ${response.status}: ${responseText}`);
-    }
-    
-    let result;
-    try {
-        result = JSON.parse(responseText);
-    } catch (e) {
-        console.error("Gofile API Error: Failed to parse JSON. Raw response:", responseText);
-        throw new Error('Gofile upload failed. The response from their server was not valid JSON.');
-    }
-
-
-    if (result.status !== 'ok' || !result.data?.directLink) {
-        console.error("Gofile API Error - Unexpected Response Structure:", result);
-        throw new Error(result.message || 'Gofile upload failed. The response from their server was not in the expected format.');
-    }
-
-    return { directLink: result.data.directLink };
+    // Instead of trying to parse it and crashing, just return the raw text.
+    return { rawResponse: responseText };
   }
 );

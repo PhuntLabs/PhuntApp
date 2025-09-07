@@ -114,16 +114,16 @@ export function useChannelMessages(server: Server | null, channelId: string | un
                 fileContent: base64Content,
             });
 
-            if (file.type.startsWith('image/')) {
-                imageUrl = result.directLink;
-            } else {
-                fileInfo = {
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    url: result.directLink,
-                }
-            }
+             // Log the raw response for debugging
+            console.log("Gofile Raw Response:", result.rawResponse);
+
+            // Once we know the structure, we can parse it. For now, we can't create the message.
+            toast({
+                title: "Debug: Gofile Response",
+                description: "Check the developer console for the server's raw response.",
+            });
+            return null; // Stop execution for now
+            
         } catch (error: any) {
             toast({
               variant: 'destructive',

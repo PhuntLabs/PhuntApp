@@ -78,6 +78,8 @@ export function useChat(chat: PopulatedChat | null) {
         ...doc.data(),
       } as Message));
       setMessages(msgs);
+    }, (error) => {
+        console.error("Error fetching messages:", error)
     });
 
     // Clear unread count for the current user when they view the chat
@@ -106,17 +108,17 @@ export function useChat(chat: PopulatedChat | null) {
                 fileType: file.type,
                 fileContent: base64Content,
             });
+            
+            // Log the raw response for debugging
+            console.log("Gofile Raw Response:", result.rawResponse);
 
-            if (file.type.startsWith('image/')) {
-                imageUrl = result.directLink;
-            } else {
-                fileInfo = {
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    url: result.directLink,
-                }
-            }
+            // Once we know the structure, we can parse it. For now, we can't create the message.
+            toast({
+                title: "Debug: Gofile Response",
+                description: "Check the developer console for the server's raw response.",
+            });
+            return null; // Stop execution for now
+
         } catch (error: any) {
           toast({
             variant: 'destructive',
