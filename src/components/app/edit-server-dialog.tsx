@@ -116,7 +116,7 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
   const [inviteLink, setInviteLink] = useState(server.customInviteLink || '');
   const [customEmojis, setCustomEmojis] = useState<CustomEmoji[]>(server.customEmojis || []);
   const [roles, setRoles] = useState<Role[]>(server.roles || []);
-  const [serverTags, setServerTags] = useState<ServerTag[]>(server.tags || []);
+  const [serverTag, setServerTag] = useState<ServerTag | undefined>(server.tag);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [systemChannelId, setSystemChannelId] = useState<string | undefined>(server.systemChannelId);
   const [memberSearch, setMemberSearch] = useState('');
@@ -125,9 +125,6 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
   const [newEmojiUrl, setNewEmojiUrl] = useState('');
   const [newEmojiFile, setNewEmojiFile] = useState<File | null>(null);
   
-  const [newTagName, setNewTagName] = useState('');
-  const [newTagIcon, setNewTagIcon] = useState<ServerTag['icon']>('Sword');
-
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
@@ -146,7 +143,7 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
       setInviteLink(server.customInviteLink || '');
       setCustomEmojis(server.customEmojis || []);
       setSystemChannelId(server.systemChannelId);
-      setServerTags(server.tags || []);
+      setServerTag(server.tag);
       
       const serverRoles = [...(server.roles || [])];
       serverRoles.sort((a, b) => a.priority - b.priority);
@@ -170,7 +167,7 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
             description,
             customEmojis,
             roles: rolesWithUpdatedPriority,
-            tags: serverTags,
+            tag: serverTag,
             systemChannelId,
         };
         
@@ -311,26 +308,11 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
       }
   };
 
-  const handleAddTag = () => {
-    if (!newTagName.trim()) {
-        toast({ variant: 'destructive', title: 'Tag name is required.' });
-        return;
-    }
-    if (newTagName.length > 4) {
-        toast({ variant: 'destructive', title: 'Tag name cannot exceed 4 characters.' });
-        return;
-    }
-    const newTag: ServerTag = {
-        id: uuidv4(),
-        name: newTagName.trim(),
-        icon: newTagIcon,
-    };
-    setServerTags(prev => [...prev, newTag]);
-    setNewTagName('');
-  }
-
-  const handleRemoveTag = (tagId: string) => {
-    setServerTags(prev => prev.filter(t => t.id !== tagId));
+  const handleTagUpdate = (key: 'name' | 'icon', value: string) => {
+    setServerTag(prev => ({
+        name: key === 'name' ? value : prev?.name || '',
+        icon: key === 'icon' ? value as ServerTag['icon'] : prev?.icon || 'Sword'
+    }));
   }
 
   const activeRoleForEditing = roles.find(r => r.id === selectedRole);
@@ -354,7 +336,7 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
                         <TabsTrigger value="general" className="w-full justify-start data-[state=active]:bg-accent">Overview</TabsTrigger>
                         <TabsTrigger value="roles" className="w-full justify-start data-[state=active]:bg-accent">Roles</TabsTrigger>
                         <TabsTrigger value="emojis" className="w-full justify-start data-[state=active]:bg-accent">Emojis</TabsTrigger>
-                        <TabsTrigger value="tags" className="w-full justify-start data-[state=active]:bg-accent">Tags</TabsTrigger>
+                        <TabsTrigger value="tags" className="w-full justify-start data-[state=active]:bg-accent">Member Tag</TabsTrigger>
                         <TabsTrigger value="members" className="w-full justify-start data-[state=active]:bg-accent">Members</TabsTrigger>
                         <TabsTrigger value="discovery" className="w-full justify-start data-[state=active]:bg-accent">Discovery</TabsTrigger>
                         <Separator className="my-2"/>
@@ -481,18 +463,18 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
 
                     <TabsContent value="tags" className="mt-0 space-y-4 py-4">
                          <DialogDescription>
-                            Create unique tags that members can apply to their profiles. Max 4 characters per tag.
+                            Create a unique server-wide tag that members can choose to display next to their name. Max 4 characters.
                         </DialogDescription>
                          <div className="p-3 border rounded-lg space-y-3">
-                            <h4 className="font-semibold text-sm">Create New Tag</h4>
+                            <h4 className="font-semibold text-sm">Server Member Tag</h4>
                              <div className="flex items-end gap-2">
                                  <div className="space-y-1.5 flex-1">
                                     <Label htmlFor="tag-name">Tag Name (4 chars max)</Label>
-                                    <Input id="tag-name" value={newTagName} onChange={(e) => setNewTagName(e.target.value)} maxLength={4} placeholder="e.g. Pro"/>
+                                    <Input id="tag-name" value={serverTag?.name || ''} onChange={(e) => handleTagUpdate('name', e.target.value)} maxLength={4} placeholder="e.g. Pro"/>
                                 </div>
                                  <div className="space-y-1.5">
                                      <Label htmlFor="tag-icon">Tag Icon</Label>
-                                      <Select value={newTagIcon} onValueChange={(value: any) => setNewTagIcon(value)}>
+                                      <Select value={serverTag?.icon || 'Sword'} onValueChange={(value: any) => handleTagUpdate('icon', value)}>
                                         <SelectTrigger id="tag-icon">
                                             <SelectValue placeholder="Select an icon"/>
                                         </SelectTrigger>
@@ -507,33 +489,17 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <Button type="button" onClick={handleAddTag}><Plus className="size-4 mr-2"/> Add Tag</Button>
+                            </div>
+                            <div>
+                                <Label>Preview</Label>
+                                <div className="p-2 mt-1 bg-muted rounded-md flex items-center justify-center">
+                                    <Badge variant="secondary" className="gap-1.5 text-base">
+                                        {(tagIcons as any)[serverTag?.icon || 'Sword'] && React.createElement((tagIcons as any)[serverTag?.icon || 'Sword'], { className: 'size-4' })} 
+                                        {serverTag?.name || 'Tag'}
+                                    </Badge>
+                                </div>
                             </div>
                         </div>
-
-                         <div className="space-y-2">
-                             <Label>Existing Tags</Label>
-                             <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                                {serverTags.map((tag) => {
-                                    const Icon = tagIcons[tag.icon];
-                                    const isClaimed = server.claimedTags?.[tag.id];
-                                    return (
-                                        <div key={tag.id} className="flex items-center justify-between p-2 border rounded-md">
-                                            <div className="flex items-center gap-3">
-                                                <Badge variant="secondary" className="gap-1.5">
-                                                    <Icon className="size-3.5"/> {tag.name}
-                                                </Badge>
-                                                {isClaimed && <span className="text-xs text-muted-foreground">Claimed by {members.find(m => m.uid === isClaimed)?.displayName || '...'}</span>}
-                                            </div>
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveTag(tag.id)} className="size-7 text-muted-foreground">
-                                                <X className="size-4" />
-                                            </Button>
-                                        </div>
-                                    )
-                                })}
-                                 {serverTags.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No tags created yet.</p>}
-                            </div>
-                         </div>
                     </TabsContent>
                     
                     <TabsContent value="discovery" className="mt-0">

@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (data: Partial<UserProfile>) => {
       if (!authUser) throw new Error('Not authenticated');
 
-      const { displayName, photoURL, serverTags, ...firestoreData } = data;
+      const { displayName, photoURL, ...firestoreData } = data;
 
       const profileUpdates: { displayName?: string; photoURL?: string | null } = {};
       if (displayName !== undefined && displayName !== authUser.displayName) profileUpdates.displayName = displayName;
@@ -159,41 +159,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const userRef = doc(db, 'users', authUser.uid);
-      
-      if (serverTags) {
-          await runTransaction(db, async (transaction) => {
-            const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists()) throw new Error("User document does not exist!");
-
-            const currentServerTags = userDoc.data().serverTags || {};
-            const serverId = Object.keys(serverTags)[0];
-            const newTagId = serverTags[serverId];
-            const oldTagId = currentServerTags[serverId];
-
-            const serverRef = doc(db, 'servers', serverId);
-            const serverDoc = await transaction.get(serverRef);
-            if (!serverDoc.exists()) throw new Error("Server not found!");
-
-            const serverData = serverDoc.data() as Server;
-
-            // Unclaim old tag if it exists
-            if (oldTagId && serverData.claimedTags?.[oldTagId] === authUser.uid) {
-                transaction.update(serverRef, { [`claimedTags.${oldTagId}`]: null });
-            }
-
-            // Claim new tag if it's not already claimed
-            if (newTagId && serverData.claimedTags?.[newTagId]) {
-                 throw new Error("This tag has just been claimed by another user.");
-            }
-            if (newTagId) {
-                 transaction.update(serverRef, { [`claimedTags.${newTagId}`]: authUser.uid });
-            }
-            
-            // Update user's profile with the new tag
-            transaction.set(userRef, { serverTags }, { merge: true });
-        });
-      }
-
       await setDoc(userRef, firestoreData, { merge: true });
     },
     [authUser]

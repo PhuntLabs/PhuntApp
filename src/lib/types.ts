@@ -41,7 +41,6 @@ export interface Connection {
 }
 
 export interface ServerTag {
-    id: string;
     name: string;
     icon: 'Sword' | 'Zap' | 'Car' | 'Bike';
 }
@@ -67,7 +66,7 @@ export interface UserProfile {
   currentGame?: Game | CustomGame | null; // Can be a standard game or a custom one
   customGames?: CustomGame[];
   connections?: Connection[];
-  serverTags?: { [serverId: string]: string }; // serverId -> tagId
+  serverTags?: { [serverId: string]: boolean }; // serverId -> showTag
 }
 
 export interface ChatDocument {
@@ -202,8 +201,7 @@ export interface Server {
 
     customEmojis?: CustomEmoji[];
     roles?: Role[];
-    tags?: ServerTag[];
-    claimedTags?: { [tagId: string]: string }; // tagId -> userId
+    tag?: ServerTag;
     customInviteLink?: string;
     isVerified?: boolean;
     systemChannelId?: string;

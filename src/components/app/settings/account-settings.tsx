@@ -17,6 +17,7 @@ import { useServers } from '@/hooks/use-servers';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Server, ServerTag } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 
 const tagIcons = {
     Sword, Zap, Car, Bike
@@ -78,12 +79,13 @@ export function AccountSettings() {
     }
   };
   
-  const handleTagSelect = async (serverId: string, tagId: string) => {
+  const handleTagToggle = async (serverId: string, show: boolean) => {
       try {
-          await updateUserProfile({ serverTags: { [serverId]: tagId } });
-          toast({ title: 'Tag Applied!', description: 'Your new server tag is now active.'})
+          const newServerTags = { ...user?.serverTags, [serverId]: show };
+          await updateUserProfile({ serverTags: newServerTags });
+          toast({ title: 'Tag preference saved!' })
       } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Failed to apply tag', description: error.message });
+          toast({ variant: 'destructive', title: 'Failed to update preference', description: error.message });
       }
   }
 
@@ -92,36 +94,24 @@ export function AccountSettings() {
   }
   
   const ServerTagSelector = ({ server }: { server: Server }) => {
-    const availableTags = server.tags?.filter(tag => !server.claimedTags?.[tag.id] || server.claimedTags?.[tag.id] === user.uid) || [];
-    const currentTagId = user.serverTags?.[server.id] || 'none';
-
-    if (!server.tags || server.tags.length === 0) {
-        return <p className="text-sm text-muted-foreground">No tags available in this server.</p>
+    if (!server.tag) {
+        return <p className="text-sm text-muted-foreground">No tag available in this server.</p>
     }
 
+    const TagIcon = tagIcons[server.tag.icon];
+    const isEnabled = user.serverTags?.[server.id] !== false;
+
     return (
-        <Select value={currentTagId} onValueChange={(tagId) => handleTagSelect(server.id, tagId)}>
-            <SelectTrigger>
-                <SelectValue placeholder="Select a tag..."/>
-            </SelectTrigger>
-            <SelectContent>
-                <SelectItem value="none">
-                    <div className="flex items-center gap-2">
-                        <Tag className="size-4"/> None
-                    </div>
-                </SelectItem>
-                {availableTags.map(tag => {
-                     const Icon = tagIcons[tag.icon];
-                     return (
-                        <SelectItem key={tag.id} value={tag.id}>
-                            <div className="flex items-center gap-2">
-                                <Icon className="size-4"/> {tag.name}
-                            </div>
-                        </SelectItem>
-                    )
-                })}
-            </SelectContent>
-        </Select>
+        <div className="flex items-center justify-between p-2 rounded-md bg-muted">
+            <Badge variant="secondary" className="gap-1.5 text-sm">
+                <TagIcon className="size-4"/>
+                <span>{server.tag.name}</span>
+            </Badge>
+            <Switch
+                checked={isEnabled}
+                onCheckedChange={(checked) => handleTagToggle(server.id, checked)}
+            />
+        </div>
     )
   }
 
@@ -205,10 +195,10 @@ export function AccountSettings() {
       <Card>
         <CardHeader>
             <CardTitle>Server Tags</CardTitle>
-            <CardDescription>Apply a unique tag from a server you're in. This tag will be displayed next to your name within that server.</CardDescription>
+            <CardDescription>Toggle the visibility of server-specific tags next to your name.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            {servers.length > 0 ? servers.map(server => (
+            {servers.filter(s => s.tag?.name).length > 0 ? servers.filter(s => s.tag?.name).map(server => (
                 <div key={server.id} className="grid grid-cols-3 items-center gap-4">
                      <Label className="font-semibold">{server.name}</Label>
                      <div className="col-span-2">
@@ -216,7 +206,7 @@ export function AccountSettings() {
                      </div>
                 </div>
             )) : (
-                <p className="text-sm text-muted-foreground text-center py-4">You are not a member of any servers yet.</p>
+                <p className="text-sm text-muted-foreground text-center py-4">None of your servers have a member tag configured.</p>
             )}
         </CardContent>
       </Card>
