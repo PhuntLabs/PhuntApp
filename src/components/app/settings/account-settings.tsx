@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,13 +9,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { MailWarning, User, Save } from 'lucide-react';
+import { MailWarning, User, Save, Sword, Zap, Car, Bike, Tag } from 'lucide-react';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { useServers } from '@/hooks/use-servers';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Server, ServerTag } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
+
+const tagIcons = {
+    Sword, Zap, Car, Bike
+};
 
 export function AccountSettings() {
   const { user, updateUserProfile, sendPasswordReset } = useAuth();
+  const { servers } = useServers(!!user);
   const { toast } = useToast();
 
   const [displayName, setDisplayName] = useState('');
@@ -67,9 +77,52 @@ export function AccountSettings() {
       });
     }
   };
+  
+  const handleTagSelect = async (serverId: string, tagId: string) => {
+      try {
+          await updateUserProfile({ serverTags: { [serverId]: tagId } });
+          toast({ title: 'Tag Applied!', description: 'Your new server tag is now active.'})
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Failed to apply tag', description: error.message });
+      }
+  }
 
   if (!user) {
     return null;
+  }
+  
+  const ServerTagSelector = ({ server }: { server: Server }) => {
+    const availableTags = server.tags?.filter(tag => !server.claimedTags?.[tag.id] || server.claimedTags?.[tag.id] === user.uid) || [];
+    const currentTagId = user.serverTags?.[server.id] || 'none';
+
+    if (!server.tags || server.tags.length === 0) {
+        return <p className="text-sm text-muted-foreground">No tags available in this server.</p>
+    }
+
+    return (
+        <Select value={currentTagId} onValueChange={(tagId) => handleTagSelect(server.id, tagId)}>
+            <SelectTrigger>
+                <SelectValue placeholder="Select a tag..."/>
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="none">
+                    <div className="flex items-center gap-2">
+                        <Tag className="size-4"/> None
+                    </div>
+                </SelectItem>
+                {availableTags.map(tag => {
+                     const Icon = tagIcons[tag.icon];
+                     return (
+                        <SelectItem key={tag.id} value={tag.id}>
+                            <div className="flex items-center gap-2">
+                                <Icon className="size-4"/> {tag.name}
+                            </div>
+                        </SelectItem>
+                    )
+                })}
+            </SelectContent>
+        </Select>
+    )
   }
 
   return (
@@ -147,6 +200,25 @@ export function AccountSettings() {
                 {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
         </CardFooter>
+      </Card>
+
+      <Card>
+        <CardHeader>
+            <CardTitle>Server Tags</CardTitle>
+            <CardDescription>Apply a unique tag from a server you're in. This tag will be displayed next to your name within that server.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            {servers.length > 0 ? servers.map(server => (
+                <div key={server.id} className="grid grid-cols-3 items-center gap-4">
+                     <Label className="font-semibold">{server.name}</Label>
+                     <div className="col-span-2">
+                        <ServerTagSelector server={server} />
+                     </div>
+                </div>
+            )) : (
+                <p className="text-sm text-muted-foreground text-center py-4">You are not a member of any servers yet.</p>
+            )}
+        </CardContent>
       </Card>
       
       <Separator/>

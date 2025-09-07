@@ -1,8 +1,8 @@
 
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, Embed } from '@/lib/types';
-import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Menu } from 'lucide-react';
+import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, Embed, ServerTag } from '@/lib/types';
+import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,10 @@ import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useBadges } from '@/hooks/use-badges';
 
+
+const tagIcons = {
+    Sword, Zap, Car, Bike
+};
 
 interface ChannelChatProps {
     channel: Channel;
@@ -183,6 +187,9 @@ export function ChannelChat({
                                 if (!sender) return null;
 
                                 const allBadges = sender.isBot ? ['bot', ...(sender.badges || [])] : sender.badges || [];
+                                
+                                const userServerTagId = sender.serverTags?.[server.id];
+                                const userServerTag = server.tags?.find(t => t.id === userServerTagId);
 
                                 return (
                                     <div
@@ -223,6 +230,12 @@ export function ChannelChat({
                                                     <UserNav user={sender as UserProfile} as="trigger" serverContext={server}>
                                                         <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
                                                     </UserNav>
+                                                     {userServerTag && (
+                                                        <Badge variant="secondary" className="gap-1">
+                                                            {(tagIcons as any)[userServerTag.icon] && React.createElement((tagIcons as any)[userServerTag.icon], { className: 'size-3' })}
+                                                            {userServerTag.name}
+                                                        </Badge>
+                                                     )}
                                                     <div className="flex items-center gap-1">
                                                          {allBadges.map((badgeId) => {
                                                             const badgeInfo = getBadgeDetails(badgeId);

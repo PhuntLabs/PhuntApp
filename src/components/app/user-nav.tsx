@@ -2,7 +2,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Settings, Pencil, UserPlus, Moon, XCircle, CircleDot, MessageCircleMore, Check, Gamepad2, Link as LinkIcon, Github, Youtube } from 'lucide-react';
+import { LogOut, Save, Settings, Pencil, UserPlus, Moon, XCircle, CircleDot, MessageCircleMore, Check, Gamepad2, Link as LinkIcon, Github, Youtube, Sword, Zap, Car, Bike } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -50,6 +50,11 @@ const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType,
     dnd: { label: 'Do Not Disturb', icon: XCircle, color: 'text-red-500' },
     offline: { label: 'Offline', icon: CircleDot, color: 'text-gray-500' },
 };
+
+const tagIcons = {
+    Sword, Zap, Car, Bike
+};
+
 
 // Profile Effects Components
 const RainEffect = () => (
@@ -297,6 +302,9 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       .sort((a, b) => a.priority - b.priority);
   
   const allServerRoles = serverContext?.roles?.sort((a,b) => a.priority - b.priority) || [];
+  
+  const userServerTagId = user.serverTags?.[serverContext?.id || ''];
+  const userServerTag = serverContext?.tags?.find(t => t.id === userServerTagId);
 
   const AvatarEffectComponent = user.avatarEffect ? avatarEffects[user.avatarEffect] : null;
   const ProfileEffectComponent = user.profileEffect ? profileEffects[user.profileEffect] : null;
@@ -365,6 +373,12 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                         <>
                             <div className="flex items-center gap-2">
                                 <h3 className="text-xl font-bold">{displayUser.displayName}</h3>
+                                {userServerTag && (
+                                    <Badge variant="secondary" className="gap-1">
+                                        {(tagIcons as any)[userServerTag.icon] && React.createElement((tagIcons as any)[userServerTag.icon], { className: 'size-3' })}
+                                        {userServerTag.name}
+                                    </Badge>
+                                )}
                                 <div className="flex items-center gap-1">
                                 {allBadges.map((badgeId) => {
                                     const badgeInfo = getBadgeDetails(badgeId);

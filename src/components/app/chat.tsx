@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { PopulatedChat, Message, UserProfile, Emoji, CustomEmoji } from '@/lib/types';
-import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, Menu } from 'lucide-react';
+import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike } from 'lucide-react';
 import { UserNav } from './user-nav';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
@@ -22,6 +22,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useBadges } from '@/hooks/use-badges';
+
+const tagIcons = {
+    Sword, Zap, Car, Bike
+};
 
 interface ChatProps {
   chat: PopulatedChat;
@@ -147,7 +151,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
               if (!sender) return null;
 
               const allBadges = sender.isBot ? ['bot', ...(sender.badges || [])] : sender.badges || [];
-
+              
               return (
                 <div
                   key={message.id}
