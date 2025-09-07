@@ -1,8 +1,7 @@
-
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, Embed, ServerTag } from '@/lib/types';
-import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike } from 'lucide-react';
+import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -186,10 +185,10 @@ export function ChannelChat({
 
                                 if (!sender) return null;
 
-                                const allBadges = sender.isBot ? ['bot', ...(sender.badges || [])] : sender.badges || [];
-                                
-                                const userServerTagId = sender.serverTags?.[server.id];
-                                const userServerTag = server.tags?.find(t => t.id === userServerTagId);
+                                const isHeina = sender.displayName?.toLowerCase() === 'heina';
+                                const shouldShowServerTag = server.tag?.name && sender.serverTags?.[server.id] !== false;
+                                const TagIcon = shouldShowServerTag ? (tagIcons as any)[server.tag!.icon] : null;
+
 
                                 return (
                                     <div
@@ -230,32 +229,18 @@ export function ChannelChat({
                                                     <UserNav user={sender as UserProfile} as="trigger" serverContext={server}>
                                                         <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
                                                     </UserNav>
-                                                     {userServerTag && (
+                                                     {shouldShowServerTag && (
                                                         <Badge variant="secondary" className="gap-1">
-                                                            {(tagIcons as any)[userServerTag.icon] && React.createElement((tagIcons as any)[userServerTag.icon], { className: 'size-3' })}
-                                                            {userServerTag.name}
+                                                            {TagIcon && <TagIcon className="size-3" />}
+                                                            {server.tag!.name}
                                                         </Badge>
                                                      )}
-                                                    <div className="flex items-center gap-1">
-                                                         {allBadges.map((badgeId) => {
-                                                            const badgeInfo = getBadgeDetails(badgeId);
-                                                            if (!badgeInfo) return null;
-                                                            const Icon = getBadgeIcon(badgeInfo.icon);
-                                                            return (
-                                                                <Tooltip key={badgeId}>
-                                                                    <TooltipTrigger>
-                                                                        <div 
-                                                                            className="h-5 px-1.5 flex items-center gap-1 rounded-full text-xs font-semibold"
-                                                                            style={{ color: badgeInfo.color, backgroundColor: `${badgeInfo.color}20`}}
-                                                                        >
-                                                                            <Icon className="size-3" /> {badgeInfo.name}
-                                                                        </div>
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent>{badgeInfo.name}</TooltipContent>
-                                                                </Tooltip>
-                                                            )
-                                                        })}
-                                                    </div>
+                                                     {isHeina && (
+                                                        <Badge variant="outline" className="border-green-500/50 text-green-400 gap-1.5 h-5">
+                                                            <BadgeCheck className="size-3" />
+                                                            OWNER
+                                                        </Badge>
+                                                     )}
                                                     <span className="text-xs text-muted-foreground">
                                                         {message.timestamp ? format((message.timestamp as any).toDate(), 'PPpp') : 'sending...'}
                                                     </span>

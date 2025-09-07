@@ -1,8 +1,7 @@
-
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Settings, Pencil, UserPlus, Moon, XCircle, CircleDot, MessageCircleMore, Check, Gamepad2, Link as LinkIcon, Github, Youtube, Sword, Zap, Car, Bike } from 'lucide-react';
+import { LogOut, Save, Settings, Pencil, UserPlus, Moon, XCircle, CircleDot, MessageCircleMore, Check, Gamepad2, Link as LinkIcon, Github, Youtube, Sword, Zap, Car, Bike, BadgeCheck } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -303,11 +302,13 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   
   const allServerRoles = serverContext?.roles?.sort((a,b) => a.priority - b.priority) || [];
   
-  const userServerTagId = user.serverTags?.[serverContext?.id || ''];
-  const userServerTag = serverContext?.tags?.find(t => t.id === userServerTagId);
+  const shouldShowServerTag = serverContext?.tag?.name && user.serverTags?.[serverContext?.id] !== false;
+  const TagIcon = shouldShowServerTag ? (tagIcons as any)[serverContext!.tag!.icon] : null;
 
   const AvatarEffectComponent = user.avatarEffect ? avatarEffects[user.avatarEffect] : null;
   const ProfileEffectComponent = user.profileEffect ? profileEffects[user.profileEffect] : null;
+
+  const isHeina = user.displayName?.toLowerCase() === 'heina';
 
   return (
     <Popover open={isPopoverOpen} onOpenChange={(open) => {
@@ -373,12 +374,18 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                         <>
                             <div className="flex items-center gap-2">
                                 <h3 className="text-xl font-bold">{displayUser.displayName}</h3>
-                                {userServerTag && (
+                                {shouldShowServerTag && (
                                     <Badge variant="secondary" className="gap-1">
-                                        {(tagIcons as any)[userServerTag.icon] && React.createElement((tagIcons as any)[userServerTag.icon], { className: 'size-3' })}
-                                        {userServerTag.name}
+                                        {TagIcon && <TagIcon className="size-3" />}
+                                        {serverContext!.tag!.name}
                                     </Badge>
                                 )}
+                                 {isHeina && (
+                                    <Badge variant="outline" className="border-green-500/50 text-green-400 gap-1.5 h-5">
+                                        <BadgeCheck className="size-3" />
+                                        OWNER
+                                    </Badge>
+                                 )}
                                 <div className="flex items-center gap-1">
                                 {allBadges.map((badgeId) => {
                                     const badgeInfo = getBadgeDetails(badgeId);

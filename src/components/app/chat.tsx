@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
@@ -8,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { PopulatedChat, Message, UserProfile, Emoji, CustomEmoji } from '@/lib/types';
-import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike } from 'lucide-react';
+import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck } from 'lucide-react';
 import { UserNav } from './user-nav';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
@@ -150,7 +149,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
               
               if (!sender) return null;
 
-              const allBadges = sender.isBot ? ['bot', ...(sender.badges || [])] : sender.badges || [];
+              const isHeina = sender.displayName?.toLowerCase() === 'heina';
               
               return (
                 <div
@@ -190,26 +189,12 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                             <UserNav user={sender} as="trigger">
                                 <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
                             </UserNav>
-                             <div className="flex items-center gap-1">
-                                {allBadges.map((badgeId) => {
-                                    const badgeInfo = getBadgeDetails(badgeId);
-                                    if (!badgeInfo) return null;
-                                    const Icon = getBadgeIcon(badgeInfo.icon);
-                                    return (
-                                        <Tooltip key={badgeId}>
-                                            <TooltipTrigger>
-                                                <div 
-                                                    className="h-5 px-1.5 flex items-center gap-1 rounded-full text-xs font-semibold"
-                                                    style={{ color: badgeInfo.color, backgroundColor: `${badgeInfo.color}20`}}
-                                                >
-                                                    <Icon className="size-3" /> {badgeInfo.name}
-                                                </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent>{badgeInfo.name}</TooltipContent>
-                                        </Tooltip>
-                                    )
-                                })}
-                            </div>
+                             {isHeina && (
+                                <Badge variant="outline" className="border-green-500/50 text-green-400 gap-1.5 h-5">
+                                    <BadgeCheck className="size-3" />
+                                    OWNER
+                                </Badge>
+                             )}
                             <span className="text-xs text-muted-foreground">
                                 {message.timestamp ? format((message.timestamp as any).toDate(), 'PPpp') : 'sending...'}
                             </span>
