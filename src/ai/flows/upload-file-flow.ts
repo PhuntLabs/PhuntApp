@@ -73,7 +73,15 @@ const uploadFileFlow = ai.defineFlow(
         throw new Error(`Gofile upload failed with status ${response.status}: ${errorText}`);
     }
 
-    const result = await response.json();
+    const responseText = await response.text();
+    let result;
+    try {
+        result = JSON.parse(responseText);
+    } catch (e) {
+        console.error("Gofile API Error: Failed to parse JSON. Raw response:", responseText);
+        throw new Error('Gofile upload failed. The response from their server was not valid JSON.');
+    }
+
 
     if (result.status !== 'ok' || !result.data?.directLink) {
         console.error("Gofile API Error - Unexpected Response Structure:", result);
