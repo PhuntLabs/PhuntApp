@@ -1,19 +1,20 @@
 <?php
 // --- START: CORS Headers ---
-// Allow requests from any origin. For better security, you could replace '*'
-// with your app's actual domain.
+// This is the most critical line. It tells the browser that any origin ('*') is allowed to make requests.
 header('Access-Control-Allow-Origin: *');
 
-// Allow the necessary HTTP methods.
+// Allow the necessary HTTP methods. The browser will use OPTIONS for a "pre-flight" request.
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 
-// Allow the necessary headers.
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+// Allow the necessary headers that the browser might send.
+header('Access-control-allow-headers: content-type, authorization, x-requested-with');
 
-// Handle pre-flight OPTIONS request (sent by browsers to check CORS).
+// Handle the browser's pre-flight OPTIONS request.
+// This is crucial. When the browser sees a cross-origin request, it first sends an OPTIONS request to check permissions.
+// Your server MUST respond to this with the headers above and then stop execution.
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(204); // Use 204 No Content for pre-flight
-    die(); // Stop script execution after sending headers for pre-flight
+    http_response_code(204); // Use 204 No Content for pre-flight.
+    die(); // Stop script execution after sending headers for the pre-flight request.
 }
 // --- END: CORS Headers ---
 
@@ -52,10 +53,14 @@ if (isset($_FILES['fileToUpload']) && $_FILES['fileToUpload']['error'] === UPLOA
         echo json_encode(['success' => false, 'message' => 'Failed to move the uploaded file.']);
     }
 } else {
-    // Handle the case where no file was uploaded or there was an error.
+    // Handle the case where no file was uploaded or there was an upload error.
     header('Content-Type: application/json');
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'No file uploaded or an upload error occurred.']);
+    $error_message = 'No file uploaded or an upload error occurred.';
+    if (isset($_FILES['fileToUpload'])) {
+        $error_message .= ' Error code: ' . $_FILES['fileToUpload']['error'];
+    }
+    echo json_encode(['success' => false, 'message' => $error_message]);
 }
 
 ?>
