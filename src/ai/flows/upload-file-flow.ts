@@ -5,6 +5,7 @@
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { v4 as uuidv4 } from 'uuid';
 
 const UploadFileInputSchema = z.object({
   fileName: z.string(),
@@ -38,17 +39,33 @@ const uploadFileFlow = ai.defineFlow(
     
     // Convert base64 back to a Buffer
     const fileBuffer = Buffer.from(fileContent, 'base64');
+    
+    // Manually construct the multipart/form-data payload
+    const boundary = `----WebKitFormBoundary${uuidv4().replace(/-/g, '')}`;
+    const bodyParts: (string | Buffer)[] = [];
 
-    const formData = new FormData();
-    // Use the Buffer directly. The `fetch` implementation in Node.js can handle this.
-    formData.append('file', new Blob([fileBuffer], { type: fileType }), fileName);
+    bodyParts.push(`--${boundary}`);
+    bodyParts.push(`Content-Disposition: form-data; name="file"; filename="${fileName}"`);
+    bodyParts.push(`Content-Type: ${fileType}`);
+    bodyParts.push(''); // Empty line before content
+    bodyParts.push(fileBuffer);
+    bodyParts.push(`--${boundary}--`);
+    bodyParts.push(''); // Final empty line
 
+    const body = bodyParts.reduce((acc, part) => {
+        if (typeof part === 'string') {
+            return Buffer.concat([acc, Buffer.from(part + '\r\n', 'utf-8')]);
+        }
+        return Buffer.concat([acc, part, Buffer.from('\r\n', 'utf-8')]);
+    }, Buffer.alloc(0));
+    
     const response = await fetch('https://upload.gofile.io/uploadFile', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
       },
-      body: formData,
+      body: body,
     });
     
     if (!response.ok) {
