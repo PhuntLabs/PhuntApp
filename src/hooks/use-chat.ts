@@ -86,15 +86,15 @@ export function useChat(chat: PopulatedChat | null) {
       let imageUrl: string | undefined = undefined;
       if (file) {
         const formData = new FormData();
-        formData.append('fileToUpload', file);
+        formData.append('file', file);
         try {
-          const response = await fetch('https://www.yeahchat.online/fileupload.php', {
+          const response = await fetch('https://file.io', {
             method: 'POST',
             body: formData,
           });
           const result = await response.json();
-          if (result.success && result.url) {
-            imageUrl = result.url;
+          if (result.success && result.link) {
+            imageUrl = result.link;
           } else {
             throw new Error(result.message || 'File upload failed.');
           }
