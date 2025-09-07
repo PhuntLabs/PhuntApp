@@ -22,6 +22,17 @@ import {
 import type { Message, PopulatedChat, Mention } from '@/lib/types';
 import { useAuth } from './use-auth';
 import { useToast } from './use-toast';
+import { uploadFile } from '@/ai/flows/upload-file-flow';
+
+// Function to convert a File to a base64 string
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = error => reject(error);
+    });
+};
 
 // Function to find mentioned user IDs from message text
 async function getMentionedUserIds(text: string): Promise<string[]> {
@@ -88,38 +99,24 @@ export function useChat(chat: PopulatedChat | null) {
       let fileInfo: Message['fileInfo'] | undefined = undefined;
 
       if (file) {
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        const fetchOptions: RequestInit = {
-            method: 'POST',
-            body: formData,
-        };
-
-        const apiToken = process.env.NEXT_PUBLIC_GOFILE_API_TOKEN;
-        if (apiToken) {
-            fetchOptions.headers = {
-                'Authorization': `Bearer ${apiToken}`
-            };
-        }
-
         try {
-          const response = await fetch('https://upload.gofile.io/uploadFile', fetchOptions);
-          const result = await response.json();
-          if (result.status === 'ok' && result.data?.directLink) {
+            const base64Content = await fileToBase64(file);
+            const result = await uploadFile({
+                fileName: file.name,
+                fileType: file.type,
+                fileContent: base64Content,
+            });
+
             if (file.type.startsWith('image/')) {
-                imageUrl = result.data.directLink;
+                imageUrl = result.directLink;
             } else {
                 fileInfo = {
                     name: file.name,
                     size: file.size,
                     type: file.type,
-                    url: result.data.directLink,
+                    url: result.directLink,
                 }
             }
-          } else {
-            throw new Error(result.message || 'Gofile upload failed. The response structure might have changed.');
-          }
         } catch (error: any) {
           toast({
             variant: 'destructive',
