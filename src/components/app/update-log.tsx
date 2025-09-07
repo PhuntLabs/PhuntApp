@@ -12,12 +12,17 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Rocket, Sparkles, Gamepad2, Bot, MessageCirclePlus } from 'lucide-react';
+import { Rocket, Sparkles, Gamepad2, Bot, MessageCirclePlus, Paperclip } from 'lucide-react';
 
-const APP_VERSION = '1.0.5';
+const APP_VERSION = '1.0.6';
 const LOCAL_STORAGE_KEY = `changelog_seen_${APP_VERSION}`;
 
 const updates = [
+    {
+        title: 'Secure File Uploads',
+        icon: Paperclip,
+        description: 'You can now upload and share files of any type directly in your chats. All files are securely handled via Gofile.io, appearing as a clean, rich embed.',
+    },
     {
         title: 'Introducing: The Game Hub!',
         icon: Gamepad2,
