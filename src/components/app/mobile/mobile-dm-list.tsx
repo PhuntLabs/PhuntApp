@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { AddUserDialog } from '../add-user-dialog';
 import { useAuth } from '@/hooks/use-auth';
+import Image from 'next/image';
 
 interface MobileDMListProps {
   chats: PopulatedChat[];
@@ -32,17 +33,11 @@ const ActiveNowCard = ({ user }: { user: Partial<UserProfile> }) => {
 
     return (
         <div className="w-40 shrink-0">
-            <div className="aspect-video rounded-lg relative overflow-hidden bg-accent">
+            <div className="aspect-video rounded-lg relative overflow-hidden bg-accent group">
                  { "logoUrl" in game && game.logoUrl ? (
-                    <Avatar className="w-full h-full rounded-lg">
-                        <AvatarImage src={game.logoUrl} alt={game.name} className="object-cover"/>
-                        <AvatarFallback className="rounded-lg">{game.name[0]}</AvatarFallback>
-                    </Avatar>
+                    <Image src={game.logoUrl} alt={game.name} fill className="object-cover group-hover:scale-105 transition-transform" />
                 ) : "imageUrl" in game && game.imageUrl ? (
-                    <Avatar className="w-full h-full rounded-lg">
-                        <AvatarImage src={game.imageUrl} alt={game.name} className="object-cover"/>
-                        <AvatarFallback className="rounded-lg">{game.name[0]}</AvatarFallback>
-                    </Avatar>
+                    <Image src={game.imageUrl} alt={game.name} fill className="object-cover group-hover:scale-105 transition-transform" />
                 ): <div className="w-full h-full bg-accent flex items-center justify-center"><Gamepad2 className="size-8 text-muted-foreground"/></div>}
                 <div className="absolute inset-x-0 bottom-0 bg-black/50 backdrop-blur-sm p-1.5">
                     <div className="flex items-center gap-2">
@@ -55,7 +50,6 @@ const ActiveNowCard = ({ user }: { user: Partial<UserProfile> }) => {
                 </div>
             </div>
             <p className="font-semibold text-sm truncate mt-1">{game.name}</p>
-            <p className="text-xs text-muted-foreground truncate">Roblox</p>
         </div>
     )
 }
