@@ -7,8 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import type { PopulatedChat, Message, UserProfile, Emoji, CustomEmoji } from '@/lib/types';
-import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck } from 'lucide-react';
+import type { PopulatedChat, Message, UserProfile, Emoji, CustomEmoji, UserStatus } from '@/lib/types';
+import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck, Phone, Video, ChevronLeft } from 'lucide-react';
 import { UserNav } from './user-nav';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
@@ -27,6 +27,13 @@ const tagIcons = {
     Sword, Zap, Car, Bike
 };
 
+const statusConfig: Record<UserStatus, string> = {
+    online: 'bg-green-500',
+    idle: 'bg-yellow-500',
+    dnd: 'bg-red-500',
+    offline: 'bg-gray-500',
+};
+
 interface ChatProps {
   chat: PopulatedChat;
   messages: Message[];
@@ -35,9 +42,10 @@ interface ChatProps {
   onDeleteMessage: (messageId: string) => void;
   currentUser: User;
   sidebarTrigger?: React.ReactNode;
+  onBack?: () => void;
 }
 
-export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMessage, currentUser, sidebarTrigger }: ChatProps) {
+export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMessage, currentUser, sidebarTrigger, onBack }: ChatProps) {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
@@ -99,6 +107,8 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   const chatName = otherMember?.displayName || chat.name || 'Chat';
   const chatAvatar = otherMember?.photoURL;
   const isBotChat = otherMember?.isBot;
+  const status = otherMember?.status || 'offline';
+
 
   const TypingIndicator = () => {
     if (typingUsers.length === 0) return null;
@@ -115,17 +125,25 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      <header className="p-4 flex items-center gap-2 border-b">
+    <div className="flex flex-col h-full bg-background">
+      <header className="p-2.5 md:p-4 flex items-center gap-2 border-b">
+         {onBack && (
+            <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={onBack}>
+                <ChevronLeft />
+            </Button>
+         )}
          {sidebarTrigger}
          <UserNav user={otherMember as UserProfile} as="trigger">
-            <div className="flex items-center gap-2 cursor-pointer">
-                 <Avatar className="size-8">
-                  <AvatarImage src={chatAvatar || undefined} />
-                  <AvatarFallback>{chatName?.[0]}</AvatarFallback>
-                </Avatar>
+            <div className="flex items-center gap-2 cursor-pointer flex-1">
+                 <div className="relative">
+                    <Avatar className="size-8">
+                      <AvatarImage src={chatAvatar || undefined} />
+                      <AvatarFallback>{chatName?.[0]}</AvatarFallback>
+                    </Avatar>
+                     <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background", statusConfig[status])} />
+                </div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-semibold">{chatName}</h1>
+                  <h1 className="text-base md:text-xl font-semibold">{chatName}</h1>
                   {isBotChat && (
                       <Badge variant="secondary" className="h-5 px-1.5 flex items-center gap-1 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
                         <Bot className="size-3" /> BOT
@@ -134,6 +152,10 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                 </div>
             </div>
         </UserNav>
+         <div className="ml-auto flex items-center gap-1">
+            <Button variant="ghost" size="icon"><Phone /></Button>
+            <Button variant="ghost" size="icon"><Video /></Button>
+        </div>
       </header>
       <div className="flex flex-1 flex-col h-full bg-muted/20 overflow-hidden">
         <ScrollArea className="flex-1" ref={scrollAreaRef as any}>
@@ -249,7 +271,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
           </TooltipProvider>
         </ScrollArea>
          <TypingIndicator />
-        <div className="p-4 border-t bg-card">
+        <div className="p-2 md:p-4 border-t bg-card">
             {replyingTo && (
                 <div className="flex items-center justify-between text-sm bg-secondary px-3 py-1.5 rounded-t-md -mb-1 mx-[-1px]">
                     <p className="text-muted-foreground">

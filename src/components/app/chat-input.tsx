@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Send, SmilePlus, X, AtSign, Slash, Bot, Trash, Lock, Vote, MessageSquare, Pipette, Shuffle, Paperclip } from 'lucide-react';
+import { Send, SmilePlus, X, AtSign, Slash, Bot, Trash, Lock, Vote, MessageSquare, Pipette, Shuffle, Paperclip, Plus, Gamepad2, Gift, Mic } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Server } from '@/lib/types';
 import { executeSlashCommand, SlashCommandOutput } from '@/ai/flows/slash-command-flow';
+import { useMobileView } from '@/hooks/use-mobile-view';
+import { cn } from '@/lib/utils';
 
 const standardEmojis: Emoji[] = [
     { name: "grinning", char: "😀", keywords: ["happy", "joy", "smile"] },
@@ -92,6 +94,7 @@ export function ChatInput({
     const { hasPermission } = usePermissions(serverContext || null, channelId || null);
     const canMentionEveryone = hasPermission('mentionEveryone');
     const hasQolBot = serverContext?.members.some(id => id === 'qolforu-bot-id');
+    const { isMobileView } = useMobileView();
 
     const everyoneAndHereOption = useMemo(() => {
         return { uid: 'everyone', displayName: 'everyone', note: 'Notifies everyone in this channel.' };
@@ -270,6 +273,38 @@ export function ChatInput({
         </div>
     )
 
+    if (isMobileView) {
+        return (
+            <form onSubmit={handleSubmit} className="relative flex flex-col gap-2">
+                <div className="flex items-center gap-1.5 p-2">
+                    <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0 text-muted-foreground"><Plus className="size-5"/></Button>
+                    <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0 text-muted-foreground"><Gamepad2 className="size-5"/></Button>
+                    <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0 text-muted-foreground"><Gift className="size-5"/></Button>
+
+                    <div className="relative flex-1">
+                        <Textarea
+                            ref={inputRef}
+                            value={text}
+                            onChange={handleTextChange}
+                            onPaste={handlePaste}
+                            onKeyDown={handleKeyDown}
+                            placeholder={placeholder || "Message..."}
+                            className="bg-muted border-none pr-10 resize-none"
+                            rows={1}
+                            disabled={disabled || isSubmitting}
+                        />
+                        <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 size-8 text-muted-foreground">
+                            <SmilePlus className="size-5" />
+                        </Button>
+                    </div>
+                    <Button type="submit" variant="ghost" size="icon" className="size-8 shrink-0 text-muted-foreground">
+                        {text.trim() || attachment ? <Send className="size-5 text-primary" /> : <Mic className="size-5" />}
+                    </Button>
+                </div>
+            </form>
+        )
+    }
+
     return (
         <form onSubmit={handleSubmit} className="relative flex flex-col gap-2">
             {isAutocompleteOpen && AutocompletePopover()}
@@ -340,3 +375,4 @@ export function ChatInput({
         </form>
     );
 }
+

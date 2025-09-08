@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Home, AtSign, User as UserIcon, Menu, Bell } from 'lucide-react';
+import { Home, Bell, User as UserIcon, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PopulatedChat, Server, UserProfile, Channel } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
@@ -103,9 +103,14 @@ export function MobileLayout({
       onSelectServer(server);
   }
 
-  const handleBack = () => {
+  const handleBackFromChat = () => {
     onSelectChat(null);
-    sidebarProps.onSelectChannel(null as any);
+    if(selectedServer) {
+        // If we were in a server, deselect the channel
+        sidebarProps.onSelectChannel(null as any);
+    } else {
+        // If we were in a DM, do nothing, the main view will show the DM list
+    }
   }
 
   const onJumpToMessage = () => {} // Placeholder
@@ -121,7 +126,7 @@ export function MobileLayout({
 
     if (isChatOpen) {
        if (selectedChat && authUser) {
-           return <Chat chat={selectedChat} messages={dmMessages} onSendMessage={onSendDM} onEditMessage={onEditDM} onDeleteMessage={onDeleteDM} currentUser={authUser} sidebarTrigger={sidebarTrigger} />;
+           return <Chat chat={selectedChat} messages={dmMessages} onSendMessage={onSendDM} onEditMessage={onEditDM} onDeleteMessage={onDeleteDM} currentUser={authUser} onBack={handleBackFromChat} />;
        }
        if (selectedServer && sidebarProps.selectedChannel && authUser) {
            return <ChannelChat channel={sidebarProps.selectedChannel} server={selectedServer} currentUser={authUser} members={sidebarProps.members} messages={channelMessages} onSendMessage={onSendChannelMessage} onEditMessage={onEditChannelMessage} onDeleteMessage={onDeleteChannelMessage} sidebarTrigger={sidebarTrigger} />;
