@@ -19,6 +19,7 @@ import {
   Gamepad,
   Code,
   Bell,
+  Link2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountSettings } from './settings/account-settings';
@@ -29,12 +30,14 @@ import { ProfileSettings } from './settings/profile-settings';
 import { GameActivitySettings } from './settings/game-activity-settings';
 import { DeveloperSettings } from './settings/developer-settings';
 import { NotificationsSettings } from './settings/notifications-settings';
+import { ConnectionsSettings } from './settings/connections-settings';
 
-type Section = 'account' | 'profiles' | 'security' | 'theme' | 'bugs' | 'game-activity' | 'developer' | 'notifications';
+type Section = 'account' | 'profiles' | 'connections' | 'security' | 'theme' | 'bugs' | 'game-activity' | 'developer' | 'notifications';
 
 const sections = [
   { id: 'account', label: 'My Account', icon: User },
   { id: 'profiles', label: 'Profiles', icon: Sparkles },
+  { id: 'connections', label: 'Connections', icon: Link2 },
   { id: 'game-activity', label: 'Game Activity', icon: Gamepad },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'security', label: 'Security', icon: Shield },
@@ -59,6 +62,8 @@ export function SettingsDialog({ children, defaultSection = 'account', onOpenCha
         return <AccountSettings />;
       case 'profiles':
         return <ProfileSettings />;
+      case 'connections':
+        return <ConnectionsSettings />;
       case 'game-activity':
         return <GameActivitySettings />;
       case 'security':

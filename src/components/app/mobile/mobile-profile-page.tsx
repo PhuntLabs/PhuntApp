@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useChats } from '@/hooks/use-chats';
-import { Settings, User, UserNav, User as UserIcon, Link2 } from 'lucide-react';
+import { Settings, User, UserNav, User as UserIcon, Link2, Pencil } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,11 +16,13 @@ import { SettingsDialog } from '../settings-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { MobileSettingsPage } from './mobile-settings-page';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { MobileEditProfile } from './mobile-edit-profile';
 
 export function MobileProfilePage() {
     const { user, authUser } = useAuth();
     const { chats } = useChats(!!authUser);
     const { getBadgeDetails, getBadgeIcon } = useBadges();
+    const [showEditProfile, setShowEditProfile] = useState(false);
 
     if (!user) {
         return <div className="flex items-center justify-center h-full">Loading...</div>;
@@ -31,12 +33,23 @@ export function MobileProfilePage() {
     
     const friends = chats.map(chat => chat.members.find(m => m.id !== user?.uid)).filter(Boolean);
 
+    if (showEditProfile) {
+        return <MobileEditProfile onClose={() => setShowEditProfile(false)} />;
+    }
+
     return (
         <div className="h-full flex flex-col bg-card">
             <header className="p-4 flex items-center justify-end gap-2 absolute top-0 right-0 z-10">
-                <Button variant="ghost" size="icon" className="text-white bg-black/30 hover:bg-black/50">
-                    <Link2 className="size-5" />
-                </Button>
+                 <Sheet>
+                    <SheetTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-white bg-black/30 hover:bg-black/50">
+                            <Link2 className="size-5" />
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right" className="p-0 w-full">
+                        {/* This should be the connections page */}
+                    </SheetContent>
+                </Sheet>
                 <Sheet>
                     <SheetTrigger asChild>
                          <Button variant="ghost" size="icon" className="text-white bg-black/30 hover:bg-black/50">
@@ -75,9 +88,9 @@ export function MobileProfilePage() {
                                 )
                             })}
                         </div>
-                        <SettingsDialog defaultSection="account">
-                             <Button className="w-full mt-4">Edit Profile</Button>
-                        </SettingsDialog>
+                         <Button className="w-full mt-4" onClick={() => setShowEditProfile(true)}>
+                            <Pencil className="mr-2 size-4" /> Edit Profile
+                        </Button>
                      </div>
                 </div>
 
@@ -117,4 +130,3 @@ export function MobileProfilePage() {
         </div>
     );
 }
-
