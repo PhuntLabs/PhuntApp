@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Plus, Compass, MessageSquare, Gamepad2 } from 'lucide-react';
+import { Plus, Compass, MessageSquare, Gamepad2, Music } from 'lucide-react';
 import type { Server, PopulatedChat } from '@/lib/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { AddServerDialog } from './add-server-dialog';
@@ -32,6 +32,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
     const { isMobileView } = useMobileView();
     const isDiscoveryActive = pathname === '/discovery';
     const isGamesActive = pathname.startsWith('/games');
+    const isMusicActive = pathname.startsWith('/music');
 
     const { chats } = useChats(!!authUser);
 
@@ -76,12 +77,12 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                             <div 
                                 className={cn(
                                     "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
-                                    !selectedServer && !isDiscoveryActive && !isGamesActive ? "h-9" : "group-hover:h-5"
+                                    !selectedServer && !isDiscoveryActive && !isGamesActive && !isMusicActive ? "h-9" : "group-hover:h-5"
                                 )} 
                             />
                             <div className={cn(
                                 "size-12 rounded-3xl transition-all duration-200 bg-secondary flex items-center justify-center",
-                                !selectedServer && !isDiscoveryActive && !isGamesActive ? 'rounded-2xl bg-primary' : 'group-hover:rounded-2xl group-hover:bg-primary'
+                                !selectedServer && !isDiscoveryActive && !isGamesActive && !isMusicActive ? 'rounded-2xl bg-primary' : 'group-hover:rounded-2xl group-hover:bg-primary'
                             )}>
                                 <MessageSquare className="size-7 text-white/80" />
                             </div>
@@ -229,7 +230,37 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                         </TooltipContent>
                     </Tooltip>
                 </Link>
+
+                {/* Music Button */}
+                <Link href="/music" legacyBehavior={false}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                             <div className="relative group">
+                                 <div 
+                                    className={cn(
+                                        "absolute -left-3 top-1/2 -translate-y-1_2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
+                                        isMusicActive ? "h-9" : "group-hover:h-5"
+                                    )} 
+                                />
+                                <Avatar className={cn(
+                                    "size-12 rounded-3xl bg-secondary transition-all duration-200 group-hover:rounded-2xl",
+                                    isMusicActive ? 'rounded-2xl bg-green-600' : 'group-hover:bg-green-600'
+                                )}>
+                                    <AvatarFallback className={cn("bg-transparent text-green-400 transition-colors duration-200", isMusicActive ? "text-white" : "group-hover:text-white")}>
+                                        <Music size={24} />
+                                    </AvatarFallback>
+                                </Avatar>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                            <p>Music Library</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </Link>
+
             </div>
         </TooltipProvider>
     );
 }
+
+    

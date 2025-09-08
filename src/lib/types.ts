@@ -34,6 +34,14 @@ export interface CustomGame {
   imageUrl: string;
 }
 
+export interface Song {
+    id: string;
+    title: string;
+    artist: string;
+    albumArtUrl: string;
+    audioUrl: string;
+}
+
 export interface Connection {
     type: 'spotify' | 'github' | 'steam' | 'youtube'; // Add more as needed
     username: string;
@@ -69,6 +77,7 @@ export interface UserProfile {
   customGames?: CustomGame[];
   connections?: Connection[];
   serverTags?: { [serverId: string]: boolean }; // serverId -> showTag
+  currentSong?: Song | null;
 }
 
 export interface ChatDocument {
@@ -260,3 +269,5 @@ export interface Emoji {
     char: string;
     keywords: string[];
 }
+
+    

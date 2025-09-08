@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import type { IAgoraRTCClient, ILocalVideoTrack, ILocalAudioTrack } from 'agora-rtc-sdk-ng';
 import type { UserProfile, Call } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { addDoc, collection, doc, serverTimestamp, updateDoc, onSnapshot, Unsubscribe, setDoc, getDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, serverTimestamp, updateDoc, onSnapshot, Unsubscribe, setDoc, getDoc, query, where } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from './use-toast';
 
@@ -233,27 +233,28 @@ export const useCallingStore = create<CallingState>((set, get) => ({
     if (callUnsubscribe) return; 
 
     const callsRef = collection(db, 'calls');
-    const q = onSnapshot(doc(db, 'users', userId), (userDoc) => {
-        if (userDoc.exists() && userDoc.data().status === 'online') {
-            const unsub = onSnapshot(callsRef, async (snapshot) => {
-                const changes = snapshot.docChanges();
-                for (const change of changes) {
-                    const callData = { id: change.doc.id, ...change.doc.data() } as Call;
-                    if (callData.callee.uid === userId) {
-                        if (change.type === "added" && callData.status === 'ringing') {
-                            set({ incomingCall: callData });
-                        } else if (change.type === "modified" && (callData.status === 'declined' || callData.status === 'ended')) {
-                            set({ incomingCall: null });
-                        }
-                    }
-                     if (get().activeCall?.id === callData.id && callData.status === 'ended') {
-                        get().leaveCall('user');
-                    }
+    const q = query(callsRef, where('callee.uid', '==', userId), where('status', '==', 'ringing'));
+
+    const unsub = onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+            const callData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Call;
+            set({ incomingCall: callData });
+            
+            // Listen for this specific call to be ended or declined
+            const unsubCall = onSnapshot(doc(db, 'calls', callData.id), (callDoc) => {
+                const updatedCallData = callDoc.data();
+                if (updatedCallData?.status !== 'ringing') {
+                    set({ incomingCall: null });
+                    unsubCall(); // Stop listening to this specific call
                 }
             });
-            set({ callUnsubscribe: unsub });
+
+        } else {
+            set({ incomingCall: null });
         }
     });
+
+    set({ callUnsubscribe: unsub });
   },
 
   stopListeningForIncomingCalls: () => {
@@ -313,3 +314,5 @@ export const useCallingStore = create<CallingState>((set, get) => ({
   }
 
 }));
+
+    
