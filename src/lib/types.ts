@@ -144,6 +144,7 @@ export interface Call {
   duration?: number; // in seconds
   chatId: string; // DM chat ID
   embedMessageId?: string;
+  showFullScreen?: boolean;
 }
 
 export interface Mention {

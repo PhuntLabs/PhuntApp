@@ -11,14 +11,14 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const channelName = searchParams.get('channelName');
-  const uid = searchParams.get('uid');
+  const userAccount = searchParams.get('userAccount'); // Changed from 'uid'
 
   if (!channelName) {
     return NextResponse.json({ error: 'channelName is required' }, { status: 400 });
   }
 
-  if (!uid) {
-    return NextResponse.json({ error: 'uid is required' }, { status: 400 });
+  if (!userAccount) {
+    return NextResponse.json({ error: 'userAccount is required' }, { status: 400 });
   }
 
   const role = RtcRole.PUBLISHER;
@@ -26,11 +26,12 @@ export async function GET(req: NextRequest) {
   const currentTimestamp = Math.floor(Date.now() / 1000);
   const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
 
-  const token = RtcTokenBuilder.buildTokenWithUid(
+  // Use buildTokenWithUserAccount for string-based UIDs
+  const token = RtcTokenBuilder.buildTokenWithUserAccount(
     NEXT_PUBLIC_AGORA_APP_ID,
     AGORA_APP_CERTIFICATE,
     channelName,
-    Number(uid),
+    userAccount,
     role,
     privilegeExpiredTs
   );

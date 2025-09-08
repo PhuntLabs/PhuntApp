@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
@@ -45,17 +46,16 @@ interface ChatProps {
   currentUser: User;
   sidebarTrigger?: React.ReactNode;
   onBack?: () => void;
+  onInitiateCall: (callee: UserProfile) => void;
 }
 
-export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMessage, currentUser, sidebarTrigger, onBack }: ChatProps) {
+export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMessage, currentUser, sidebarTrigger, onBack, onInitiateCall }: ChatProps) {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { handleTyping } = useTypingStatus(chat.id);
   const { getBadgeDetails, getBadgeIcon } = useBadges();
-  const { user } = useAuth();
-  const { initCall } = useCallingStore();
   
   const typingUsers = useMemo(() => {
     return chat.members.filter(m => m.id !== currentUser.uid && chat.typing?.[m.id!]);
@@ -128,13 +128,10 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
     );
   }
 
-  const handleInitiateCall = () => {
-    alert('Button Pressed');
-    if (!user || !otherMember) {
-        alert('Current user or other member is not available.');
-        return;
-    };
-    initCall(user, otherMember as UserProfile, chat.id);
+  const handleCallClick = () => {
+      if(otherMember) {
+          onInitiateCall(otherMember as UserProfile);
+      }
   }
 
   return (
@@ -166,8 +163,8 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
             </div>
         </UserNav>
          <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={handleInitiateCall}><Phone /></Button>
-            <Button variant="ghost" size="icon" onClick={handleInitiateCall}><Video /></Button>
+            <Button variant="ghost" size="icon" onClick={handleCallClick}><Phone /></Button>
+            <Button variant="ghost" size="icon" onClick={handleCallClick}><Video /></Button>
         </div>
       </header>
       <div className="flex flex-1 flex-col h-full bg-muted/20 overflow-hidden">

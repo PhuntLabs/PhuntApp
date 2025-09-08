@@ -45,6 +45,10 @@ const CallView = dynamic(() => import('@/components/app/call-view').then(mod => 
   ssr: false,
 });
 
+const ActiveCallView = dynamic(() => import('@/components/app/active-call-view').then(mod => mod.ActiveCallView), {
+  ssr: false,
+});
+
 
 export default function Home() {
   const { user, authUser, loading, logout } = useAuth();
@@ -56,7 +60,7 @@ export default function Home() {
   const { chats, loading: chatsLoading, addChat, removeChat } = useChats(authReady);
   const { servers, setServers, loading: serversLoading, createServer } = useServers(authReady);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests(authReady);
-  const { activeCall, incomingCall, listenForIncomingCalls, stopListeningForIncomingCalls, initCall } = useCallingStore();
+  const { activeCall, incomingCall, listenForIncomingCalls, stopListeningForIncomingCalls, initCall, acceptCall, declineCall } = useCallingStore();
 
 
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
@@ -351,9 +355,14 @@ export default function Home() {
     );
   }
   
+  const handleAcceptCall = async (call: any) => {
+      if (!user) return;
+      await acceptCall(call, user);
+  }
+
   return (
     <ErrorBoundary>
-        {activeCall && <CallView />}
+        {activeCall?.showFullScreen && <CallView />}
         {incomingCall && <IncomingCallNotification />}
         {isMobileView ? (
             <MobileLayout 
@@ -449,6 +458,7 @@ export default function Home() {
                         </>
                         )}
                     </div>
+                    {activeCall ? <ActiveCallView/> : (
                     <div className="bg-background/50 p-2 border-t border-border">
                         <div className="flex items-center justify-between">
                         <UserNav user={user} logout={logout}/>
@@ -460,6 +470,7 @@ export default function Home() {
                         </div>
                         </div>
                     </div>
+                    )}
                 </div>
                 
                 <main className="flex-1 flex flex-col bg-background/50 min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
@@ -490,6 +501,7 @@ export default function Home() {
                         onEditMessage={editMessage}
                         onDeleteMessage={deleteMessage}
                         currentUser={authUser}
+                        onInitiateCall={(callee) => initCall(user, callee, selectedChat.id)}
                     />
                     ) : (
                     <div className="flex flex-1 items-center justify-center h-full bg-muted/20">

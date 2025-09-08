@@ -2,7 +2,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { IAgoraRTCClient } from 'agora-rtc-sdk-ng';
+import type { IAgoraRTCClient, ILocalVideoTrack, ILocalAudioTrack } from 'agora-rtc-sdk-ng';
 import type { UserProfile, Call } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { addDoc, collection, doc, serverTimestamp, updateDoc, onSnapshot, Unsubscribe, setDoc, getDoc } from 'firebase/firestore';
@@ -11,6 +11,7 @@ import { toast } from './use-toast';
 
 interface CallingState {
   agoraClient: IAgoraRTCClient | null;
+  localTracks: [ILocalAudioTrack, ILocalVideoTrack] | null;
   activeCall: Call | null;
   incomingCall: Call | null;
   callUnsubscribe: Unsubscribe | null;
@@ -27,6 +28,7 @@ interface CallingState {
   setMicOn: (on: boolean) => void;
   setCameraOn: (on: boolean) => void;
   setIsScreensharing: (sharing: boolean) => void;
+  setShowFullScreen: (show: boolean) => void;
   startInactivityCheck: () => void;
   resetInactivityTimer: () => void;
 }
@@ -63,22 +65,22 @@ async function updateCallSystemMessage(chatId: string, messageId: string, embed:
 
 export const useCallingStore = create<CallingState>((set, get) => ({
   agoraClient: null,
+  localTracks: null,
   activeCall: null,
   incomingCall: null,
   callUnsubscribe: null,
   micOn: true,
-  cameraOn: true,
+  cameraOn: false, // Default camera to off
   isScreensharing: false,
   inactivityTimer: null,
   
   initCall: async (caller, callee, chatId) => {
-    alert('Starting initCall');
     if (!APP_ID) {
       toast({ variant: 'destructive', title: 'Calling is not configured on this server.' });
       return;
     }
      if (!caller) {
-      alert("You must be logged in to make a call.");
+      toast({variant: 'destructive', title: "You must be logged in to make a call."});
       return;
     }
     
@@ -102,29 +104,31 @@ export const useCallingStore = create<CallingState>((set, get) => ({
         createdAt: serverTimestamp(),
         chatId,
         embedMessageId,
+        showFullScreen: false,
     };
     
     await setDoc(doc(db, 'calls', callId), newCall);
 
-    set({ agoraClient: client, activeCall: newCall, micOn: true, cameraOn: true, isScreensharing: false });
+    set({ agoraClient: client, activeCall: newCall, micOn: true, cameraOn: false, isScreensharing: false });
     
     try {
       const tracks = await AgoraRTC.createMicrophoneAndCameraTracks();
-      
-      alert('Reaching token API');
-      const response = await fetch(`/api/agora/token?channelName=${channelName}&uid=${caller.uid}`);
+      set({ localTracks: tracks });
+
+      // Keep camera off by default
+      await tracks[1].setEnabled(false);
+
+      const response = await fetch(`/api/agora/token?channelName=${channelName}&userAccount=${caller.uid}`);
       const { token } = await response.json();
       
-      alert('Joining Agora channel');
-      await client.join(APP_ID, channelName, token, Number(caller.uid));
-      
+      await client.join(APP_ID, channelName, token, caller.uid);
       await client.publish(tracks);
 
       get().startInactivityCheck();
       
     } catch (error: any) {
       console.error('Failed to join call:', error);
-       toast({ variant: 'destructive', title: "Permission Error", description: "Failed to access microphone or camera."})
+      toast({ variant: 'destructive', title: "Permission Error", description: "Failed to access microphone or camera."})
       get().leaveCall();
     }
   },
@@ -139,8 +143,8 @@ export const useCallingStore = create<CallingState>((set, get) => ({
     
     const AgoraRTC = await getAgoraRTC();
     const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
-    const updatedCall = { ...call, status: 'active' as const };
-    set({ agoraClient: client, activeCall: updatedCall, micOn: true, cameraOn: true, isScreensharing: false });
+    const updatedCall = { ...call, status: 'active' as const, showFullScreen: false };
+    set({ agoraClient: client, activeCall: updatedCall, micOn: true, cameraOn: false, isScreensharing: false });
     
     if (call.embedMessageId) {
         await updateCallSystemMessage(call.chatId, call.embedMessageId, {
@@ -152,11 +156,14 @@ export const useCallingStore = create<CallingState>((set, get) => ({
 
     try {
         await updateDoc(doc(db, 'calls', call.id), { status: 'active' });
-        const response = await fetch(`/api/agora/token?channelName=${call.channelName}&uid=${callee.uid}`);
+        const response = await fetch(`/api/agora/token?channelName=${call.channelName}&userAccount=${callee.uid}`);
         const { token } = await response.json();
 
-        await client.join(APP_ID, call.channelName, token, Number(callee.uid));
+        await client.join(APP_ID, call.channelName, token, callee.uid);
         const tracks = await AgoraRTC.createMicrophoneAndCameraTracks();
+        set({ localTracks: tracks });
+
+        await tracks[1].setEnabled(false); // Keep camera off by default
         await client.publish(tracks);
 
         get().startInactivityCheck();
@@ -181,15 +188,16 @@ export const useCallingStore = create<CallingState>((set, get) => ({
   },
 
   leaveCall: async (reason = 'user') => {
-    const { agoraClient, activeCall, inactivityTimer } = get();
+    const { agoraClient, activeCall, inactivityTimer, localTracks } = get();
     if (inactivityTimer) clearTimeout(inactivityTimer);
     
+    localTracks?.forEach(track => {
+        track.stop();
+        track.close();
+    });
+
     if (agoraClient) {
-      agoraClient.remoteUsers.forEach(user => {
-          user.audioTrack?.stop();
-          user.videoTrack?.stop();
-      });
-      agoraClient.leave();
+      await agoraClient.leave();
     }
     if (activeCall) {
         const callDoc = await getDoc(doc(db, 'calls', activeCall.id));
@@ -216,7 +224,7 @@ export const useCallingStore = create<CallingState>((set, get) => ({
             await updateCallSystemMessage(activeCall.chatId, activeCall.embedMessageId, embed);
         }
     }
-    set({ activeCall: null, agoraClient: null, micOn: true, cameraOn: true, isScreensharing: false, inactivityTimer: null });
+    set({ activeCall: null, agoraClient: null, localTracks: null, micOn: true, cameraOn: false, isScreensharing: false, inactivityTimer: null });
   },
 
   listenForIncomingCalls: (userId) => {
@@ -252,12 +260,30 @@ export const useCallingStore = create<CallingState>((set, get) => ({
     }
   },
   
-  setMicOn: (on: boolean) => set({ micOn: on }),
-  setCameraOn: (on: boolean) => set({ cameraOn: on }),
+  setMicOn: async (on: boolean) => {
+      const { localTracks } = get();
+      if (localTracks && localTracks[0]) {
+          await localTracks[0].setEnabled(on);
+          set({ micOn: on });
+      }
+  },
+  setCameraOn: async (on: boolean) => {
+      const { localTracks } = get();
+      if (localTracks && localTracks[1]) {
+          await localTracks[1].setEnabled(on);
+          set({ cameraOn: on });
+      }
+  },
   setIsScreensharing: (sharing: boolean) => set({ isScreensharing: sharing }),
+  setShowFullScreen: (show: boolean) => {
+    const { activeCall } = get();
+    if (activeCall) {
+        set({ activeCall: { ...activeCall, showFullScreen: show }});
+    }
+  },
 
   startInactivityCheck: () => {
-    const { agoraClient, resetInactivityTimer, leaveCall } = get();
+    const { agoraClient, resetInactivityTimer } = get();
     if (!agoraClient) return;
 
     agoraClient.on("volume-indicator", volumes => {
