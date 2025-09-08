@@ -240,8 +240,8 @@ export function MobileLayout({
                   activeView === 'home' && 'text-primary'
               )}
           >
-              <AtSign />
-              <span className="text-xs">Mentions</span>
+              <Home />
+              <span className="text-xs">Home</span>
           </button>
           <button
               onClick={() => setActiveView('notifications')}

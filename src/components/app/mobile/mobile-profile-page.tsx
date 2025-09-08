@@ -74,7 +74,7 @@ export function MobileProfilePage() {
                         </div>
                         <div className="mt-2 space-y-1">
                             <h1 className="text-2xl font-bold">{user.displayName}</h1>
-                            <p className="text-muted-foreground">{user.displayName_lowercase} • he/him</p>
+                            <p className="text-muted-foreground">{user.displayName_lowercase}</p>
                         </div>
                         <div className="flex items-center gap-1 mt-2">
                              {allBadges.map((badgeId) => {

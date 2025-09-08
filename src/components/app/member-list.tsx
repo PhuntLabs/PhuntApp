@@ -105,6 +105,13 @@ export function MemberList({ members, server, loading }: MemberListProps) {
 const MemberItem = ({ member, server, topRoleColor }: { member: Partial<UserProfile>, server: Server, topRoleColor?: string }) => {
     const isOwner = member.uid === server.ownerId;
     const status = member.status || 'offline';
+    
+    const serverProfile = server.memberDetails?.[member.uid!]?.profile;
+    const displayUser = {
+      ...member,
+      displayName: serverProfile?.nickname || member.displayName,
+      photoURL: serverProfile?.avatar || member.photoURL,
+    };
 
     return (
          <Popover>
@@ -121,8 +128,8 @@ const MemberItem = ({ member, server, topRoleColor }: { member: Partial<UserProf
                     <div className="relative z-10 flex items-center gap-2 w-full">
                         <div className="relative">
                             <Avatar className="size-8">
-                                <AvatarImage src={member.photoURL || undefined} />
-                                <AvatarFallback>{member.displayName?.[0]}</AvatarFallback>
+                                <AvatarImage src={displayUser.photoURL || undefined} />
+                                <AvatarFallback>{displayUser.displayName?.[0]}</AvatarFallback>
                             </Avatar>
                             <div className={cn(
                                 "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-secondary/30 flex items-center justify-center", 
@@ -133,7 +140,7 @@ const MemberItem = ({ member, server, topRoleColor }: { member: Partial<UserProf
                         </div>
                         <div className="flex-1 overflow-hidden">
                             <span className={cn("font-medium text-sm truncate", member.nameplateUrl ? 'text-white text-shadow-sm' : '')} style={{ color: member.nameplateUrl ? undefined : topRoleColor }}>
-                                {member.displayName}
+                                {displayUser.displayName}
                             </span>
                             {member.customStatus && (
                                 <p className={cn("text-xs truncate", member.nameplateUrl ? 'text-white/80' : 'text-muted-foreground')}>{member.customStatus}</p>

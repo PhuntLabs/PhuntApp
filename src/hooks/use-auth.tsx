@@ -67,7 +67,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const developerEmails = ['raidensch0@gmail.com'];
 const developerUsernames = ['testacc', 'aura farmer', 'thatguy123', 'heina'];
 
-function applySpecialBadges(profile: UserProfile): UserProfile {
+function applySpecialBadges(profile: Omit<UserProfile, 'id'>): Omit<UserProfile, 'id'> {
     const badges = new Set<string>(profile.badges || []);
 
     if (
@@ -111,9 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const unsubscribeUser = onSnapshot(userDocRef, (userDoc) => {
            if (userDoc.exists()) {
-             const userData = { id: userDoc.id, uid: userDoc.id, ...userDoc.data() } as UserProfile;
+             const userData = userDoc.data() as Omit<UserProfile, 'id'>;
              const userWithBadge = applySpecialBadges(userData);
-             setUser(userWithBadge);
+             setUser({ id: userDoc.id, ...userWithBadge } as UserProfile);
            } else {
              setUser({
                id: firebaseUser.uid,

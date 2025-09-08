@@ -2,7 +2,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Settings, Pencil, UserPlus, Moon, XCircle, CircleDot, MessageCircleMore, Check, Gamepad2, Link as LinkIcon, Github, Youtube, Sword, Zap, Car, Bike, BadgeCheck } from 'lucide-react';
+import { LogOut, Save, Settings, Pencil, UserPlus, Moon, XCircle, CircleDot, MessageCircleMore, Check, Gamepad2, Link as LinkIcon, Github, Youtube, Sword, Zap, Car, Bike, BadgeCheck, MessageSquare, Phone, Video } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -35,6 +35,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { Checkbox } from '../ui/checkbox';
 import Link from 'next/link';
 import { useBadges } from '@/hooks/use-badges';
+import { format } from 'date-fns';
 
 interface UserNavProps {
     user: UserProfile; 
@@ -54,6 +55,13 @@ const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType,
 const tagIcons = {
     Sword, Zap, Car, Bike
 };
+
+const connectionIcons: Record<Connection['type'], React.FC<any>> = {
+    github: (props) => <Github {...props} />,
+    spotify: (props) => <Image src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png" alt="Spotify" width={24} height={24}/>,
+    youtube: (props) => <Youtube {...props} />,
+    steam: (props) => <Image src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg" alt="Steam" width={24} height={24}/>,
+}
 
 
 // Profile Effects Components
@@ -133,13 +141,6 @@ const avatarEffects: Record<AvatarEffect, React.FC | React.FC<{ children: React.
     bounce: BounceEffectWrapper,
 };
 
-const SpotifyIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
-        <title>Spotify</title>
-        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.78 17.602c-.312.448-.937.588-1.385.275-3.6-2.212-8.038-2.7-13.313-.912-.512.113-.988-.224-1.1-.737-.113-.512.224-.988.737-1.1.581-.125 11.025.563 15.025 3.025.462.287.587.9.275 1.387zm1.187-2.612c-.388.55-1.15.725-1.7.338-4.125-2.525-10.2-3.238-14.963-1.7- debilitating.625.2-1.2-.162-1.4-.787-.2-.625.163-1.2.788-1.4 5.4-1.775 12.25-.975 16.95 1.862.563.35.738 1.113.338 1.7zm.137-2.763c-4.95-2.912-13.05-3.2-17.438-1.762-.712.238-1.437-.188-1.675-.9-.238-.712.188-1.437.9-1.675 5.025-1.65 13.95-1.287 19.6 1.987.663.388.9 1.238.513 1.9s-1.237.9-1.9.5z" fill="#1DB954"/>
-    </svg>
-);
-
 export function UserNav({ user, logout, as = 'button', children, serverContext }: UserNavProps) {
   const { authUser, user: currentUser, updateUserProfile, updateUserRolesInServer, updateServerProfile } = useAuth();
   const { sendFriendRequest } = useFriendRequests();
@@ -166,6 +167,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       photoURL: serverProfile?.avatar || user.photoURL,
   };
 
+  const memberSince = user.createdAt ? format((user.createdAt as any).toDate(), 'PP') : 'A while ago';
 
   useEffect(() => {
     if (isPopoverOpen) {
@@ -270,9 +272,6 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
 
   const userStatus = user.status || 'offline';
   const { label: statusLabel, icon: StatusIcon, color: statusColor } = statusConfig[userStatus];
-  
-  const spotifyConnection = user.connections?.find(c => c.type === 'spotify');
-
 
   const TriggerComponent = as === 'button' ? (
      <button className="flex items-center gap-2 p-1 hover:bg-accent rounded-md cursor-pointer transition-colors w-full text-left">
@@ -360,19 +359,12 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                     </Tooltip>
                                 </div>
                             </div>
-                             <div className="ml-auto flex justify-end gap-1">
-                                {!isCurrentUser && (
-                                    <Button variant="outline" size="sm" onClick={handleAddFriend}>
-                                        <UserPlus className="mr-2 h-3.5 w-3.5"/> Add Friend
-                                    </Button>
-                                )}
-                            </div>
                         </div>
                     
-                        <div className="pt-4">
+                        <div className="pt-2">
                         {!isEditing ? (
                         <>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className="text-xl font-bold">{displayUser.displayName}</h3>
                                 {isHeina ? (
                                     <Badge variant="outline" className="border-green-500/50 text-green-400 gap-1.5 h-5">
@@ -385,7 +377,6 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                         {serverContext!.tag!.name}
                                     </Badge>
                                 )}
-                                <div className="flex items-center gap-1">
                                 {allBadges.map((badgeId) => {
                                     const badgeInfo = getBadgeDetails(badgeId);
                                     if (!badgeInfo) return null;
@@ -402,74 +393,68 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                         </Tooltip>
                                     )
                                 })}
-                                </div>
                             </div>
 
-                            <p className={cn("text-sm text-muted-foreground -mt-1", !user.email && 'italic')}>{user.email || 'No email provided'}</p>
-                            {user.customStatus && <p className="text-sm text-foreground mt-1">{user.customStatus}</p>}
-                            <Separator className="my-2" />
+                            <p className={cn("text-sm text-muted-foreground -mt-1", !user.displayName_lowercase && 'italic')}>{user.displayName_lowercase || 'no username'}</p>
                             
-                            {spotifyConnection && !user.currentGame && (
-                                <>
-                                <div className="mb-2">
-                                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Listening to Spotify</h4>
-                                     <div className="flex items-center gap-3 mt-1 bg-secondary/50 p-2 rounded-md">
-                                        <SpotifyIcon className="size-10" />
-                                        <div className="overflow-hidden flex-1">
-                                            <p className="font-semibold truncate">Daylight</p>
-                                            <p className="text-xs text-muted-foreground truncate">by David Kushner</p>
-                                            <p className="text-xs text-muted-foreground truncate">on Daylight</p>
+                             {!isCurrentUser && (
+                                <div className="flex items-center gap-2 mt-3">
+                                     <Button className="flex-1" size="sm"><MessageSquare /> Message</Button>
+                                     <Button className="flex-1" size="sm" variant="secondary"><Phone /> Call</Button>
+                                     <Button className="flex-1" size="sm" variant="secondary"><Video /> Video</Button>
+                                </div>
+                             )}
+
+                            <Separator className="my-4" />
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <h4 className="text-xs font-bold uppercase text-muted-foreground mb-1">About Me</h4>
+                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
+                                </div>
+                                 <div>
+                                    <h4 className="text-xs font-bold uppercase text-muted-foreground mb-1">Member Since</h4>
+                                    <p className="text-sm text-muted-foreground">{memberSince}</p>
+                                </div>
+
+                                {serverContext && (
+                                    <div>
+                                        <h4 className="text-xs font-bold uppercase text-muted-foreground mb-1">Roles</h4>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            {serverRoles && serverRoles.length > 0 ? (
+                                                serverRoles.map(role => (
+                                                <Badge key={role.id} variant="outline" className="font-medium" style={{ borderColor: role.color, color: role.color, backgroundColor: `${role.color}1A`}}>
+                                                    {role.name}
+                                                </Badge>
+                                            ))
+                                            ) : (
+                                                <p className="text-xs text-muted-foreground italic">No roles</p>
+                                            )}
                                         </div>
                                     </div>
-                                </div>
+                                )}
+                            </div>
+
+                            {user.connections && user.connections.length > 0 && (
+                                <>
+                                    <Separator className="my-4" />
+                                     <div>
+                                        <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Connections</h4>
+                                        <div className="space-y-2">
+                                            {user.connections.map(conn => {
+                                                const Icon = connectionIcons[conn.type];
+                                                return (
+                                                    <a href={`https://www.${conn.type}.com/${conn.username}`} target="_blank" rel="noopener noreferrer" key={conn.type} className="flex items-center p-2 bg-secondary/50 rounded-md hover:bg-secondary">
+                                                        <Icon className="size-6 mr-3 text-muted-foreground" />
+                                                        <span className="font-semibold">{conn.username}</span>
+                                                    </a>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
                                 </>
                             )}
                             
-                            {user.currentGame && (
-                                <>
-                                <div className="mb-2">
-                                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Playing a Game</h4>
-                                    <div className="flex items-center gap-3 mt-1 bg-secondary/50 p-2 rounded-md">
-                                        <Image src={"logoUrl" in user.currentGame ? user.currentGame.logoUrl : user.currentGame.imageUrl} alt={user.currentGame.name} width={40} height={40} className="rounded-md" />
-                                        <div className="overflow-hidden flex-1">
-                                            <p className="font-semibold truncate">{user.currentGame.name}</p>
-                                            {"description" in user.currentGame && <p className="text-xs text-muted-foreground truncate">{user.currentGame.description}</p>}
-                                        </div>
-                                    </div>
-                                    {!isCurrentUser && "embedUrl" in user.currentGame && (
-                                        <Link href={`/games/${user.currentGame.id}`} className="mt-2 w-full">
-                                            <Button variant="outline" size="sm" className="w-full">
-                                                <Gamepad2 className="mr-2 size-4" />
-                                                Join Game
-                                            </Button>
-                                        </Link>
-                                    )}
-                                </div>
-                                </>
-                            )}
-
-                             <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
-                             
-
-                            {serverContext && (
-                            <>
-                                <Separator className="my-2" />
-                                <div className="mb-2">
-                                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Roles</h4>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                        {serverRoles && serverRoles.length > 0 ? (
-                                            serverRoles.map(role => (
-                                            <Badge key={role.id} variant="outline" className="font-medium" style={{ borderColor: role.color, color: role.color, backgroundColor: `${role.color}1A`}}>
-                                                {role.name}
-                                            </Badge>
-                                        ))
-                                        ) : (
-                                            <p className="text-xs text-muted-foreground italic">No roles</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </>
-                            )}
 
                              {canManageRoles && allServerRoles.length > 0 && (
                                 <>
