@@ -264,7 +264,6 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   };
   
   const handleInitiateCall = () => {
-    alert('Call button clicked in user popover.');
     if (!currentUser || !user) return;
     // For now, we assume a call from the profile popover is in a DM context.
     // A more robust implementation would check for an existing chat.

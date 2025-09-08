@@ -130,7 +130,6 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   }
 
   const handleInitiateCall = () => {
-    alert('Call button clicked in DM header.');
     if (!user || !otherMember) return;
     initCall(user, otherMember as UserProfile, chat.id);
   }

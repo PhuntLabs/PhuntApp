@@ -73,9 +73,12 @@ export const useCallingStore = create<CallingState>((set, get) => ({
   inactivityTimer: null,
   
   initCall: async (caller, callee, chatId) => {
-    alert('initCall function started.');
     if (!APP_ID) {
       toast({ variant: 'destructive', title: 'Calling is not configured on this server.' });
+      return;
+    }
+     if (!caller) {
+      alert("You must be logged in to make a call.");
       return;
     }
     
@@ -106,17 +109,13 @@ export const useCallingStore = create<CallingState>((set, get) => ({
     set({ agoraClient: client, activeCall: newCall, micOn: true, cameraOn: true, isScreensharing: false });
     
     try {
-      alert('Requesting microphone and camera permissions...');
       const tracks = await AgoraRTC.createMicrophoneAndCameraTracks();
-      alert('Permissions granted. Reaching API for token...');
       
       const response = await fetch(`/api/agora/token?channelName=${channelName}&uid=${caller.uid}`);
       const { token } = await response.json();
       
-      alert('Token received. Joining Agora channel...');
       await client.join(APP_ID, channelName, token, Number(caller.uid));
       
-      alert('Publishing tracks...');
       await client.publish(tracks);
 
       get().startInactivityCheck();
@@ -181,7 +180,7 @@ export const useCallingStore = create<CallingState>((set, get) => ({
 
   leaveCall: async (reason = 'user') => {
     const { agoraClient, activeCall, inactivityTimer } = get();
-    if (inactivityTimer) clearInterval(inactivityTimer);
+    if (inactivityTimer) clearTimeout(inactivityTimer);
     
     if (agoraClient) {
       agoraClient.remoteUsers.forEach(user => {
