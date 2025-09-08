@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -21,7 +22,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
-      router.push('/');
+      router.push('/channels/@me');
     } catch (error: any) {
       toast({
         variant: 'destructive',

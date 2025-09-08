@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -22,7 +23,7 @@ export default function SignupPage() {
     e.preventDefault();
     try {
       await signup(email, password, username);
-      router.push('/');
+      router.push('/channels/@me');
     } catch (error: any) {
       toast({
         variant: 'destructive',

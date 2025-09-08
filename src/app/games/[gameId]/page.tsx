@@ -95,7 +95,7 @@ export default function GameViewerPage() {
                 customStatus: '',
                 currentGame: null,
             });
-            router.push('/');
+            router.push('/channels/@me');
         } catch (error) {
             console.error('Failed to exit game:', error);
         } finally {
