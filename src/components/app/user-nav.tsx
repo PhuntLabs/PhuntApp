@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { User } from 'firebase/auth';
@@ -264,9 +263,11 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   };
   
   const handleInitiateCall = () => {
-    if (!currentUser || !user) return;
-    // For now, we assume a call from the profile popover is in a DM context.
-    // A more robust implementation would check for an existing chat.
+    alert('Button Pressed');
+    if (!currentUser) {
+        alert('Current user is not available.');
+        return;
+    };
     initCall(currentUser, user, 'placeholder_chat_id');
   };
 

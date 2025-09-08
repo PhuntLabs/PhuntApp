@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { create } from 'zustand';
@@ -73,6 +72,7 @@ export const useCallingStore = create<CallingState>((set, get) => ({
   inactivityTimer: null,
   
   initCall: async (caller, callee, chatId) => {
+    alert('Starting initCall');
     if (!APP_ID) {
       toast({ variant: 'destructive', title: 'Calling is not configured on this server.' });
       return;
@@ -111,9 +111,11 @@ export const useCallingStore = create<CallingState>((set, get) => ({
     try {
       const tracks = await AgoraRTC.createMicrophoneAndCameraTracks();
       
+      alert('Reaching token API');
       const response = await fetch(`/api/agora/token?channelName=${channelName}&uid=${caller.uid}`);
       const { token } = await response.json();
       
+      alert('Joining Agora channel');
       await client.join(APP_ID, channelName, token, Number(caller.uid));
       
       await client.publish(tracks);

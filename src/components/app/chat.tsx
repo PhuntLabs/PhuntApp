@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
@@ -130,7 +129,11 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   }
 
   const handleInitiateCall = () => {
-    if (!user || !otherMember) return;
+    alert('Button Pressed');
+    if (!user || !otherMember) {
+        alert('Current user or other member is not available.');
+        return;
+    };
     initCall(user, otherMember as UserProfile, chat.id);
   }
 
