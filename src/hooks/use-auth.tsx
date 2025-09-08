@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const unsubscribeUser = onSnapshot(userDocRef, (userDoc) => {
            if (userDoc.exists()) {
-             const userData = { id: userDoc.id, ...userDoc.data() } as UserProfile;
+             const userData = { id: userDoc.id, uid: userDoc.id, ...userDoc.data() } as UserProfile;
              const userWithBadge = applySpecialBadges(userData);
              setUser(userWithBadge);
            } else {

@@ -5,10 +5,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailWarning } from "lucide-react";
 import Image from "next/image";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { useMobileView } from '@/hooks/use-mobile-view';
 
 // A simple (and not cryptographically secure) way to generate a base32 secret for TOTP.
 // In a real app, this should be done on a secure backend.
@@ -29,8 +30,9 @@ const loadTotp = async () => {
 
 
 export function SecuritySettings() {
-  const { user } = useAuth();
+  const { user, sendPasswordReset } = useAuth();
   const { toast } = useToast();
+  const { isMobileView } = useMobileView();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -67,6 +69,22 @@ export function SecuritySettings() {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not generate QR code.' });
     } finally {
         setIsGenerating(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    try {
+      await sendPasswordReset();
+      toast({
+        title: 'Password Reset Email Sent',
+        description: 'Check your inbox for instructions to reset your password.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to Send Email',
+        description: error.message,
+      });
     }
   };
   
@@ -180,6 +198,23 @@ export function SecuritySettings() {
                 )}
             </CardFooter>
       </Card>
+      
+       {isMobileView && (
+            <Card className="mt-6 border-destructive/50">
+                <CardHeader>
+                    <CardTitle>Password</CardTitle>
+                    <CardDescription>
+                        To change your password, send a reset link to your email.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button variant="secondary" onClick={handlePasswordReset}>
+                        <MailWarning className="mr-2 size-4"/>
+                        Send Password Reset Email
+                    </Button>
+                </CardContent>
+            </Card>
+        )}
     </div>
   );
 }

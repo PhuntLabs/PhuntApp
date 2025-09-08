@@ -17,12 +17,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { MobileSettingsPage } from './mobile-settings-page';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MobileEditProfile } from './mobile-edit-profile';
+import { ConnectionsSettings } from '../settings/connections-settings';
 
 export function MobileProfilePage() {
     const { user, authUser } = useAuth();
     const { chats } = useChats(!!authUser);
     const { getBadgeDetails, getBadgeIcon } = useBadges();
-    const [showEditProfile, setShowEditProfile] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
 
     if (!user) {
         return <div className="flex items-center justify-center h-full">Loading...</div>;
@@ -33,8 +34,8 @@ export function MobileProfilePage() {
     
     const friends = chats.map(chat => chat.members.find(m => m.id !== user?.uid)).filter(Boolean);
 
-    if (showEditProfile) {
-        return <MobileEditProfile onClose={() => setShowEditProfile(false)} />;
+    if (isEditing) {
+        return <MobileEditProfile onClose={() => setIsEditing(false)} />;
     }
 
     return (
@@ -47,7 +48,7 @@ export function MobileProfilePage() {
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="right" className="p-0 w-full">
-                        {/* This should be the connections page */}
+                        <ConnectionsSettings />
                     </SheetContent>
                 </Sheet>
                 <Sheet>
@@ -73,7 +74,7 @@ export function MobileProfilePage() {
                         </div>
                         <div className="mt-2 space-y-1">
                             <h1 className="text-2xl font-bold">{user.displayName}</h1>
-                            <p className="text-muted-foreground">heinaszn • he/him</p>
+                            <p className="text-muted-foreground">{user.displayName_lowercase} • he/him</p>
                         </div>
                         <div className="flex items-center gap-1 mt-2">
                              {allBadges.map((badgeId) => {
@@ -88,7 +89,7 @@ export function MobileProfilePage() {
                                 )
                             })}
                         </div>
-                         <Button className="w-full mt-4" onClick={() => setShowEditProfile(true)}>
+                         <Button className="w-full mt-4" onClick={() => setIsEditing(true)}>
                             <Pencil className="mr-2 size-4" /> Edit Profile
                         </Button>
                      </div>

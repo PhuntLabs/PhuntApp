@@ -40,7 +40,7 @@ const sections = [
   { id: 'connections', label: 'Connections', icon: Link2 },
   { id: 'game-activity', label: 'Game Activity', icon: Gamepad },
   { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'security', label: 'Security', icon: Shield },
+  { id: 'security', label: 'Security & Password', icon: Shield },
   { id: 'theme', label: 'Theme', icon: Paintbrush },
   { id: 'developer', label: 'Developer', icon: Code },
   { id: 'bugs', label: 'Bugs & Feedback', icon: Bug },

@@ -119,7 +119,7 @@ export function AccountSettings() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>User Profile</CardTitle>
+          <CardTitle>My Account</CardTitle>
           <CardDescription>This information will be displayed on your profile.</CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
