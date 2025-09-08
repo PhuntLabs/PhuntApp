@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 import type { Server, Channel, ChannelType, UserProfile } from '@/lib/types';
-import { Hash, ChevronDown, Settings, Trash, Plus, MoreVertical, Pencil, Megaphone, ScrollText, MessageSquare, UserPlus, BadgeCheck, Users } from 'lucide-react';
+import { Hash, ChevronDown, Settings, Trash, Plus, MoreVertical, Pencil, Megaphone, ScrollText, MessageSquare, UserPlus, BadgeCheck, Users, Gem, Bell, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { EditServerDialog } from './edit-server-dialog';
 import { AddChannelDialog } from './add-channel-dialog';
@@ -31,6 +31,7 @@ import { InviteDialog } from './invite-dialog';
 import { useChannelMessages } from '@/hooks/use-channel-messages';
 import Image from 'next/image';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 const channelIcons: Record<ChannelType, React.ElementType> = {
     text: Hash,
@@ -92,68 +93,85 @@ export function ServerSidebar({ server, channels, selectedChannel, members, onSe
   return (
     <div className="h-full flex flex-col bg-card/40">
         <div className="border-b shadow-sm relative">
-            {server.bannerURL && (
-                <div className="h-24 w-full relative">
-                    <Image src={server.bannerURL} alt={`${server.name} banner`} fill style={{objectFit: 'cover'}}/>
-                </div>
-            )}
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className={cn(
-                        "p-4 w-full text-left hover:bg-accent/50 transition-colors",
-                         server.bannerURL && "absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 text-white"
-                        )}>
-                        <div className="flex items-center gap-2">
-                             {server.isVerified && <BadgeCheck className="size-5 text-blue-400 shrink-0" />}
-                            <CardTitle className={cn("truncate text-lg", server.bannerURL && "text-shadow-md")}>{server.name}</CardTitle>
-                            <ChevronDown className={cn("size-5 shrink-0 text-muted-foreground", server.bannerURL && "text-white/80")} />
+                     <button className="p-4 w-full text-left hover:bg-accent/50 transition-colors flex items-center justify-between">
+                        <div className="flex-1 overflow-hidden">
+                             <CardTitle className="truncate text-lg">{server.name}</CardTitle>
                         </div>
-                        <CardDescription className={cn("flex items-center gap-1 text-xs ml-1", server.bannerURL && "text-white/70")}>
-                            {server.description ? (
-                                <span className="truncate">{server.description}</span>
-                            ) : (
-                                <>
-                                    <Users className="size-3"/> {server.members?.length || 0} Members
-                                </>
-                            )}
-                        </CardDescription>
+                        <ChevronDown className="size-5 shrink-0 text-muted-foreground ml-2" />
                     </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="start">
-                    <InviteDialog serverId={server.id}>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-indigo-400 focus:bg-indigo-500/20 focus:text-indigo-300">
-                            <UserPlus className="mr-2 h-4 w-4" />
-                            <span>Invite People</span>
+                <DropdownMenuContent className="w-80" align="start">
+                    <div className="flex flex-col">
+                        <div className="h-20 bg-accent relative mb-12">
+                             {server.bannerURL && (
+                                <Image src={server.bannerURL} alt={`${server.name} banner`} fill style={{objectFit: 'cover'}}/>
+                            )}
+                             <Avatar className="absolute top-16 left-4 size-20 border-4 border-popover rounded-xl">
+                                <AvatarImage src={server.photoURL || undefined} alt={server.name}/>
+                                <AvatarFallback className="text-3xl rounded-xl">{server.name[0]}</AvatarFallback>
+                            </Avatar>
+                        </div>
+                        <div className="p-4 pt-0">
+                            <h3 className="font-bold text-lg">{server.name}</h3>
+                            <p className="text-sm text-muted-foreground">{server.description || "No description."}</p>
+                             <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
+                                <span className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-green-500"/> {members.length} Online</span>
+                                <span className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-gray-500"/> {server.members.length} Members</span>
+                            </div>
+                        </div>
+
+                         <div className="grid grid-cols-3 gap-2 px-4 mb-2">
+                            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-secondary/50">
+                                <Gem className="size-5 text-purple-400"/>
+                                <span className="text-xs font-semibold">0 Boosts</span>
+                            </div>
+                             <InviteDialog serverId={server.id}>
+                                 <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-secondary/50 cursor-pointer hover:bg-secondary">
+                                    <UserPlus className="size-5"/>
+                                    <span className="text-xs font-semibold">Invite</span>
+                                </div>
+                            </InviteDialog>
+                            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-secondary/50">
+                                <Bell className="size-5"/>
+                                <span className="text-xs font-semibold">Notifications</span>
+                            </div>
+                        </div>
+                         <DropdownMenuSeparator />
+                         <DropdownMenuItem>
+                            <CheckCircle className="mr-2"/> Mark As Read
+                         </DropdownMenuItem>
+
+                         <DropdownMenuSeparator />
+                        {isHeina && (
+                             <DropdownMenuItem onSelect={handleToggleVerify}>
+                                <BadgeCheck className="mr-2 h-4 w-4" />
+                                <span>{server.isVerified ? 'Unverify Server' : 'Verify Server'}</span>
+                            </DropdownMenuItem>
+                        )}
+                        {isOwner && (
+                            <>
+                                <AddChannelDialog onCreateChannel={onCreateChannel}>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    <span>Create Channel</span>
+                                    </DropdownMenuItem>
+                                </AddChannelDialog>
+                                <EditServerDialog server={server} members={members} onUpdateServer={onUpdateServer} onDeleteServer={onDeleteServer}>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                        <Settings className="mr-2 h-4 w-4" />
+                                        <span>Server Settings</span>
+                                    </DropdownMenuItem>
+                                </EditServerDialog>
+                            </>
+                        )}
+                         <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                            <Trash className="mr-2 h-4 w-4" />
+                            <span>Leave Server</span>
                         </DropdownMenuItem>
-                    </InviteDialog>
-                    {isHeina && (
-                         <DropdownMenuItem onSelect={handleToggleVerify}>
-                            <BadgeCheck className="mr-2 h-4 w-4" />
-                            <span>{server.isVerified ? 'Unverify Server' : 'Verify Server'}</span>
-                        </DropdownMenuItem>
-                    )}
-                    {isOwner && (
-                        <>
-                            <DropdownMenuSeparator />
-                            <AddChannelDialog onCreateChannel={onCreateChannel}>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Plus className="mr-2 h-4 w-4" />
-                                <span>Create Channel</span>
-                                </DropdownMenuItem>
-                            </AddChannelDialog>
-                            <EditServerDialog server={server} members={members} onUpdateServer={onUpdateServer} onDeleteServer={onDeleteServer}>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Settings className="mr-2 h-4 w-4" />
-                                    <span>Server Settings</span>
-                                </DropdownMenuItem>
-                            </EditServerDialog>
-                        </>
-                    )}
-                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                        <Trash className="mr-2 h-4 w-4" />
-                        <span>Leave Server</span>
-                    </DropdownMenuItem>
+                    </div>
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
