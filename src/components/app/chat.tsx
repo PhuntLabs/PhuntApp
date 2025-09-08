@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
@@ -25,6 +24,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 import { useBadges } from '@/hooks/use-badges';
 import { useCallingStore } from '@/hooks/use-calling-store';
 import { useAuth } from '@/hooks/use-auth';
+import dynamic from 'next/dynamic';
+
+const CallView = dynamic(() => import('@/components/app/call-view').then(mod => mod.CallView), {
+  ssr: false,
+});
+
 
 const tagIcons = {
     Sword, Zap, Car, Bike
@@ -56,6 +61,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { handleTyping } = useTypingStatus(chat.id);
   const { getBadgeDetails, getBadgeIcon } = useBadges();
+  const { activeCall } = useCallingStore();
   
   const typingUsers = useMemo(() => {
     return chat.members.filter(m => m.id !== currentUser.uid && chat.typing?.[m.id!]);
@@ -112,7 +118,8 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   const chatAvatar = otherMember?.photoURL;
   const isBotChat = otherMember?.isBot;
   const status = otherMember?.status || 'offline';
-
+  
+  const isCallActiveInThisChat = activeCall && activeCall.chatId === chat.id;
 
   const TypingIndicator = () => {
     if (typingUsers.length === 0) return null;
@@ -167,6 +174,11 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
             <Button variant="ghost" size="icon" onClick={handleCallClick}><Video /></Button>
         </div>
       </header>
+       {isCallActiveInThisChat && (
+          <div className="h-96">
+            <CallView />
+          </div>
+        )}
       <div className="flex flex-1 flex-col h-full bg-muted/20 overflow-hidden">
         <ScrollArea className="flex-1" ref={scrollAreaRef as any}>
           <TooltipProvider>

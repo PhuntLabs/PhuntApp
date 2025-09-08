@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { create } from 'zustand';
@@ -20,6 +19,7 @@ interface CallingState {
   cameraOn: boolean;
   isScreensharing: boolean;
   inactivityTimer: NodeJS.Timeout | null;
+  mainViewUserId: string | null;
   initCall: (caller: UserProfile, callee: UserProfile, chatId: string) => Promise<void>;
   acceptCall: (call: Call, currentUser: UserProfile) => Promise<void>;
   declineCall: (call: Call) => Promise<void>;
@@ -29,7 +29,7 @@ interface CallingState {
   setMicOn: (on: boolean) => void;
   setCameraOn: (on: boolean) => Promise<void>;
   setIsScreensharing: (sharing: boolean) => void;
-  setShowFullScreen: (show: boolean) => void;
+  setMainViewUserId: (userId: string | null) => void;
   startInactivityCheck: () => void;
   resetInactivityTimer: () => void;
 }
@@ -74,6 +74,7 @@ export const useCallingStore = create<CallingState>((set, get) => ({
   cameraOn: false, // Default camera to off
   isScreensharing: false,
   inactivityTimer: null,
+  mainViewUserId: null,
   
   initCall: async (caller, callee, chatId) => {
     if (!APP_ID) {
@@ -105,12 +106,11 @@ export const useCallingStore = create<CallingState>((set, get) => ({
         createdAt: serverTimestamp(),
         chatId,
         embedMessageId,
-        showFullScreen: false,
     };
     
     await setDoc(doc(db, 'calls', callId), newCall);
 
-    set({ agoraClient: client, activeCall: newCall, micOn: true, cameraOn: false, isScreensharing: false });
+    set({ agoraClient: client, activeCall: newCall, micOn: true, cameraOn: false, isScreensharing: false, mainViewUserId: callee.uid });
     
     try {
       const tracks = await AgoraRTC.createMicrophoneAndCameraTracks();
@@ -144,8 +144,8 @@ export const useCallingStore = create<CallingState>((set, get) => ({
     
     const AgoraRTC = await getAgoraRTC();
     const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
-    const updatedCall = { ...call, status: 'active' as const, showFullScreen: false };
-    set({ agoraClient: client, activeCall: updatedCall, micOn: true, cameraOn: false, isScreensharing: false });
+    const updatedCall = { ...call, status: 'active' as const };
+    set({ agoraClient: client, activeCall: updatedCall, micOn: true, cameraOn: false, isScreensharing: false, mainViewUserId: call.caller.uid });
     
     if (call.embedMessageId) {
         await updateCallSystemMessage(call.chatId, call.embedMessageId, {
@@ -225,7 +225,7 @@ export const useCallingStore = create<CallingState>((set, get) => ({
             await updateCallSystemMessage(activeCall.chatId, activeCall.embedMessageId, embed);
         }
     }
-    set({ activeCall: null, agoraClient: null, localTracks: null, micOn: true, cameraOn: false, isScreensharing: false, inactivityTimer: null });
+    set({ activeCall: null, agoraClient: null, localTracks: null, micOn: true, cameraOn: false, isScreensharing: false, inactivityTimer: null, mainViewUserId: null });
   },
 
   listenForIncomingCalls: (userId) => {
@@ -245,6 +245,9 @@ export const useCallingStore = create<CallingState>((set, get) => ({
                         } else if (change.type === "modified" && (callData.status === 'declined' || callData.status === 'ended')) {
                             set({ incomingCall: null });
                         }
+                    }
+                     if (get().activeCall?.id === callData.id && callData.status === 'ended') {
+                        get().leaveCall('user');
                     }
                 }
             });
@@ -281,12 +284,7 @@ export const useCallingStore = create<CallingState>((set, get) => ({
       }
   },
   setIsScreensharing: (sharing: boolean) => set({ isScreensharing: sharing }),
-  setShowFullScreen: (show: boolean) => {
-    const { activeCall } = get();
-    if (activeCall) {
-        set({ activeCall: { ...activeCall, showFullScreen: show }});
-    }
-  },
+  setMainViewUserId: (userId: string | null) => set({ mainViewUserId: userId }),
 
   startInactivityCheck: () => {
     const { agoraClient, resetInactivityTimer } = get();

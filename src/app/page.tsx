@@ -40,10 +40,7 @@ import { ErrorBoundary } from '@/components/app/error-boundary';
 import { useCallingStore } from '@/hooks/use-calling-store';
 import { IncomingCallNotification } from '@/components/app/incoming-call-notification';
 import Image from 'next/image';
-
-const CallView = dynamic(() => import('@/components/app/call-view').then(mod => mod.CallView), {
-  ssr: false,
-});
+import { AgoraRTCProvider } from 'agora-rtc-react';
 
 const ActiveCallView = dynamic(() => import('@/components/app/active-call-view').then(mod => mod.ActiveCallView), {
   ssr: false,
@@ -362,7 +359,6 @@ export default function Home() {
 
   return (
     <ErrorBoundary>
-        {activeCall?.showFullScreen && <CallView />}
         {incomingCall && <IncomingCallNotification />}
         {isMobileView ? (
             <MobileLayout 
@@ -459,7 +455,9 @@ export default function Home() {
                         )}
                     </div>
                     {activeCall && agoraClient ? (
-                        <ActiveCallView client={agoraClient} />
+                        <AgoraRTCProvider client={agoraClient}>
+                            <ActiveCallView />
+                        </AgoraRTCProvider>
                     ) : (
                     <div className="bg-background/50 p-2 border-t border-border">
                         <div className="flex items-center justify-between">

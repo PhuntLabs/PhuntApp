@@ -7,10 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Mic, MicOff, Phone, ScreenShare, Video, VideoOff, Maximize } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
-import { useRemoteUsers, AgoraRTCProvider } from 'agora-rtc-react';
-import type { IAgoraRTCClient } from 'agora-rtc-sdk-ng';
+import { useRemoteUsers } from 'agora-rtc-react';
 
-function ActiveCallViewInternal() {
+export function ActiveCallView() {
     const { 
         activeCall, 
         micOn, 
@@ -18,7 +17,6 @@ function ActiveCallViewInternal() {
         setMicOn, 
         setCameraOn, 
         leaveCall, 
-        setShowFullScreen 
     } = useCallingStore();
     const { user } = useAuth();
     const remoteUsers = useRemoteUsers();
@@ -40,7 +38,7 @@ function ActiveCallViewInternal() {
                         <p className="text-xs text-muted-foreground">{remoteUsers.length + 1} participants</p>
                     </div>
                 </div>
-                 <Button variant="ghost" size="icon" className="size-8" onClick={() => setShowFullScreen(true)}>
+                 <Button variant="ghost" size="icon" className="size-8" onClick={() => {}}>
                     <Maximize className="size-4" />
                 </Button>
             </div>
@@ -60,12 +58,4 @@ function ActiveCallViewInternal() {
             </div>
         </div>
     );
-}
-
-export function ActiveCallView({ client }: { client: IAgoraRTCClient }) {
-  return (
-    <AgoraRTCProvider client={client}>
-      <ActiveCallViewInternal />
-    </AgoraRTCProvider>
-  );
 }
