@@ -41,33 +41,6 @@ const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType,
     offline: { label: 'Offline', icon: CircleDot, color: 'bg-gray-500' },
 };
 
-const ActiveNowCard = ({ user }: { user: Partial<UserProfile> }) => {
-    if (!user.currentGame) return null;
-    const game = user.currentGame;
-
-    return (
-        <div className="w-40 shrink-0">
-            <div className="aspect-video rounded-lg relative overflow-hidden bg-accent group">
-                 { "logoUrl" in game && game.logoUrl ? (
-                    <Image src={game.logoUrl} alt={game.name} fill className="object-cover group-hover:scale-105 transition-transform" />
-                ) : "imageUrl" in game && game.imageUrl ? (
-                     <Image src={game.imageUrl} alt={game.name} fill className="object-cover group-hover:scale-105 transition-transform" />
-                ): <div className="w-full h-full bg-accent flex items-center justify-center"><Gamepad2 className="size-8 text-muted-foreground"/></div>}
-                <div className="absolute inset-x-0 bottom-0 bg-black/50 backdrop-blur-sm p-1.5">
-                    <div className="flex items-center gap-2">
-                        <Avatar className="size-5">
-                            <AvatarImage src={user.photoURL || undefined} />
-                            <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
-                        </Avatar>
-                        <p className="text-xs font-semibold truncate text-white">{user.displayName}</p>
-                    </div>
-                </div>
-            </div>
-            <p className="font-semibold text-sm truncate mt-1">{game.name}</p>
-        </div>
-    )
-}
-
 export function DirectMessages({ directMessages, selectedChat, onSelectChat, onAddUser, onAddBot, onDeleteChat, loading }: DirectMessagesProps) {
   const { user } = useAuth();
   
@@ -84,25 +57,9 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
         </SidebarGroup>
     );
   }
-
-  const activeUsers = directMessages
-    .map(c => c.members.find(m => m.id !== user?.uid && m.currentGame))
-    .filter(Boolean) as UserProfile[];
   
   return (
     <>
-      {activeUsers.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Active Now</SidebarGroupLabel>
-            <ScrollArea orientation="horizontal" className="w-full py-2">
-                <div className="flex gap-3 px-2">
-                    {activeUsers.map(user => (
-                        <ActiveNowCard key={user.uid} user={user} />
-                    ))}
-                </div>
-            </ScrollArea>
-          </SidebarGroup>
-      )}
       <SidebarGroup>
         <SidebarGroupLabel className="flex items-center justify-between">
           Direct Messages
@@ -120,14 +77,12 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
             const isBotChat = otherMember?.isBot;
             const status = otherMember?.status || 'offline';
             
-            let subtext = statusConfig[status].label;
+            let subtext = otherMember?.customStatus || statusConfig[status].label;
             let SubIcon = null;
 
             if (otherMember?.currentGame) {
               subtext = `Playing ${otherMember.currentGame.name}`;
               SubIcon = Gamepad2;
-            } else if (otherMember?.customStatus) {
-              subtext = otherMember.customStatus;
             }
 
 

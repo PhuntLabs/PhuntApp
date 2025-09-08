@@ -27,32 +27,6 @@ const statusConfig: Record<UserStatus, string> = {
     offline: 'bg-gray-500',
 };
 
-const ActiveNowCard = ({ user }: { user: Partial<UserProfile> }) => {
-    if (!user.currentGame) return null;
-    const game = user.currentGame;
-
-    return (
-        <div className="w-40 shrink-0">
-            <div className="aspect-video rounded-lg relative overflow-hidden bg-accent group">
-                 { "logoUrl" in game && game.logoUrl ? (
-                    <Image src={game.logoUrl} alt={game.name} fill className="object-cover group-hover:scale-105 transition-transform" />
-                ) : "imageUrl" in game && game.imageUrl ? (
-                    <Image src={game.imageUrl} alt={game.name} fill className="object-cover group-hover:scale-105 transition-transform" />
-                ): <div className="w-full h-full bg-accent flex items-center justify-center"><Gamepad2 className="size-8 text-muted-foreground"/></div>}
-                <div className="absolute inset-x-0 bottom-0 bg-black/50 backdrop-blur-sm p-1.5">
-                    <div className="flex items-center gap-2">
-                        <Avatar className="size-5">
-                            <AvatarImage src={user.photoURL || undefined} />
-                            <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
-                        </Avatar>
-                        <p className="text-xs font-semibold truncate text-white">{user.displayName}</p>
-                    </div>
-                </div>
-            </div>
-            <p className="font-semibold text-sm truncate mt-1">{game.name}</p>
-        </div>
-    )
-}
 
 export function MobileDMList({ chats, onSelectChat, onAddUser }: MobileDMListProps) {
   const { authUser } = useAuth();
@@ -62,10 +36,6 @@ export function MobileDMList({ chats, onSelectChat, onAddUser }: MobileDMListPro
     const otherMember = chat.members.find(m => m.id !== authUser?.uid);
     return otherMember?.displayName?.toLowerCase().includes(search.toLowerCase());
   });
-  
-  const activeUsers = chats
-    .map(c => c.members.find(m => m.id !== authUser?.uid && m.currentGame))
-    .filter(Boolean) as UserProfile[];
 
 
   return (
@@ -92,19 +62,6 @@ export function MobileDMList({ chats, onSelectChat, onAddUser }: MobileDMListPro
       
       <ScrollArea className="flex-1">
         <div className="p-4">
-             {activeUsers.length > 0 && (
-                <div className="mb-6">
-                    <h2 className="text-lg font-semibold mb-2">Active Now</h2>
-                    <ScrollArea className="w-full" orientation="horizontal">
-                        <div className="flex gap-3 pb-2">
-                            {activeUsers.map(user => (
-                                <ActiveNowCard key={user.uid} user={user} />
-                            ))}
-                        </div>
-                    </ScrollArea>
-                </div>
-            )}
-            
             <h2 className="text-lg font-semibold mb-2">Recent Conversations</h2>
             <div className="space-y-1">
                 {filteredChats.map(chat => {
