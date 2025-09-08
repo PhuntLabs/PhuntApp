@@ -60,7 +60,7 @@ export default function Home() {
   const { chats, loading: chatsLoading, addChat, removeChat } = useChats(authReady);
   const { servers, setServers, loading: serversLoading, createServer } = useServers(authReady);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests(authReady);
-  const { activeCall, incomingCall, listenForIncomingCalls, stopListeningForIncomingCalls, initCall, acceptCall, declineCall } = useCallingStore();
+  const { activeCall, incomingCall, listenForIncomingCalls, stopListeningForIncomingCalls, initCall, acceptCall, declineCall, agoraClient } = useCallingStore();
 
 
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
@@ -458,7 +458,9 @@ export default function Home() {
                         </>
                         )}
                     </div>
-                    {activeCall ? <ActiveCallView/> : (
+                    {activeCall && agoraClient ? (
+                        <ActiveCallView client={agoraClient} />
+                    ) : (
                     <div className="bg-background/50 p-2 border-t border-border">
                         <div className="flex items-center justify-between">
                         <UserNav user={user} logout={logout}/>
