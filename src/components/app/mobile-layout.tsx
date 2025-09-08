@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Home, Bell, User as UserIcon, Menu } from 'lucide-react';
+import { Home, Bell, User as UserIcon, Menu, AtSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PopulatedChat, Server, UserProfile, Channel } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
@@ -129,7 +129,7 @@ export function MobileLayout({
            return <Chat chat={selectedChat} messages={dmMessages} onSendMessage={onSendDM} onEditMessage={onEditDM} onDeleteMessage={onDeleteDM} currentUser={authUser} onBack={handleBackFromChat} />;
        }
        if (selectedServer && sidebarProps.selectedChannel && authUser) {
-           return <ChannelChat channel={sidebarProps.selectedChannel} server={selectedServer} currentUser={authUser} members={sidebarProps.members} messages={channelMessages} onSendMessage={onSendChannelMessage} onEditMessage={onEditChannelMessage} onDeleteMessage={onDeleteChannelMessage} sidebarTrigger={sidebarTrigger} />;
+           return <ChannelChat channel={sidebarProps.selectedChannel} server={selectedServer} currentUser={authUser} members={sidebarProps.members} messages={channelMessages} onSendMessage={onSendChannelMessage} onEditMessage={onEditChannelMessage} onDeleteMessage={onDeleteChannelMessage} onBack={handleBackFromChat} />;
        }
     }
     
@@ -240,8 +240,8 @@ export function MobileLayout({
                   activeView === 'home' && 'text-primary'
               )}
           >
-              <Home />
-              <span className="text-xs">Home</span>
+              <AtSign />
+              <span className="text-xs">Mentions</span>
           </button>
           <button
               onClick={() => setActiveView('notifications')}

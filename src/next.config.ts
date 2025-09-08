@@ -83,6 +83,12 @@ const nextConfig: NextConfig = {
         hostname: 'gofile.io',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.buymeacoffee.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },

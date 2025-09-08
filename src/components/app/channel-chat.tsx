@@ -2,7 +2,7 @@
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, Embed, ServerTag } from '@/lib/types';
-import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck } from 'lucide-react';
+import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck, ChevronLeft, Search } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ import Image from 'next/image';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useBadges } from '@/hooks/use-badges';
+import { useMobileView } from '@/hooks/use-mobile-view';
 
 
 const tagIcons = {
@@ -37,6 +38,7 @@ interface ChannelChatProps {
     onEditMessage: (messageId: string, newText: string) => void;
     onDeleteMessage: (messageId: string) => void;
     sidebarTrigger?: React.ReactNode;
+    onBack?: () => void;
 }
 
 export function ChannelChat({ 
@@ -49,6 +51,7 @@ export function ChannelChat({
     onEditMessage,
     onDeleteMessage,
     sidebarTrigger,
+    onBack
 }: ChannelChatProps) {
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingText, setEditingText] = useState('');
@@ -57,6 +60,7 @@ export function ChannelChat({
     const { handleTyping } = useTypingStatus(server.id, channel.id);
     const { hasPermission } = usePermissions(server, channel.id);
     const { getBadgeDetails, getBadgeIcon } = useBadges();
+    const { isMobileView } = useMobileView();
 
     const canSendMessages = hasPermission('sendMessages');
     
@@ -154,12 +158,20 @@ export function ChannelChat({
 
     return (
         <div className="flex flex-col h-full">
-            <header className="p-4 border-b flex items-center gap-2 flex-shrink-0">
+            <header className="p-2.5 md:p-4 border-b flex items-center gap-2 flex-shrink-0">
+                {onBack && (
+                  <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={onBack}>
+                      <ChevronLeft />
+                  </Button>
+                )}
                 {sidebarTrigger}
                 <Hash className="size-6 text-muted-foreground" />
                 <div className="flex-1">
                     <h1 className="text-xl font-semibold">{displayName}</h1>
-                    {channel.topic && <p className="text-sm text-muted-foreground truncate">{channel.topic}</p>}
+                    {channel.topic && !isMobileView && <p className="text-sm text-muted-foreground truncate">{channel.topic}</p>}
+                </div>
+                 <div className="ml-auto flex items-center gap-1">
+                    <Button variant="ghost" size="icon"><Search /></Button>
                 </div>
             </header>
 
@@ -183,6 +195,7 @@ export function ChannelChat({
 
                                 const prevMessage = messages[index - 1];
                                 const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender || !!message.replyTo;
+                                const hasReplyLine = !!message.replyTo;
 
                                 if (!sender) return null;
 
@@ -200,7 +213,7 @@ export function ChannelChat({
                                         isMentioned ? "bg-yellow-500/10 hover:bg-yellow-500/20" : "hover:bg-foreground/5"
                                     )}
                                     >
-                                    <div className="flex-1 flex gap-3 items-start">
+                                    <div className="flex-1 flex gap-3 items-start relative">
                                         {isFirstInGroup ? (
                                         <UserNav user={sender as UserProfile} as="trigger" serverContext={server}>
                                             <Avatar className="size-10 cursor-pointer mt-1">
@@ -211,11 +224,14 @@ export function ChannelChat({
                                         ) : (
                                         <div className="w-10 flex-shrink-0" />
                                         )}
+                                        
+                                        {hasReplyLine && (
+                                            <div className="absolute left-4 top-0 -translate-x-1/2 w-8 h-4 border-l border-b border-muted-foreground/30 rounded-bl-lg" />
+                                        )}
 
                                         <div className="flex-1 pt-1">
                                              {message.replyTo && (
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                                                    <Reply className="size-3.5" />
                                                     <Avatar className="size-4">
                                                         <AvatarImage src={getSenderProfile(message.replyTo.senderId)?.photoURL || undefined} />
                                                         <AvatarFallback>{message.replyTo.senderDisplayName[0]}</AvatarFallback>
@@ -298,7 +314,7 @@ export function ChannelChat({
                 </ScrollArea>
                  <TypingIndicator />
             </div>
-             <div className="p-4 border-t bg-card flex-shrink-0">
+             <div className="p-2 md:p-4 border-t bg-card flex-shrink-0">
                 {replyingTo && (
                     <div className="flex items-center justify-between text-sm bg-secondary px-3 py-1.5 rounded-t-md -mb-1 mx-[-1px]">
                        <p className="text-muted-foreground">
