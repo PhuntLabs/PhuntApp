@@ -1,6 +1,6 @@
 # Phunt App
 
-Phunt is a new way to socialize with your fellow peers and friends.
+Phunt is a modern communication platform designed for communities of all sizes. Create a server for your friend group, your gaming clan, or your study club, and enjoy seamless text chat, high-quality voice calls, and powerful moderation tools, all for free.
 
 
 ## What does it include?
