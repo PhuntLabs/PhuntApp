@@ -38,7 +38,7 @@ export default function AddQolforuPage() {
             const bot = await ensureQolforuBotUser();
             await addBotToServer(bot.uid, selectedServerId);
             toast({ title: 'Success!', description: `${bot.displayName} has been added to your server.` });
-            router.push('/');
+            router.push('/channels/me');
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message });
         } finally {

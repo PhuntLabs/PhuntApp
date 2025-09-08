@@ -41,18 +41,18 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
     );
 
     const handleSelectDMRoot = () => {
-        if (pathname !== '/') router.push('/');
+        if (pathname !== '/channels/me') router.push('/channels/me');
         onSelectServer(null);
     }
     
     const handleSelectUnreadChat = (chat: PopulatedChat) => {
-        if (pathname !== '/') router.push('/');
+        if (pathname !== '/channels/me') router.push('/channels/me');
         onSelectServer(null);
         onSelectChat(chat);
     }
 
     const handleSelectServer = (server: Server | null) => {
-        if (pathname !== '/') router.push('/');
+        if (pathname !== '/channels/me') router.push('/channels/me');
         onSelectServer(server);
     }
     
@@ -238,7 +238,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                              <div className="relative group">
                                  <div 
                                     className={cn(
-                                        "absolute -left-3 top-1/2 -translate-y-1_2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
+                                        "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
                                         isMusicActive ? "h-9" : "group-hover:h-5"
                                     )} 
                                 />
@@ -262,5 +262,3 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
         </TooltipProvider>
     );
 }
-
-    

@@ -32,7 +32,7 @@ export default function JoinServerPage() {
 
         if (isMember) {
              toast({ title: "Already a member!", description: `You are already in the ${server?.name} server.` });
-             router.push('/channels/@me');
+             router.push('/channels/me');
              return;
         }
         
@@ -44,7 +44,7 @@ export default function JoinServerPage() {
                 description: `You have successfully joined the ${server?.name} server.`,
                 className: 'bg-green-500 text-white'
             });
-            router.push('/channels/@me');
+            router.push('/channels/me');
         } catch (e: any) {
              toast({ variant: 'destructive', title: 'Error', description: e.message });
         } finally {
@@ -72,7 +72,7 @@ export default function JoinServerPage() {
                         <p>This invite link is invalid or has expired.</p>
                     </CardContent>
                     <CardFooter>
-                        <Button onClick={() => router.push('/')} className="w-full">Go Home</Button>
+                        <Button onClick={() => router.push('/channels/me')} className="w-full">Go Home</Button>
                     </CardFooter>
                 </Card>
             </div>
