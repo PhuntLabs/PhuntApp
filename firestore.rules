@@ -135,25 +135,31 @@ service cloud.firestore {
       // Disallow deletes. Status should be changed to 'declined' instead.
       allow delete: if false;
     }
-    
-     // =====================================================================
+
+    // =====================================================================
     // Mentions Collection
     // =====================================================================
     match /mentions/{mentionId} {
-      // Users can only read mentions where they are the one mentioned.
+      // A user can only read their own mentions.
       allow read: if isUser(resource.data.mentionedUserId);
-      // Users can create mentions if they are the sender.
+      // A user can only create a mention if they are the sender.
       allow create: if isUser(request.resource.data.sender);
+      // Mentions are immutable and cannot be deleted.
+      allow update, delete: if false;
     }
     
     // =====================================================================
     // Calls Collection
     // =====================================================================
     match /calls/{callId} {
-      // Allow create if the user is the caller
-      allow create: if isUser(request.resource.data.caller.uid);
-      // Allow read/update if the user is the caller or callee
+      // Allow a user to create a call document if they are the caller.
+      allow create: if isSignedIn() && isUser(request.resource.data.caller.uid);
+      
+      // Allow the caller or callee to read or update the call document.
       allow read, update: if isSignedIn() && (isUser(resource.data.caller.uid) || isUser(resource.data.callee.uid));
+      
+      // Prevent deletion of call history.
+      allow delete: if false;
     }
   }
 }
