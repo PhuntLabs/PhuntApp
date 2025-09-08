@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
        {
         source: '/api/agora/token',
         destination: '/api/agora/token',
+      },
+      {
+        source: '/channels/@me',
+        destination: '/channels/@me',
       }
     ]
   },
@@ -96,3 +100,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
