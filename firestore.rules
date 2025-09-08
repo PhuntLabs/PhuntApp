@@ -1,147 +1,93 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions to make rules more readable
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
-
+    
     function isUser(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-    
-    function isMemberOf(serverDoc) {
-      return isSignedIn() && request.auth.uid in serverDoc.data.members;
-    }
 
-    function isOwnerOf(serverDoc) {
-      return isUser(serverDoc.data.ownerId);
-    }
-    
-    // =====================================================================
-    // Users Collection
-    // =====================================================================
+    // USER PROFILES
     match /users/{userId} {
-      // Anyone can read user profiles (needed for mentions, member lists, etc.)
-      // Also allows checking for unique usernames on signup.
-      allow read;
-
-      // A user can only create their own profile document.
-      allow create: if isUser(userId)
-                    && 'displayName' in request.resource.data
-                    && 'displayName_lowercase' in request.resource.data
-                    && 'uid' in request.resource.data && request.resource.data.uid == userId;
-
-      // A user can only update their own profile.
-      allow update: if isUser(userId);
-
-      // Users cannot delete their profiles through the app.
-      allow delete: if false;
+      // Anyone can read a user's public profile
+      allow get: if true;
+      // Only the user themselves can create or update their own profile
+      allow write: if isUser(userId);
     }
-
-    // =====================================================================
-    // Servers Collection
-    // =====================================================================
-    match /servers/{serverId} {
-      // Read Rules:
-      // 1. Anyone can read a server document if it is public (for discovery page).
-      // 2. Members of a server can read its document.
-      allow read: if resource.data.isPublic == true || isMemberOf(resource);
-
-      // Create Rule:
-      // An authenticated user can create a server if they are the owner and a member.
-      allow create: if isSignedIn()
-                    && request.resource.data.ownerId == request.auth.uid
-                    && request.auth.uid in request.resource.data.members;
+    
+    // CHATS
+    match /chats/{chatId} {
+      // Users can only read/write chats they are a member of
+      allow read, write: if isSignedIn() && resource.data.members.hasAny([request.auth.uid]);
       
-      // Update Rules:
-      // 1. Any authenticated user can join a server (add themselves to members).
-      // 2. A member can leave a server (remove themselves from members).
-      // 3. Only the owner can update other server properties.
-      allow update: if isSignedIn() && (
-                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
-                       request.resource.data.members.size() == resource.data.members.size() + 1 &&
-                       request.auth.uid in request.resource.data.members) ||
-                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
-                       request.resource.data.members.size() == resource.data.members.size() - 1 &&
-                       request.auth.uid in resource.data.members) ||
-                      isOwnerOf(resource)
-                    );
-
-      // Delete Rule: Only the server owner can delete it.
-      allow delete: if isOwnerOf(resource);
-      
-      // --- Subcollections of Servers ---
-
-      // Channels
-      match /channels/{channelId} {
-        // Only members of the parent server can list/read channels.
-        allow read: if isMemberOf(get(/databases/$(database)/documents/servers/$(serverId)));
-
-        // Only the owner of the parent server can create, update, or delete channels.
-        allow write: if isOwnerOf(get(/databases/$(database)/documents/servers/$(serverId)));
-      }
-      
-      // Channel Messages
-      match /channels/{channelId}/messages/{messageId} {
-         // Only server members can read messages.
-        allow read: if isMemberOf(get(/databases/$(database)/documents/servers/$(serverId)));
-
-        // Authenticated user can create a message if they are a server member and the sender.
-        allow create: if isMemberOf(get(/databases/$(database)/documents/servers/$(serverId)))
-                      && isUser(request.resource.data.sender);
-
-        // A user can only update/delete their own messages.
+      // Messages subcollection
+      match /messages/{messageId} {
+        // Allow read if user is a member of the parent chat
+        allow read: if isSignedIn() && get(/databases/$(database)/documents/chats/$(chatId)).data.members.hasAny([request.auth.uid]);
+        // Allow write if user is the sender
+        allow create: if isUser(request.resource.data.sender);
         allow update, delete: if isUser(resource.data.sender);
       }
     }
+
+    // FRIEND REQUESTS
+    match /friendRequests/{requestId} {
+      // Allow read if the user is the sender or receiver
+      allow read: if isSignedIn() && resource.data.members.hasAny([request.auth.uid]);
+      // Allow create if the user is the sender
+      allow create: if isUser(request.resource.data.from.id);
+      // Allow update if user is the receiver (for accepting/declining)
+      allow update: if isUser(resource.data.to);
+    }
     
-    // =====================================================================
-    // Chats Collection
-    // =====================================================================
-    match /chats/{chatId} {
-        // Allow access only if the requesting user is a member of the chat.
-        allow read, update: if isSignedIn() && request.auth.uid in resource.data.members;
-
-        // Allow creation if the user is one of the members.
-        allow create: if isSignedIn() && request.auth.uid in request.resource.data.members;
-      
-        // Users can remove themselves from a chat, which is a delete op on client.
-        allow delete: if isSignedIn() && request.auth.uid in resource.data.members;
-
-        // --- Subcollection for Messages ---
-        match /messages/{messageId} {
-            // Only chat members can read messages.
-            allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
-
-            // A user can create a message if they are a member of the chat and the sender.
-            allow create: if isSignedIn() 
-                        && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
-                        && isUser(request.resource.data.sender);
-
-            // A user can only update or delete their own messages.
-            allow update, delete: if isUser(resource.data.sender);
+    // SERVERS
+    match /servers/{serverId} {
+        // Allow anyone to read public servers
+        allow get: if resource.data.isPublic == true || (isSignedIn() && resource.data.members.hasAny([request.auth.uid]));
+        allow list: if resource.data.isPublic == true;
+        
+        // Allow authenticated users to create servers
+        allow create: if isSignedIn();
+        
+        // Allow server owner to update/delete
+        allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+        
+        // Channels subcollection
+        match /channels/{channelId} {
+            allow read, write: if isSignedIn() && get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
+            
+             // Messages subcollection within channels
+            match /messages/{messageId} {
+                allow read: if isSignedIn() && get(/databases/$(database)/documents/servers/$(serverId)).data.members.hasAny([request.auth.uid]);
+                allow create: if isUser(request.resource.data.sender);
+                allow update, delete: if isUser(resource.data.sender);
+            }
         }
     }
     
-    // =====================================================================
-    // Friend Requests Collection
-    // =====================================================================
-    match /friendRequests/{requestId} {
-      // Allow read only if the user is the sender or the receiver of the request.
-      allow read: if isSignedIn() && (isUser(resource.data.from.id) || isUser(resource.data.to));
-      
-      // Allow create if the user is the sender of the request.
-      allow create: if isSignedIn() && isUser(request.resource.data.from.id);
-      
-      // Allow update only by the recipient of the request to change the status.
-      allow update: if isSignedIn() && isUser(resource.data.to);
-      
-      // Disallow deletes. Status should be changed to 'declined' instead.
-      allow delete: if false;
+    // MENTIONS
+    match /mentions/{mentionId} {
+        allow create: if isSignedIn();
+        allow read: if isUser(resource.data.mentionedUserId);
+    }
+
+    // BADGES
+    match /badges/{badgeId} {
+      allow read: if true;
+      allow create: if isSignedIn(); // Add more specific rules if needed
+    }
+    
+    // CALLS
+    match /calls/{callId} {
+      // Allow create if the user is the caller
+      allow create: if isUser(request.resource.data.caller.uid);
+      // Allow read/update if the user is the caller or callee
+      allow read, update: if isSignedIn() && (isUser(resource.data.caller.uid) || isUser(resource.data.callee.uid));
     }
   }
 }
