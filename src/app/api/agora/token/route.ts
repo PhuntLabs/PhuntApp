@@ -2,10 +2,10 @@
 import { RtcTokenBuilder, RtcRole } from 'agora-token';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const { AGORA_APP_ID, AGORA_APP_CERTIFICATE } = process.env;
+const { NEXT_PUBLIC_AGORA_APP_ID, AGORA_APP_CERTIFICATE } = process.env;
 
 export async function GET(req: NextRequest) {
-  if (!AGORA_APP_ID || !AGORA_APP_CERTIFICATE) {
+  if (!NEXT_PUBLIC_AGORA_APP_ID || !AGORA_APP_CERTIFICATE) {
     return NextResponse.json({ error: 'Agora credentials are not configured on the server.' }, { status: 500 });
   }
 
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
 
   const token = RtcTokenBuilder.buildTokenWithUid(
-    AGORA_APP_ID,
+    NEXT_PUBLIC_AGORA_APP_ID,
     AGORA_APP_CERTIFICATE,
     channelName,
     Number(uid),

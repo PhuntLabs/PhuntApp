@@ -2,7 +2,7 @@
 'use client';
 
 import { create } from 'zustand';
-import AgoraRTC, { IAgoraRTCClient } from 'agora-rtc-sdk-ng';
+import type { IAgoraRTCClient } from 'agora-rtc-sdk-ng';
 import type { UserProfile, Call } from '@/lib/types';
 import { useAuth } from './use-auth';
 import { db } from '@/lib/firebase';
@@ -27,6 +27,12 @@ interface CallingState {
 }
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
+
+// Helper function to dynamically import AgoraRTC to avoid SSR issues
+const getAgoraRTC = async () => {
+    const { default: AgoraRTC } = await import('agora-rtc-sdk-ng');
+    return AgoraRTC;
+};
 
 // Helper to format duration in MM:SS
 function formatDuration(seconds: number) {
@@ -68,7 +74,8 @@ export const useCallingStore = create<CallingState>((set, get) => ({
       alert("You must be logged in to make a call.");
       return;
     }
-
+    
+    const AgoraRTC = await getAgoraRTC();
     const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
     const callId = uuidv4();
     const channelName = callId;
@@ -118,7 +125,8 @@ export const useCallingStore = create<CallingState>((set, get) => ({
     if (!callee) return;
 
     set({ incomingCall: null });
-
+    
+    const AgoraRTC = await getAgoraRTC();
     const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
     const updatedCall = { ...call, status: 'active' as const };
     set({ agoraClient: client, activeCall: updatedCall });
@@ -177,7 +185,7 @@ export const useCallingStore = create<CallingState>((set, get) => ({
             });
         }
     }
-    set({ activeCall: null, agoraClient: null });
+    set({ activeCall: null, agoraClient: null, micOn: true, cameraOn: true });
   },
 
   listenForIncomingCalls: (userId: string) => {
@@ -217,15 +225,3 @@ export const useCallingStore = create<CallingState>((set, get) => ({
   setMicOn: (on: boolean) => set({ micOn: on }),
   setCameraOn: (on: boolean) => set({ cameraOn: on }),
 }));
-
-// Listen for calls when user logs in
-useAuth.subscribe(
-  (state) => state.user,
-  (user) => {
-    if (user) {
-      useCallingStore.getState().listenForIncomingCalls(user.uid);
-    } else {
-      useCallingStore.getState().stopListeningForIncomingCalls();
-    }
-  }
-);

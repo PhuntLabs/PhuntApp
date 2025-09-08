@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 
 import { UserNav } from '@/components/app/user-nav';
 import { Chat } from '@/components/app/chat';
@@ -37,8 +38,11 @@ import { useMobileView } from '@/hooks/use-mobile-view';
 import { MobileLayout } from '@/components/app/mobile-layout';
 import { ErrorBoundary } from '@/components/app/error-boundary';
 import { useCallingStore } from '@/hooks/use-calling-store';
-import { CallView } from '@/components/app/call-view';
 import { IncomingCallNotification } from '@/components/app/incoming-call-notification';
+
+const CallView = dynamic(() => import('@/components/app/call-view').then(mod => mod.CallView), {
+  ssr: false,
+});
 
 
 export default function Home() {
@@ -51,7 +55,7 @@ export default function Home() {
   const { chats, loading: chatsLoading, addChat, removeChat } = useChats(authReady);
   const { servers, setServers, loading: serversLoading, createServer } = useServers(authReady);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests(authReady);
-  const { activeCall, incomingCall } = useCallingStore();
+  const { activeCall, incomingCall, listenForIncomingCalls, stopListeningForIncomingCalls } = useCallingStore();
 
 
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
@@ -102,6 +106,17 @@ export default function Home() {
     }
   }, [authUser, loading, router]);
   
+   useEffect(() => {
+    if (user?.uid) {
+      listenForIncomingCalls(user.uid);
+    } else {
+      stopListeningForIncomingCalls();
+    }
+    return () => {
+      stopListeningForIncomingCalls();
+    };
+  }, [user, listenForIncomingCalls, stopListeningForIncomingCalls]);
+
   useEffect(() => {
     if (chatsLoading) return;
 
