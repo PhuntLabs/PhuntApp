@@ -35,6 +35,8 @@ import { MentionsDialog } from '@/components/app/mentions-dialog';
 import { useMobileView } from '@/hooks/use-mobile-view';
 import { MobileLayout } from '@/components/app/mobile-layout';
 import { ErrorBoundary } from '@/components/app/error-boundary';
+import { useCallingStore } from '@/hooks/use-calling-store';
+import { CallView } from '@/components/app/call-view';
 
 
 export default function Home() {
@@ -47,6 +49,8 @@ export default function Home() {
   const { chats, loading: chatsLoading, addChat, removeChat } = useChats(authReady);
   const { servers, setServers, loading: serversLoading, createServer } = useServers(authReady);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests(authReady);
+  const { activeCall } = useCallingStore();
+
 
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
@@ -330,6 +334,7 @@ export default function Home() {
   
   return (
     <ErrorBoundary>
+        {activeCall && <CallView />}
         {isMobileView ? (
             <MobileLayout 
                 user={user}

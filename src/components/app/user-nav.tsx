@@ -36,6 +36,7 @@ import { Checkbox } from '../ui/checkbox';
 import Link from 'next/link';
 import { useBadges } from '@/hooks/use-badges';
 import { format } from 'date-fns';
+import { useCallingStore } from '@/hooks/use-calling-store';
 
 interface UserNavProps {
     user: UserProfile; 
@@ -145,6 +146,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const { authUser, user: currentUser, updateUserProfile, updateUserRolesInServer, updateServerProfile } = useAuth();
   const { sendFriendRequest } = useFriendRequests();
   const { hasPermission } = usePermissions(serverContext, null);
+  const { initCall } = useCallingStore();
   const { toast } = useToast();
   const { getBadgeDetails, getBadgeIcon } = useBadges();
 
@@ -359,6 +361,12 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                     </Tooltip>
                                 </div>
                             </div>
+                             {!isCurrentUser && (
+                                <div className="flex items-center gap-2 ml-auto">
+                                    <Button size="icon" className="rounded-full size-9 bg-secondary/80 hover:bg-secondary" onClick={() => initCall(user)}><Phone/></Button>
+                                    <Button size="icon" className="rounded-full size-9 bg-secondary/80 hover:bg-secondary" onClick={() => initCall(user)}><Video/></Button>
+                                </div>
+                            )}
                         </div>
                     
                         <div className="pt-2">
@@ -400,8 +408,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                              {!isCurrentUser && (
                                 <div className="flex items-center gap-2 mt-3">
                                      <Button className="flex-1" size="sm"><MessageSquare /> Message</Button>
-                                     <Button className="flex-1" size="sm" variant="secondary"><Phone /> Call</Button>
-                                     <Button className="flex-1" size="sm" variant="secondary"><Video /> Video</Button>
+                                     <Button className="flex-1" size="sm" variant="secondary" onClick={handleAddFriend}><UserPlus /> Add Friend</Button>
                                 </div>
                              )}
 

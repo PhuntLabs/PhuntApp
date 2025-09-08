@@ -22,6 +22,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useBadges } from '@/hooks/use-badges';
+import { useCallingStore } from '@/hooks/use-calling-store';
 
 const tagIcons = {
     Sword, Zap, Car, Bike
@@ -52,6 +53,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { handleTyping } = useTypingStatus(chat.id);
   const { getBadgeDetails, getBadgeIcon } = useBadges();
+  const { initCall } = useCallingStore();
   
   const typingUsers = useMemo(() => {
     return chat.members.filter(m => m.id !== currentUser.uid && chat.typing?.[m.id!]);
@@ -153,8 +155,8 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
             </div>
         </UserNav>
          <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="icon"><Phone /></Button>
-            <Button variant="ghost" size="icon"><Video /></Button>
+            <Button variant="ghost" size="icon" onClick={() => initCall(otherMember as UserProfile)}><Phone /></Button>
+            <Button variant="ghost" size="icon" onClick={() => initCall(otherMember as UserProfile)}><Video /></Button>
         </div>
       </header>
       <div className="flex flex-1 flex-col h-full bg-muted/20 overflow-hidden">

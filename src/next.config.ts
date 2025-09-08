@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
         source: '/add-qolforu',
         destination: '/add-qolforu',
       },
+       {
+        source: '/api/agora/token',
+        destination: '/api/agora/token',
+      }
     ]
   },
   /* config options here */
