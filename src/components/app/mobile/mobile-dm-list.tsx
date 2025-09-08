@@ -13,6 +13,8 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { AddUserDialog } from '../add-user-dialog';
 import { useAuth } from '@/hooks/use-auth';
 import Image from 'next/image';
+import { ActiveNowList } from '../active-now-list';
+import { Separator } from '@/components/ui/separator';
 
 interface MobileDMListProps {
   chats: PopulatedChat[];
@@ -29,13 +31,17 @@ const statusConfig: Record<UserStatus, string> = {
 
 
 export function MobileDMList({ chats, onSelectChat, onAddUser }: MobileDMListProps) {
-  const { authUser } = useAuth();
+  const { authUser, user } = useAuth();
   const [search, setSearch] = useState('');
 
   const filteredChats = chats.filter(chat => {
     const otherMember = chat.members.find(m => m.id !== authUser?.uid);
     return otherMember?.displayName?.toLowerCase().includes(search.toLowerCase());
   });
+
+  const activeFriends = chats
+    .map(chat => chat.members.find(m => m.id !== user?.uid))
+    .filter((member): member is UserProfile => !!member && member.status !== 'offline');
 
 
   return (
@@ -61,7 +67,14 @@ export function MobileDMList({ chats, onSelectChat, onAddUser }: MobileDMListPro
       </div>
       
       <ScrollArea className="flex-1">
-        <div className="p-4">
+        {activeFriends.length > 0 && (
+            <div className="p-4 space-y-2">
+                 <h3 className="text-sm font-semibold text-muted-foreground uppercase">Active Now</h3>
+                 <ActiveNowList users={activeFriends} />
+                 <Separator className="!mt-4"/>
+            </div>
+        )}
+        <div className="p-4 pt-0">
             <h2 className="text-lg font-semibold mb-2">Recent Conversations</h2>
             <div className="space-y-1">
                 {filteredChats.map(chat => {

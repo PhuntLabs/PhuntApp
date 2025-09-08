@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import Image from 'next/image';
 import { ScrollArea } from '../ui/scroll-area';
+import { ActiveNowList } from './active-now-list';
+import { Separator } from '../ui/separator';
 
 interface DirectMessagesProps {
   directMessages: PopulatedChat[];
@@ -44,6 +46,10 @@ const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType,
 export function DirectMessages({ directMessages, selectedChat, onSelectChat, onAddUser, onAddBot, onDeleteChat, loading }: DirectMessagesProps) {
   const { user } = useAuth();
   
+  const activeFriends = directMessages
+    .map(chat => chat.members.find(m => m.id !== user?.uid))
+    .filter((member): member is UserProfile => !!member && member.status !== 'offline');
+
   if (loading) {
     return (
         <SidebarGroup>
@@ -60,6 +66,13 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
   
   return (
     <>
+      {activeFriends.length > 0 && (
+          <div className="p-2 space-y-2">
+            <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase">Active Now</h3>
+            <ActiveNowList users={activeFriends} />
+            <Separator />
+          </div>
+      )}
       <SidebarGroup>
         <SidebarGroupLabel className="flex items-center justify-between">
           Direct Messages
