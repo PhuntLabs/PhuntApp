@@ -70,7 +70,7 @@ export function MobileEditProfile({ onClose }: MobileEditProfileProps) {
       <ScrollArea className="flex-1">
         <div className="relative">
           <div className="h-32 bg-accent relative">
-            {bannerURL && <Image src={bannerURL} alt="Banner" layout="fill" objectFit="cover" />}
+            {bannerURL && <Image src={bannerURL} alt="Banner" fill objectFit="cover" />}
             <Button variant="secondary" size="icon" className="absolute top-2 right-2 rounded-full size-8">
               <ImageIcon className="size-4" />
             </Button>
@@ -79,7 +79,7 @@ export function MobileEditProfile({ onClose }: MobileEditProfileProps) {
             <div className="-mt-16">
               <Avatar className="size-24 border-4 border-background rounded-full relative">
                 <AvatarImage src={photoURL || undefined} />
-                <AvatarFallback>{displayName[0]}</AvatarFallback>
+                <AvatarFallback>{displayName?.[0]}</AvatarFallback>
                  <Button variant="secondary" size="icon" className="absolute bottom-0 right-0 rounded-full size-8">
                     <Pencil className="size-4" />
                 </Button>

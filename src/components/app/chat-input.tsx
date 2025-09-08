@@ -6,7 +6,7 @@ import { Send, SmilePlus, X, AtSign, Slash, Bot, Trash, Lock, Vote, MessageSquar
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import type { UserProfile, Emoji, CustomEmoji } from '@/lib/types';
+import type { UserProfile, Emoji, CustomEmoji, Server, Message, Embed } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,11 +14,12 @@ import { ScrollArea } from '../ui/scroll-area';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/use-permissions';
-import { Server } from '@/lib/types';
 import { executeSlashCommand, SlashCommandOutput } from '@/ai/flows/slash-command-flow';
 import { useMobileView } from '@/hooks/use-mobile-view';
 import { cn } from '@/lib/utils';
 import { Input } from '../ui/input';
+import { uploadFile } from '@/ai/flows/upload-file-flow';
+
 
 const standardEmojis: Emoji[] = [
     { name: "grinning", char: "😀", keywords: ["happy", "joy", "smile"] },
@@ -51,7 +52,7 @@ const qolforuCommands = [
 
 
 interface ChatInputProps {
-    onSendMessage: (text: string, file?: File, embed?: any) => void;
+    onSendMessage: (text: string, file?: File, embed?: Embed | { embed: Embed, reactions?: string[] }) => void;
     onTyping: (isTyping: boolean) => void;
     placeholder?: string;
     members: Partial<UserProfile>[];
@@ -125,7 +126,7 @@ export function ChatInput({
         handleTyping();
 
         const cursorPosition = e.target.selectionStart;
-        if (!cursorPosition) return;
+        if (cursorPosition === null) return;
         const textBeforeCursor = value.substring(0, cursorPosition);
         
         const lastAt = textBeforeCursor.lastIndexOf('@');
@@ -158,7 +159,7 @@ export function ChatInput({
         if (!isAutocompleteOpen || !autocompleteType) return;
 
         if (autocompleteType === 'command') {
-            const allCommands = [...modCommands];
+            const allCommands: (typeof modCommands[0] | typeof qolforuCommands[0])[] = [...modCommands];
             if(hasQolBot) allCommands.push(...qolforuCommands);
 
             const matches = allCommands.filter(cmd => 
@@ -187,7 +188,7 @@ export function ChatInput({
         if (!inputRef.current) return;
 
         const cursorPosition = inputRef.current.selectionStart;
-        if (!cursorPosition) return;
+        if (cursorPosition === null) return;
         const textBeforeCursor = text.substring(0, cursorPosition);
         
         let newText: string;
@@ -211,7 +212,7 @@ export function ChatInput({
      const insertEmoji = (emoji: Emoji | CustomEmoji) => {
         if (!inputRef.current) return;
         const cursorPosition = inputRef.current.selectionStart;
-        if (!cursorPosition) return;
+        if (cursorPosition === null) return;
 
         const textToInsert = 'char' in emoji ? emoji.char : `:${emoji.name}:`;
 
@@ -244,15 +245,33 @@ export function ChatInput({
         e.preventDefault();
         
         if ((text.trim() === '' && !attachment) || isSubmitting) return;
+        setIsSubmitting(true);
         
         if (text.startsWith('/') && serverContext && channelId && authUser) {
-            // ... (slash command logic remains the same)
-            return;
-        }
+            const [command, ...args] = text.substring(1).split(' ');
+            const qolBot = serverContext.members.find(id => id === 'qolforu-bot-id');
 
-        // The user will implement the upload logic here.
-        // We will pass the file object to the parent component.
-        onSendMessage(text, attachment || undefined);
+            try {
+                const result = await executeSlashCommand({
+                    executorId: authUser.uid,
+                    serverId: serverContext.id,
+                    channelId: channelId,
+                    command,
+                    args,
+                    botId: qolBot ? 'qolforu-bot-id' : undefined
+                });
+
+                if (result.type === 'embed') {
+                    onSendMessage('', undefined, result.payload);
+                }
+                
+            } catch(error: any) {
+                toast({ variant: 'destructive', title: 'Command Error', description: error.message });
+            }
+
+        } else {
+             onSendMessage(text, attachment || undefined);
+        }
         
         onTyping(false);
         setText('');
@@ -273,13 +292,56 @@ export function ChatInput({
 
     const AutocompletePopover = () => (
         <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border rounded-lg shadow-lg p-2 max-h-60 overflow-y-auto z-10">
-            {/* Autocomplete logic remains the same */}
+           {autocompleteType === 'mention' && (
+                <div className="space-y-1">
+                    {filteredMembers.map(member => (
+                        <button key={member.uid} onClick={() => insertAutocomplete(member.displayName!, 'mention')} className="flex items-center gap-2 p-2 rounded w-full text-left hover:bg-accent">
+                            <Avatar className="size-6">
+                                <AvatarImage src={member.photoURL || undefined} />
+                                <AvatarFallback>{member.displayName?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-semibold">{member.displayName}</span>
+                            {'note' in member && <span className="text-xs text-muted-foreground ml-auto">{member.note}</span>}
+                        </button>
+                    ))}
+                </div>
+            )}
+             {autocompleteType === 'emoji' && (
+                <div className="space-y-1">
+                    {filteredEmojis.map(emoji => (
+                        <button key={emoji.name} onClick={() => insertAutocomplete(emoji.name, 'emoji')} className="flex items-center gap-2 p-2 rounded w-full text-left hover:bg-accent">
+                            {'char' in emoji ? (
+                                <span className="text-2xl">{emoji.char}</span>
+                            ) : (
+                                <Image src={emoji.url} alt={emoji.name} width={24} height={24} />
+                            )}
+                            <span className="font-mono text-sm">:{emoji.name}:</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+             {autocompleteType === 'command' && (
+                <div className="space-y-1">
+                     {filteredCommands.map(cmd => (
+                        <button key={cmd.name} onClick={() => insertAutocomplete(cmd.name, 'command')} className="flex items-center gap-3 p-2 rounded w-full text-left hover:bg-accent">
+                            <div className="size-8 rounded-md bg-secondary/50 flex items-center justify-center">
+                                <cmd.icon className="size-5" />
+                            </div>
+                            <div>
+                                <p className="font-semibold">{cmd.name}</p>
+                                <p className="text-xs text-muted-foreground">{cmd.description}</p>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
     )
 
     if (isMobileView) {
         return (
             <form onSubmit={handleSubmit} className="relative flex flex-col gap-2">
+                 {isAutocompleteOpen && AutocompletePopover()}
                 {attachment && (
                     <div className="relative w-20 h-20 bg-secondary/50 rounded-md p-1.5 ml-2">
                         <Image
@@ -327,13 +389,38 @@ export function ChatInput({
                                     <SmilePlus className="size-5" />
                                 </Button>
                             </PopoverTrigger>
-                             <PopoverContent className="w-96 p-0 border-none mb-2" side="top" align="end">
-                                {/* Emoji popover content remains the same */}
+                             <PopoverContent className="w-80 p-0 border-none mb-2" side="top" align="end">
+                                <Tabs defaultValue="emoji">
+                                    <TabsList className="w-full justify-start px-2 rounded-b-none">
+                                        <TabsTrigger value="emoji">Emoji</TabsTrigger>
+                                        <TabsTrigger value="gif" disabled>GIF</TabsTrigger>
+                                        <TabsTrigger value="sticker" disabled>Sticker</TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="emoji" className="m-0">
+                                         <ScrollArea className="h-64 p-2">
+                                            <div className="grid grid-cols-8 gap-1">
+                                            {standardEmojis.map(emoji => (
+                                                <button key={emoji.name} type="button" onClick={() => insertEmoji(emoji)} className="p-1 text-2xl rounded-md hover:bg-accent aspect-square">
+                                                    {emoji.char}
+                                                </button>
+                                            ))}
+                                            </div>
+                                            {customEmojis.length > 0 && <h3 className="text-xs font-semibold text-muted-foreground uppercase py-2">Custom</h3>}
+                                            <div className="grid grid-cols-8 gap-1">
+                                                 {customEmojis.map(emoji => (
+                                                    <button key={emoji.name} type="button" onClick={() => insertEmoji(emoji)} className="p-1 rounded-md hover:bg-accent aspect-square">
+                                                        <Image src={emoji.url} alt={emoji.name} width={28} height={28}/>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </ScrollArea>
+                                    </TabsContent>
+                                </Tabs>
                             </PopoverContent>
                         </Popover>
                     </div>
-                    <Button type="submit" variant="ghost" size="icon" className="size-9 shrink-0 text-muted-foreground">
-                        <Send className="size-5 text-primary" />
+                     <Button type="submit" variant="ghost" size="icon" className="size-9 shrink-0 text-muted-foreground">
+                        {text.trim() === '' && !attachment ? <Mic className="size-5" /> : <Send className="size-5 text-primary" />}
                     </Button>
                 </div>
             </form>
@@ -398,7 +485,32 @@ export function ChatInput({
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-96 p-0 border-none mb-2" side="top" align="end">
-                            {/* Emoji popover content remains the same */}
+                            <Tabs defaultValue="emoji">
+                                <TabsList className="w-full justify-start px-2 rounded-b-none">
+                                    <TabsTrigger value="emoji">Emoji</TabsTrigger>
+                                    <TabsTrigger value="gif" disabled>GIF</TabsTrigger>
+                                    <TabsTrigger value="sticker" disabled>Sticker</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="emoji" className="m-0">
+                                     <ScrollArea className="h-64 p-2">
+                                        <div className="grid grid-cols-8 gap-1">
+                                        {standardEmojis.map(emoji => (
+                                            <button key={emoji.name} type="button" onClick={() => insertEmoji(emoji)} className="p-1 text-2xl rounded-md hover:bg-accent aspect-square">
+                                                {emoji.char}
+                                            </button>
+                                        ))}
+                                        </div>
+                                        {customEmojis.length > 0 && <h3 className="text-xs font-semibold text-muted-foreground uppercase py-2">Custom</h3>}
+                                        <div className="grid grid-cols-8 gap-1">
+                                             {customEmojis.map(emoji => (
+                                                <button key={emoji.name} type="button" onClick={() => insertEmoji(emoji)} className="p-1 rounded-md hover:bg-accent aspect-square">
+                                                    <Image src={emoji.url} alt={emoji.name} width={28} height={28}/>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </ScrollArea>
+                                </TabsContent>
+                            </Tabs>
                         </PopoverContent>
                     </Popover>
 
