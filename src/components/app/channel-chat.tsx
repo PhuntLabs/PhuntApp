@@ -22,6 +22,7 @@ import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useBadges } from '@/hooks/use-badges';
 import { useMobileView } from '@/hooks/use-mobile-view';
+import { MobileChannelSearch } from './mobile/mobile-channel-search';
 
 
 const tagIcons = {
@@ -56,6 +57,7 @@ export function ChannelChat({
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingText, setEditingText] = useState('');
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const { handleTyping } = useTypingStatus(server.id, channel.id);
     const { hasPermission } = usePermissions(server, channel.id);
@@ -156,6 +158,10 @@ export function ChannelChat({
         });
     }, [server, currentUser]);
 
+    if (isMobileView && isSearchOpen) {
+        return <MobileChannelSearch server={server} members={members as UserProfile[]} onClose={() => setIsSearchOpen(false)} />
+    }
+
     return (
         <div className="flex flex-col h-full">
             <header className="p-2.5 md:p-4 border-b flex items-center gap-2 flex-shrink-0">
@@ -171,7 +177,7 @@ export function ChannelChat({
                     {channel.topic && !isMobileView && <p className="text-sm text-muted-foreground truncate">{channel.topic}</p>}
                 </div>
                  <div className="ml-auto flex items-center gap-1">
-                    <Button variant="ghost" size="icon"><Search /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)}><Search /></Button>
                 </div>
             </header>
 
