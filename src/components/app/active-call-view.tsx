@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useCallingStore } from '@/hooks/use-calling-store';
@@ -7,9 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Mic, MicOff, Phone, ScreenShare, Video, VideoOff, Maximize } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
-import { useRemoteUsers } from 'agora-rtc-react';
+import { AgoraRTCProvider, useRemoteUsers } from 'agora-rtc-react';
+import type { IAgoraRTCClient } from 'agora-rtc-sdk-ng';
 
-export function ActiveCallView() {
+function ActiveCallViewInternal() {
     const { 
         activeCall, 
         micOn, 
@@ -58,4 +60,13 @@ export function ActiveCallView() {
             </div>
         </div>
     );
+}
+
+export function ActiveCallView({ client }: { client: IAgoraRTCClient }) {
+  if (!client) return null;
+  return (
+    <AgoraRTCProvider client={client}>
+      <ActiveCallViewInternal />
+    </AgoraRTCProvider>
+  );
 }
