@@ -24,6 +24,7 @@ import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useBadges } from '@/hooks/use-badges';
 import { useCallingStore } from '@/hooks/use-calling-store';
+import { useAuth } from '@/hooks/use-auth';
 
 const tagIcons = {
     Sword, Zap, Car, Bike
@@ -54,6 +55,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { handleTyping } = useTypingStatus(chat.id);
   const { getBadgeDetails, getBadgeIcon } = useBadges();
+  const { user } = useAuth();
   const { initCall } = useCallingStore();
   
   const typingUsers = useMemo(() => {
@@ -127,6 +129,11 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
     );
   }
 
+  const handleInitiateCall = () => {
+    if (!user || !otherMember) return;
+    initCall(user, otherMember as UserProfile, chat.id);
+  }
+
   return (
     <div className="flex flex-col h-full bg-background">
       <header className="p-2.5 md:p-4 flex items-center gap-2 border-b">
@@ -156,8 +163,8 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
             </div>
         </UserNav>
          <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={() => initCall(otherMember as UserProfile, chat.id)}><Phone /></Button>
-            <Button variant="ghost" size="icon" onClick={() => initCall(otherMember as UserProfile, chat.id)}><Video /></Button>
+            <Button variant="ghost" size="icon" onClick={handleInitiateCall}><Phone /></Button>
+            <Button variant="ghost" size="icon" onClick={handleInitiateCall}><Video /></Button>
         </div>
       </header>
       <div className="flex flex-1 flex-col h-full bg-muted/20 overflow-hidden">

@@ -4,10 +4,10 @@
 import { create } from 'zustand';
 import type { IAgoraRTCClient } from 'agora-rtc-sdk-ng';
 import type { UserProfile, Call } from '@/lib/types';
-import { useAuth } from './use-auth';
 import { db } from '@/lib/firebase';
 import { addDoc, collection, doc, serverTimestamp, updateDoc, onSnapshot, Unsubscribe, setDoc, getDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from './use-toast';
 
 interface CallingState {
   agoraClient: IAgoraRTCClient | null;
@@ -16,8 +16,8 @@ interface CallingState {
   callUnsubscribe: Unsubscribe | null;
   micOn: boolean;
   cameraOn: boolean;
-  initCall: (callee: UserProfile, chatId: string) => Promise<void>;
-  acceptCall: (call: Call) => Promise<void>;
+  initCall: (caller: UserProfile, callee: UserProfile, chatId: string) => Promise<void>;
+  acceptCall: (call: Call, currentUser: UserProfile) => Promise<void>;
   declineCall: (call: Call) => Promise<void>;
   leaveCall: () => Promise<void>;
   listenForIncomingCalls: (userId: string) => void;
@@ -64,14 +64,9 @@ export const useCallingStore = create<CallingState>((set, get) => ({
   micOn: true,
   cameraOn: true,
   
-  initCall: async (callee: UserProfile, chatId: string) => {
+  initCall: async (caller: UserProfile, callee: UserProfile, chatId: string) => {
     if (!APP_ID) {
-      alert("Agora App ID is not configured. Calling is disabled.");
-      return;
-    }
-    const { user: caller } = useAuth.getState();
-    if (!caller) {
-      alert("You must be logged in to make a call.");
+      toast({ variant: 'destructive', title: 'Calling is not configured on this server.' });
       return;
     }
     
@@ -99,7 +94,7 @@ export const useCallingStore = create<CallingState>((set, get) => ({
     
     await setDoc(doc(db, 'calls', callId), newCall);
 
-    set({ agoraClient: client, activeCall: newCall });
+    set({ agoraClient: client, activeCall: newCall, micOn: true, cameraOn: true });
     
     try {
       const response = await fetch(`/api/agora/token?channelName=${channelName}&uid=${caller.uid}`);
@@ -110,26 +105,25 @@ export const useCallingStore = create<CallingState>((set, get) => ({
       const tracks = await AgoraRTC.createMicrophoneAndCameraTracks();
       await client.publish(tracks);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to join call:', error);
+       toast({ variant: 'destructive', title: "Permission Error", description: "Failed to access microphone or camera."})
       get().leaveCall();
     }
   },
   
-  acceptCall: async (call: Call) => {
+  acceptCall: async (call: Call, callee: UserProfile) => {
     if (!APP_ID) {
-      alert("Agora App ID is not configured. Calling is disabled.");
+      toast({ variant: 'destructive', title: 'Calling is not configured on this server.' });
       return;
     }
-    const { user: callee } = useAuth.getState();
-    if (!callee) return;
 
     set({ incomingCall: null });
     
     const AgoraRTC = await getAgoraRTC();
     const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
     const updatedCall = { ...call, status: 'active' as const };
-    set({ agoraClient: client, activeCall: updatedCall });
+    set({ agoraClient: client, activeCall: updatedCall, micOn: true, cameraOn: true });
     
     if (call.embedMessageId) {
         await updateCallSystemMessage(call.chatId, call.embedMessageId, {
@@ -148,8 +142,9 @@ export const useCallingStore = create<CallingState>((set, get) => ({
         const tracks = await AgoraRTC.createMicrophoneAndCameraTracks();
         await client.publish(tracks);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Failed to accept call:', error);
+        toast({ variant: 'destructive', title: "Permission Error", description: "Failed to access microphone or camera."})
         get().leaveCall();
     }
   },
@@ -169,6 +164,11 @@ export const useCallingStore = create<CallingState>((set, get) => ({
   leaveCall: async () => {
     const { agoraClient, activeCall } = get();
     if (agoraClient) {
+      // Unpublish local tracks and leave the channel
+      agoraClient.remoteUsers.forEach(user => {
+          user.audioTrack?.stop();
+          user.videoTrack?.stop();
+      });
       agoraClient.leave();
     }
     if (activeCall) {

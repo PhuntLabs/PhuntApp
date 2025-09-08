@@ -261,6 +261,13 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
         setManagedRoles(managedRoles);
     }
   };
+  
+  const handleInitiateCall = () => {
+      if (!currentUser || !user) return;
+      // In a real app, you would also need the chat ID between these two users
+      // For now, we'll assume a placeholder or that it can be derived.
+      initCall(currentUser, user, 'placeholder_chat_id');
+  }
 
   const handleCancel = () => {
     if (serverContext && user) {
@@ -363,8 +370,8 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                             </div>
                              {!isCurrentUser && (
                                 <div className="flex items-center gap-2 ml-auto">
-                                    <Button size="icon" className="rounded-full size-9 bg-secondary/80 hover:bg-secondary" onClick={() => initCall(user)}><Phone/></Button>
-                                    <Button size="icon" className="rounded-full size-9 bg-secondary/80 hover:bg-secondary" onClick={() => initCall(user)}><Video/></Button>
+                                    <Button size="icon" className="rounded-full size-9 bg-secondary/80 hover:bg-secondary" onClick={() => initCall(currentUser!, user)}><Phone/></Button>
+                                    <Button size="icon" className="rounded-full size-9 bg-secondary/80 hover:bg-secondary" onClick={() => initCall(currentUser!, user)}><Video/></Button>
                                 </div>
                             )}
                         </div>
