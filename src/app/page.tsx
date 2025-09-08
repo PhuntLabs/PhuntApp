@@ -27,7 +27,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
 import { BOT_ID, BOT_USERNAME } from '@/ai/bots/config';
-import { AtSign, Mic, Settings } from 'lucide-react';
+import { AtSign, Mic, Settings, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServerSidebar } from '@/components/app/server-sidebar';
 import { MemberList } from '@/components/app/member-list';
@@ -39,6 +39,7 @@ import { MobileLayout } from '@/components/app/mobile-layout';
 import { ErrorBoundary } from '@/components/app/error-boundary';
 import { useCallingStore } from '@/hooks/use-calling-store';
 import { IncomingCallNotification } from '@/components/app/incoming-call-notification';
+import Image from 'next/image';
 
 const CallView = dynamic(() => import('@/components/app/call-view').then(mod => mod.CallView), {
   ssr: false,
@@ -55,7 +56,7 @@ export default function Home() {
   const { chats, loading: chatsLoading, addChat, removeChat } = useChats(authReady);
   const { servers, setServers, loading: serversLoading, createServer } = useServers(authReady);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests(authReady);
-  const { activeCall, incomingCall, listenForIncomingCalls, stopListeningForIncomingCalls } = useCallingStore();
+  const { activeCall, incomingCall, listenForIncomingCalls, stopListeningForIncomingCalls, initCall } = useCallingStore();
 
 
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
@@ -343,8 +344,9 @@ export default function Home() {
 
   if (loading || !authUser || !user) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <p>Loading...</p>
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
+        <Image src="https://www.cdn.buymeacoffee.com/uploads/project_id_196593/63d59e63-53e3-40e1-96e0-3947b19a16f2.png" alt="Phunt Logo" width={128} height={128} />
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
   }

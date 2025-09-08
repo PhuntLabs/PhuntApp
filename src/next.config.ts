@@ -87,7 +87,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'cdn.buymeacoffee.com',
+        hostname: 'www.cdn.buymeacoffee.com',
         port: '',
         pathname: '/**',
       }

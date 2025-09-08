@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
         source: '/add-qolforu',
         destination: '/add-qolforu',
       },
+       {
+        source: '/api/agora/token',
+        destination: '/api/agora/token',
+      }
     ]
   },
   /* config options here */
@@ -78,6 +82,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'gofile.io',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.cdn.buymeacoffee.com',
         port: '',
         pathname: '/**',
       }
