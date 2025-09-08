@@ -85,7 +85,7 @@ export default function LandingPage() {
                             Phunt is a modern communication platform designed for communities of all sizes. Create a server for your friend group, your gaming clan, or your study club, and enjoy seamless text chat, high-quality voice calls, and powerful moderation tools, all for free.
                         </p>
                         <div className="mt-8 flex justify-center gap-4">
-                             <Link href="/channels/@me">
+                             <Link href="/login">
                                 <Button size="lg" className="text-lg">
                                     Get Started
                                 </Button>

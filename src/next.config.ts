@@ -94,6 +94,12 @@ const nextConfig: NextConfig = {
         hostname: 'www.cdn.buymeacoffee.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.scdn.co',
+        port: '',
+        pathname: '/**',
       }
     ],
   },

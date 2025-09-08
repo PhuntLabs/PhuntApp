@@ -1,11 +1,12 @@
 
-
 'use client';
 
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
+import { AgoraRTCProvider } from 'agora-rtc-react';
 
 import { UserNav } from '@/components/app/user-nav';
 import { Chat } from '@/components/app/chat';
@@ -26,7 +27,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
 import { BOT_ID, BOT_USERNAME } from '@/ai/bots/config';
-import { AtSign, Mic, Settings } from 'lucide-react';
+import { AtSign, Mic, Settings, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServerSidebar } from '@/components/app/server-sidebar';
 import { MemberList } from '@/components/app/member-list';
@@ -35,10 +36,18 @@ import { UpdateLog } from '@/components/app/update-log';
 import { MentionsDialog } from '@/components/app/mentions-dialog';
 import { useMobileView } from '@/hooks/use-mobile-view';
 import { MobileLayout } from '@/components/app/mobile-layout';
-import { ErrorBoundary } from './error-boundary';
+import { ErrorBoundary } from '@/components/app/error-boundary';
+import { useCallingStore } from '@/hooks/use-calling-store';
+import { IncomingCallNotification } from '@/components/app/incoming-call-notification';
+import Image from 'next/image';
 
 
-export default function Home() {
+const ActiveCallView = dynamic(() => import('@/components/app/active-call-view').then(mod => mod.ActiveCallView), {
+  ssr: false,
+});
+
+
+export default function AppRootPage() {
   const { user, authUser, loading, logout } = useAuth();
   const router = useRouter();
   const { isMobileView } = useMobileView();
@@ -48,6 +57,8 @@ export default function Home() {
   const { chats, loading: chatsLoading, addChat, removeChat } = useChats(authReady);
   const { servers, setServers, loading: serversLoading, createServer } = useServers(authReady);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests(authReady);
+  const { activeCall, incomingCall, listenForIncomingCalls, stopListeningForIncomingCalls, initCall, acceptCall, declineCall, agoraClient } = useCallingStore();
+
 
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
@@ -97,6 +108,17 @@ export default function Home() {
     }
   }, [authUser, loading, router]);
   
+   useEffect(() => {
+    if (user?.uid && user.callingEnabled) {
+      listenForIncomingCalls(user.uid);
+    } else {
+      stopListeningForIncomingCalls();
+    }
+    return () => {
+      stopListeningForIncomingCalls();
+    };
+  }, [user, listenForIncomingCalls, stopListeningForIncomingCalls]);
+
   useEffect(() => {
     if (chatsLoading) return;
 
@@ -323,14 +345,22 @@ export default function Home() {
 
   if (loading || !authUser || !user) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <p>Loading...</p>
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
+        <Image src="https://www.cdn.buymeacoffee.com/uploads/project_id_196593/63d59e63-53e3-40e1-96e0-3947b19a16f2.png" alt="Phunt Logo" width={128} height={128} />
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
   }
   
+  const handleAcceptCall = async (call: any) => {
+      if (!user) return;
+      await acceptCall(call, user);
+  }
+
   return (
     <ErrorBoundary>
+        <UpdateLog />
+        {incomingCall && <IncomingCallNotification />}
         {isMobileView ? (
             <MobileLayout 
                 user={user}
@@ -366,7 +396,7 @@ export default function Home() {
             />
         ) : (
             <SidebarProvider>
-            <UpdateLog />
+            
             <div className="flex h-screen bg-background/70">
                 <Servers 
                 servers={servers}
@@ -425,6 +455,9 @@ export default function Home() {
                         </>
                         )}
                     </div>
+                    {activeCall && agoraClient ? (
+                        <ActiveCallView client={agoraClient} />
+                    ) : (
                     <div className="bg-background/50 p-2 border-t border-border">
                         <div className="flex items-center justify-between">
                         <UserNav user={user} logout={logout}/>
@@ -436,6 +469,7 @@ export default function Home() {
                         </div>
                         </div>
                     </div>
+                    )}
                 </div>
                 
                 <main className="flex-1 flex flex-col bg-background/50 min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
@@ -466,6 +500,7 @@ export default function Home() {
                         onEditMessage={editMessage}
                         onDeleteMessage={deleteMessage}
                         currentUser={authUser}
+                        onInitiateCall={(callee) => initCall(user, callee, selectedChat.id)}
                     />
                     ) : (
                     <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
