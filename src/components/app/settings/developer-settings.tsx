@@ -6,15 +6,18 @@ import { useMobileView } from "@/hooks/use-mobile-view";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info, Phone } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import { BadgeManager } from "./badge-manager";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export function DeveloperSettings() {
-    const { user } = useAuth();
+    const { user, updateUserProfile } = useAuth();
+    const { toast } = useToast();
     const { isMobileView, setIsMobileView, isPwaMode } = useMobileView();
 
     const handleToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -24,6 +27,18 @@ export function DeveloperSettings() {
         // because of the way the click event is handled on the label.
         const currentChecked = (e.currentTarget.previousSibling as HTMLButtonElement)?.dataset?.state === 'checked';
         setIsMobileView(!currentChecked);
+    }
+    
+    const handleCallingToggle = async (enabled: boolean) => {
+        try {
+            await updateUserProfile({ callingEnabled: enabled });
+            toast({
+                title: `Calling ${enabled ? 'Enabled' : 'Disabled'}`,
+                description: `You have ${enabled ? 'enabled' : 'disabled'} the beta calling features.`,
+            });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        }
     }
 
     const isHeina = user?.displayName === 'heina';
@@ -35,6 +50,25 @@ export function DeveloperSettings() {
                 <p className="text-muted-foreground">
                     Settings for development and testing purposes.
                 </p>
+            </div>
+
+            <div className="p-4 rounded-lg animated-gradient text-white relative overflow-hidden">
+                 <div className="absolute inset-0 bg-black/30"/>
+                 <div className="relative z-10">
+                    <AlertTitle className="text-white flex items-center gap-2"><Phone /> Calling with RTC (Beta)</AlertTitle>
+                    <AlertDescription className="text-white/80 mt-2">
+                        Enable or disable the WebRTC calling features. This feature is experimental and may have bugs. Please report any issues you encounter.
+                    </AlertDescription>
+                    <div className="flex items-center space-x-2 mt-4">
+                        <Switch
+                          id="calling-toggle"
+                          checked={user?.callingEnabled}
+                          onCheckedChange={handleCallingToggle}
+                          className="data-[state=checked]:bg-white/90 data-[state=unchecked]:bg-white/20"
+                        />
+                        <Label htmlFor="calling-toggle" className="text-white/90">Enable Calling</Label>
+                    </div>
+                 </div>
             </div>
 
             <Card>

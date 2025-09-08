@@ -77,6 +77,14 @@ export const useCallingStore = create<CallingState>((set, get) => ({
   mainViewUserId: null,
   
   initCall: async (caller, callee, chatId) => {
+    if (!caller?.callingEnabled) {
+        toast({
+            variant: 'destructive',
+            title: 'Calling Disabled',
+            description: 'You must enable the calling feature in Developer Settings to make calls.',
+        });
+        return;
+    }
     if (!APP_ID) {
       toast({ variant: 'destructive', title: 'Calling is not configured on this server.' });
       return;
@@ -135,6 +143,14 @@ export const useCallingStore = create<CallingState>((set, get) => ({
   },
   
   acceptCall: async (call, callee) => {
+    if (!callee?.callingEnabled) {
+        toast({
+            variant: 'destructive',
+            title: 'Calling Disabled',
+            description: 'You must enable the calling feature in Developer Settings to accept calls.',
+        });
+        return;
+    }
     if (!APP_ID) {
       toast({ variant: 'destructive', title: 'Calling is not configured on this server.' });
       return;

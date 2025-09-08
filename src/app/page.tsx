@@ -109,7 +109,7 @@ export default function Home() {
   }, [authUser, loading, router]);
   
    useEffect(() => {
-    if (user?.uid) {
+    if (user?.uid && user.callingEnabled) {
       listenForIncomingCalls(user.uid);
     } else {
       stopListeningForIncomingCalls();
@@ -359,6 +359,7 @@ export default function Home() {
 
   return (
     <ErrorBoundary>
+        <UpdateLog />
         {incomingCall && <IncomingCallNotification />}
         {isMobileView ? (
             <MobileLayout 
@@ -395,7 +396,7 @@ export default function Home() {
             />
         ) : (
             <SidebarProvider>
-            <UpdateLog />
+            
             <div className="flex h-screen bg-background/70">
                 <Servers 
                 servers={servers}

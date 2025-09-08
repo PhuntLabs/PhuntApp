@@ -12,12 +12,18 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Rocket, Sparkles, Gamepad2, Bot, MessageCirclePlus, Paperclip } from 'lucide-react';
+import { Rocket, Sparkles, Gamepad2, Bot, MessageCirclePlus, Paperclip, Phone } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-const APP_VERSION = '1.0.6';
+const APP_VERSION = '1.0.7'; // Incremented version
 const LOCAL_STORAGE_KEY = `changelog_seen_${APP_VERSION}`;
 
 const updates = [
+    {
+        title: 'Calling (Beta)',
+        icon: Phone,
+        description: 'Voice and video calling is now available for testing! You can enable it in Developer Settings. Please report any bugs you find!',
+    },
     {
         title: 'Secure File Uploads',
         icon: Paperclip,
@@ -37,11 +43,6 @@ const updates = [
         title: 'Say Hello to Bots',
         icon: Bot,
         description: 'Add our first phunt bot, @qolforu, from the Discovery page! Use its commands like /poll and /embed to add fun and utility to your server.',
-    },
-    {
-        title: 'Custom Welcome Messages',
-        icon: MessageCirclePlus,
-        description: 'Set a specific channel in your server settings to have the app automatically post a warm welcome message whenever a new member joins.',
     },
 ]
 
@@ -64,19 +65,19 @@ export function UpdateLog() {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <div className="flex items-center gap-3">
-             <div className="bg-primary/20 text-primary p-2.5 rounded-lg">
+          <div className={cn("flex items-center gap-3 p-4 -m-6 mb-0 rounded-t-lg animated-gradient text-white")}>
+             <div className="bg-white/20 p-2.5 rounded-lg">
                 <Rocket className="size-6" />
              </div>
              <div>
-                <DialogTitle className="text-2xl">What's New in phunt {APP_VERSION}?</DialogTitle>
-                <DialogDescription>
-                    This is a big one! Here are the latest features.
+                <DialogTitle className="text-2xl text-white">What's New in phunt {APP_VERSION}?</DialogTitle>
+                <DialogDescription className="text-white/80">
+                    Here are the latest features and improvements.
                 </DialogDescription>
             </div>
           </div>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh] pr-4">
+        <ScrollArea className="max-h-[60vh] -mx-6 px-6">
             <div className="space-y-6 py-4">
                 {updates.map(({ title, icon: Icon, description }) => (
                      <div key={title} className="flex items-start gap-4">
@@ -91,7 +92,7 @@ export function UpdateLog() {
                 ))}
             </div>
         </ScrollArea>
-        <DialogFooter>
+        <DialogFooter className="!mt-2">
           <Button onClick={handleClose}>Explore New Features</Button>
         </DialogFooter>
       </DialogContent>

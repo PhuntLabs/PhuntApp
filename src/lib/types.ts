@@ -78,6 +78,7 @@ export interface UserProfile {
   connections?: Connection[];
   serverTags?: { [serverId: string]: boolean }; // serverId -> showTag
   currentSong?: Song | null;
+  callingEnabled?: boolean;
 }
 
 export interface ChatDocument {
@@ -269,5 +270,3 @@ export interface Emoji {
     char: string;
     keywords: string[];
 }
-
-    
