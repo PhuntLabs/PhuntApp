@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -61,7 +62,7 @@ export function ThemeSettings() {
   
   // Apply theme when it changes
   useEffect(() => {
-    document.documentElement.classList.remove('light', 'dark', 'full-dark');
+    document.documentElement.classList.remove('light', 'dark', 'full-dark', 'custom');
     document.documentElement.classList.add(theme);
     
     localStorage.setItem('app-theme', theme);
