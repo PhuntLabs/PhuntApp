@@ -50,9 +50,7 @@ const RageEffect = () => (
 );
 
 const GlowEffect = () => <div className="avatar-effect-glow"></div>;
-
 const OrbitEffect = () => <div className="avatar-effect-orbit"></div>;
-
 const SparkleEffect = () => (
     <div className="avatar-effect-sparkle">
         {[...Array(5)].map((_, i) => (
@@ -66,67 +64,32 @@ const SparkleEffect = () => (
         ))}
     </div>
 );
-
 const BounceEffect = ({ children }: { children: React.ReactNode }) => <div className="avatar-effect-bounce">{children}</div>;
-
 const SnowEffect = () => (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {[...Array(30)].map((_, i) => (
-            <div
-                key={i}
-                className="snowflake"
-                style={{
-                    left: `${Math.random() * 100}%`,
-                    fontSize: `${Math.random() * 10 + 8}px`,
-                    animationDuration: `${2 + Math.random() * 3}s`,
-                    animationDelay: `${Math.random() * 5}s`,
-                }}
-            >
-                ●
-            </div>
+            <div key={i} className="snowflake" style={{ left: `${Math.random() * 100}%`, fontSize: `${Math.random() * 10 + 8}px`, animationDuration: `${2 + Math.random() * 3}s`, animationDelay: `${Math.random() * 5}s` }}>●</div>
         ))}
     </div>
 );
-
 const AuroraEffect = () => <div className="aurora"></div>;
-
 const StarfieldEffect = () => (
      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {[...Array(50)].map((_, i) => (
-            <div
-                key={i}
-                className="star"
-                style={{
-                    top: `${Math.random() * 100}%`,
-                    left: `${Math.random() * 100}%`,
-                    width: `${Math.random() * 2 + 1}px`,
-                    height: `${Math.random() * 2 + 1}px`,
-                    animationDelay: `${Math.random() * 2}s`,
-                    animationDuration: `${1.5 + Math.random() * 1}s`
-                }}
-            />
+            <div key={i} className="star" style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`, width: `${Math.random() * 2 + 1}px`, height: `${Math.random() * 2 + 1}px`, animationDelay: `${Math.random() * 2}s`, animationDuration: `${1.5 + Math.random() * 1}s` }}/>
         ))}
     </div>
-)
-
+);
 const ConfettiEffect = () => {
     const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800'];
     return (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
             {[...Array(25)].map((_, i) => (
-                 <div
-                    key={i}
-                    className="confetti"
-                    style={{
-                        left: `${Math.random() * 100}%`,
-                        backgroundColor: colors[Math.floor(Math.random() * colors.length)],
-                        animationDelay: `${Math.random() * 3}s`,
-                    }}
-                />
+                 <div key={i} className="confetti" style={{ left: `${Math.random() * 100}%`, backgroundColor: colors[Math.floor(Math.random() * colors.length)], animationDelay: `${Math.random() * 3}s` }} />
             ))}
         </div>
-    )
-}
+    );
+};
 
 
 const avatarEffects: { id: AvatarEffect, name: string, component: React.FC | React.FC<{ children: React.ReactNode }> }[] = [
@@ -149,10 +112,10 @@ const profileEffects: { id: ProfileEffect, name: string, component: React.FC }[]
 
 const nameplates = [
     { id: 'none', name: 'None', url: '' },
-    { id: 'cityscape', name: 'Cityscape', url: 'https://picsum.photos/seed/cityscape-nameplate/300/60', hint: 'city buildings' },
-    { id: 'forest', name: 'Forest', url: 'https://picsum.photos/seed/forest-nameplate/300/60', hint: 'forest trees' },
-    { id: 'galaxy', name: 'Galaxy', url: 'https://picsum.photos/seed/galaxy-nameplate/300/60', hint: 'galaxy stars' },
-    { id: 'ocean', name: 'Ocean', url: 'https://picsum.photos/seed/ocean-nameplate/300/60', hint: 'ocean wave' },
+    { id: 'cityscape', name: 'Cityscape', url: 'https://picsum.photos/seed/cityscape/400/80', hint: 'city buildings' },
+    { id: 'forest', name: 'Forest', url: 'https://picsum.photos/seed/forest/400/80', hint: 'forest trees' },
+    { id: 'galaxy', name: 'Galaxy', url: 'https://picsum.photos/seed/galaxy/400/80', hint: 'galaxy stars' },
+    { id: 'ocean', name: 'Ocean', url: 'https://picsum.photos/seed/ocean/400/80', hint: 'ocean wave' },
 ];
 
 
