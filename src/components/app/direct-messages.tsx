@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSkeleton } from '@/components/ui/sidebar';
@@ -19,7 +20,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import Image from 'next/image';
 
 interface DirectMessagesProps {
   directMessages: PopulatedChat[];
@@ -94,43 +96,54 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
                 tooltip={chatName}
                 isActive={selectedChat?.id === chat.id}
                 onClick={() => onSelectChat(chat)}
-                className={cn("h-auto py-1.5", hasUnread && "text-white font-semibold")}
+                className={cn("h-auto py-1.5 relative overflow-hidden", hasUnread && "text-white font-semibold")}
               >
-                <div className="relative">
-                  <Avatar className="size-8 rounded-full relative">
-                    <AvatarImage src={chatAvatar || undefined} />
-                    <AvatarFallback>{chatName[0]}</AvatarFallback>
-                  </Avatar>
-                   <div className={cn(
-                        "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-secondary/30",
-                        statusConfig[status].color
-                    )} />
-                </div>
-                <div className="flex-1 overflow-hidden -space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate">{chatName}</span>
-                    {isBotChat && (
-                        <Badge variant="secondary" className="h-4 px-1 flex items-center gap-1 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
-                          <Bot className="size-2.5" /> BOT
-                        </Badge>
-                    )}
-                  </div>
-                  <p className={cn("text-xs truncate flex items-center gap-1", hasUnread ? "text-white/70" : "text-muted-foreground")}>
-                    {SubIcon && <SubIcon className="size-3 shrink-0"/>}
-                    {subtext}
-                  </p>
+                 {otherMember?.nameplateUrl && (
+                    <Image
+                        src={otherMember.nameplateUrl}
+                        alt=""
+                        fill
+                        className="object-cover opacity-30 group-hover:opacity-50 transition-opacity"
+                        data-ai-hint="cityscape background"
+                    />
+                 )}
+                <div className="relative z-10 flex items-center gap-2 w-full">
+                    <div className="relative">
+                      <Avatar className="size-8 rounded-full relative">
+                        <AvatarImage src={chatAvatar || undefined} />
+                        <AvatarFallback>{chatName[0]}</AvatarFallback>
+                      </Avatar>
+                       <div className={cn(
+                            "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-secondary/30",
+                            statusConfig[status].color
+                        )} />
+                    </div>
+                    <div className="flex-1 overflow-hidden -space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className={cn("truncate", otherMember?.nameplateUrl ? 'text-white' : '')}>{chatName}</span>
+                        {isBotChat && (
+                            <Badge variant="secondary" className="h-4 px-1 flex items-center gap-1 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                              <Bot className="size-2.5" /> BOT
+                            </Badge>
+                        )}
+                      </div>
+                      <p className={cn("text-xs truncate flex items-center gap-1", hasUnread ? "text-white/70" : otherMember?.nameplateUrl ? "text-white/80" : "text-muted-foreground")}>
+                        {SubIcon && <SubIcon className="size-3 shrink-0"/>}
+                        {subtext}
+                      </p>
+                    </div>
                 </div>
               </SidebarMenuButton>
 
                 {hasUnread && (
-                    <div className="absolute right-8 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center">
+                    <div className="absolute right-8 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center z-20">
                         {chat.unreadCount?.[user?.uid || ''] > 9 ? '9+' : chat.unreadCount?.[user?.uid || '']}
                     </div>
                 )}
 
                <AlertDialog>
                 <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-5 w-5 absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/item:opacity-100 text-muted-foreground hover:text-foreground">
+                    <Button variant="ghost" size="icon" className="h-5 w-5 absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/item:opacity-100 text-muted-foreground hover:text-foreground z-20">
                         <X className="h-3 w-3"/>
                     </Button>
                 </AlertDialogTrigger>

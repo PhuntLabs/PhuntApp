@@ -63,6 +63,7 @@ export interface UserProfile {
   customStatus?: string;
   avatarEffect?: AvatarEffect;
   profileEffect?: ProfileEffect;
+  nameplateUrl?: string;
   currentGame?: Game | CustomGame | null; // Can be a standard game or a custom one
   customGames?: CustomGame[];
   connections?: Connection[];

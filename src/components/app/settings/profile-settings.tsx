@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -144,6 +145,14 @@ const profileEffects: { id: ProfileEffect, name: string, component: React.FC }[]
     { id: 'confetti', name: 'Confetti', component: ConfettiEffect },
 ];
 
+const nameplates = [
+    { id: 'none', name: 'None', url: '' },
+    { id: 'cityscape', name: 'Cityscape', url: 'https://picsum.photos/seed/cityscape-nameplate/300/60' },
+    { id: 'forest', name: 'Forest', url: 'https://picsum.photos/seed/forest-nameplate/300/60' },
+    { id: 'galaxy', name: 'Galaxy', url: 'https://picsum.photos/seed/galaxy-nameplate/300/60' },
+    { id: 'ocean', name: 'Ocean', url: 'https://picsum.photos/seed/ocean-nameplate/300/60' },
+];
+
 
 export function ProfileSettings() {
   const { user, updateUserProfile } = useAuth();
@@ -151,19 +160,21 @@ export function ProfileSettings() {
 
   const [avatarEffect, setAvatarEffect] = useState<AvatarEffect>('none');
   const [profileEffect, setProfileEffect] = useState<ProfileEffect>('none');
+  const [nameplateUrl, setNameplateUrl] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   
   useEffect(() => {
     if (user) {
       setAvatarEffect(user.avatarEffect || 'none');
       setProfileEffect(user.profileEffect || 'none');
+      setNameplateUrl(user.nameplateUrl || '');
     }
   }, [user]);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-        await updateUserProfile({ avatarEffect, profileEffect });
+        await updateUserProfile({ avatarEffect, profileEffect, nameplateUrl });
         toast({ title: 'Profile Effects Updated', description: 'Your new look has been saved.' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
@@ -255,6 +266,44 @@ export function ProfileSettings() {
 
                     </div>
                      <span className="font-medium text-sm">{effect.name}</span>
+                </div>
+           ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+            <CardTitle>Nameplate</CardTitle>
+            <CardDescription>Make your name stand out in servers and chats with a custom background.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+           {nameplates.map(plate => (
+                <div
+                    key={plate.id}
+                    onClick={() => setNameplateUrl(plate.url)}
+                    className={cn(
+                        "relative flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                         nameplateUrl === plate.url ? "border-primary bg-primary/10" : "border-transparent bg-muted/50 hover:bg-accent"
+                    )}
+                >
+                    <div className="w-full h-16 bg-accent rounded-lg relative overflow-hidden flex flex-col items-center justify-center p-2">
+                        {plate.url ? (
+                             <Image src={plate.url} alt={plate.name} fill className="object-cover" />
+                        ): (
+                            <div className="w-full h-full bg-muted"></div>
+                        )}
+                        <div className="relative z-10 w-full bg-black/30 backdrop-blur-sm p-2 rounded-md">
+                            <div className="flex items-center gap-2">
+                                <Avatar className="size-8">
+                                     <AvatarImage src={user.photoURL || undefined} />
+                                     <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <p className="font-bold text-white text-shadow-md">{user.displayName}</p>
+                            </div>
+                        </div>
+
+                    </div>
+                     <span className="font-medium text-sm">{plate.name}</span>
                 </div>
            ))}
         </CardContent>

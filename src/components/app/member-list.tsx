@@ -8,6 +8,7 @@ import { Crown, MessageCircleMore } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { UserNav } from "./user-nav";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface MemberListProps {
     members: Partial<UserProfile>[];
@@ -108,28 +109,38 @@ const MemberItem = ({ member, server, topRoleColor }: { member: Partial<UserProf
     return (
          <Popover>
             <PopoverTrigger asChild>
-                <div className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer">
-                    <div className="relative">
-                        <Avatar className="size-8">
-                            <AvatarImage src={member.photoURL || undefined} />
-                            <AvatarFallback>{member.displayName?.[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className={cn(
-                            "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-secondary/30 flex items-center justify-center", 
-                            statusConfig[status].color
-                        )}>
-                             {member.customStatus && <MessageCircleMore className="size-2 text-white/70" />}
+                <div className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer relative overflow-hidden">
+                    {member.nameplateUrl && (
+                        <Image
+                            src={member.nameplateUrl}
+                            alt=""
+                            fill
+                            className="object-cover opacity-50 group-hover:opacity-75 transition-opacity"
+                        />
+                    )}
+                    <div className="relative z-10 flex items-center gap-2 w-full">
+                        <div className="relative">
+                            <Avatar className="size-8">
+                                <AvatarImage src={member.photoURL || undefined} />
+                                <AvatarFallback>{member.displayName?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className={cn(
+                                "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-secondary/30 flex items-center justify-center", 
+                                statusConfig[status].color
+                            )}>
+                                {member.customStatus && <MessageCircleMore className="size-2 text-white/70" />}
+                            </div>
                         </div>
+                        <div className="flex-1 overflow-hidden">
+                            <span className={cn("font-medium text-sm truncate", member.nameplateUrl ? 'text-white text-shadow-sm' : '')} style={{ color: member.nameplateUrl ? undefined : topRoleColor }}>
+                                {member.displayName}
+                            </span>
+                            {member.customStatus && (
+                                <p className={cn("text-xs truncate", member.nameplateUrl ? 'text-white/80' : 'text-muted-foreground')}>{member.customStatus}</p>
+                            )}
+                        </div>
+                        {isOwner && <Crown className="size-4 text-yellow-500 z-10" />}
                     </div>
-                    <div className="flex-1 overflow-hidden">
-                        <span className="font-medium text-sm truncate" style={{ color: topRoleColor }}>
-                            {member.displayName}
-                        </span>
-                        {member.customStatus && (
-                            <p className="text-xs text-muted-foreground truncate">{member.customStatus}</p>
-                        )}
-                    </div>
-                    {isOwner && <Crown className="size-4 text-yellow-500" />}
                 </div>
             </PopoverTrigger>
              <PopoverContent className="w-80 mb-2 p-0 border-none" side="left" align="start">
