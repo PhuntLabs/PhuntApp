@@ -6,11 +6,21 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Phone, PhoneOff, Video } from 'lucide-react';
 import { useCallingStore } from '@/hooks/use-calling-store';
 import Image from 'next/image';
+import { useAuth } from '@/hooks/use-auth';
 
 export function IncomingCallNotification() {
+    const { user } = useAuth();
     const { incomingCall, acceptCall, declineCall } = useCallingStore();
 
-    if (!incomingCall) return null;
+    if (!incomingCall || !user) return null;
+
+    const handleAccept = () => {
+        acceptCall(incomingCall, user);
+    }
+
+    const handleDecline = () => {
+        declineCall(incomingCall);
+    }
 
     return (
         <div className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
@@ -32,7 +42,7 @@ export function IncomingCallNotification() {
                                 size="lg"
                                 variant="destructive"
                                 className="rounded-full size-16"
-                                onClick={() => declineCall(incomingCall)}
+                                onClick={handleDecline}
                             >
                                 <PhoneOff className="size-7" />
                             </Button>
@@ -42,7 +52,7 @@ export function IncomingCallNotification() {
                              <Button
                                 size="lg"
                                 className="rounded-full size-16 bg-green-500 hover:bg-green-600"
-                                onClick={() => acceptCall(incomingCall)}
+                                onClick={handleAccept}
                             >
                                 <Phone className="size-7" />
                             </Button>

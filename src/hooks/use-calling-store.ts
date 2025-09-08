@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import type { IAgoraRTCClient, ILocalVideoTrack, ILocalAudioTrack } from 'agora-rtc-sdk-ng';
 import type { UserProfile, Call } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { addDoc, collection, doc, serverTimestamp, updateDoc, onSnapshot, Unsubscribe, setDoc, getDoc, query, where } from 'firebase/firestore';
+import { addDoc, collection, doc, serverTimestamp, updateDoc, onSnapshot, Unsubscribe, setDoc, getDoc, query, where, Timestamp } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from './use-toast';
 
@@ -233,7 +233,8 @@ export const useCallingStore = create<CallingState>((set, get) => ({
     if (callUnsubscribe) return; 
 
     const callsRef = collection(db, 'calls');
-    const q = query(callsRef, where('callee.uid', '==', userId), where('status', '==', 'ringing'));
+    const sixtySecondsAgo = Timestamp.fromMillis(Date.now() - 60000);
+    const q = query(callsRef, where('callee.uid', '==', userId), where('status', '==', 'ringing'), where('createdAt', '>=', sixtySecondsAgo));
 
     const unsub = onSnapshot(q, (snapshot) => {
         if (!snapshot.empty) {
@@ -314,5 +315,3 @@ export const useCallingStore = create<CallingState>((set, get) => ({
   }
 
 }));
-
-    
