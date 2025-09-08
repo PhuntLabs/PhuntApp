@@ -288,7 +288,7 @@ export function ProfileSettings() {
                 >
                     <div className="w-full h-16 bg-accent rounded-lg relative overflow-hidden flex flex-col items-center justify-center p-2">
                         {plate.url ? (
-                             <Image src={plate.url} alt={plate.name} fill className="object-cover" />
+                             <Image src={plate.url} alt={plate.name} fill className="object-cover" data-ai-hint={`${plate.name} background`} />
                         ): (
                             <div className="w-full h-full bg-muted"></div>
                         )}
