@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChevronRight, User, Sparkles, Gamepad, Shield, Paintbrush, Code, Bug } from 'lucide-react';
+import { ChevronRight, User, Sparkles, Gamepad, Shield, Paintbrush, Code, Bug, Bell, Link2 } from 'lucide-react';
 import { AccountSettings } from '../settings/account-settings';
 import { ProfileSettings } from '../settings/profile-settings';
 import { GameActivitySettings } from '../settings/game-activity-settings';
@@ -14,13 +14,17 @@ import { ThemeSettings } from '../settings/theme-settings';
 import { DeveloperSettings } from '../settings/developer-settings';
 import { BugReportSettings } from '../settings/bug-report-settings';
 import { AnimatePresence, motion } from 'framer-motion';
+import { NotificationsSettings } from '../settings/notifications-settings';
+import { ConnectionsSettings } from '../settings/connections-settings';
 
-type SectionId = 'account' | 'profiles' | 'game-activity' | 'security' | 'theme' | 'developer' | 'bugs';
+type SectionId = 'account' | 'profiles' | 'connections' | 'game-activity' | 'security' | 'theme' | 'developer' | 'bugs' | 'notifications';
 
 const sections = [
   { id: 'account', label: 'My Account', icon: User, component: AccountSettings },
   { id: 'profiles', label: 'Profiles', icon: Sparkles, component: ProfileSettings },
+  { id: 'connections', label: 'Connections', icon: Link2, component: ConnectionsSettings },
   { id: 'game-activity', label: 'Game Activity', icon: Gamepad, component: GameActivitySettings },
+  { id: 'notifications', label: 'Notifications', icon: Bell, component: NotificationsSettings },
   { id: 'security', label: 'Security', icon: Shield, component: SecuritySettings },
   { id: 'theme', label: 'Theme', icon: Paintbrush, component: ThemeSettings },
   { id: 'developer', label: 'Developer', icon: Code, component: DeveloperSettings },

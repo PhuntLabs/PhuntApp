@@ -18,6 +18,7 @@ import { MentionsDialog } from './mentions-dialog';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
+import { MobileProfilePage } from './mobile/mobile-profile-page';
 
 interface MobileLayoutProps {
     user: UserProfile;
@@ -53,7 +54,7 @@ interface MobileLayoutProps {
     onDeleteChannelMessage: any;
 }
 
-type MainView = 'home' | 'notifications' | 'settings';
+type MainView = 'home' | 'notifications' | 'profile';
 
 export function MobileLayout({
     user,
@@ -178,8 +179,8 @@ export function MobileLayout({
           );
     }
 
-    if (activeView === 'settings') {
-        return <MobileSettingsPage />;
+    if (activeView === 'profile') {
+        return <MobileProfilePage />;
     }
   }
 
@@ -255,10 +256,10 @@ export function MobileLayout({
               <span className="text-xs">Mentions</span>
           </button>
           <button
-              onClick={() => setActiveView('settings')}
+              onClick={() => setActiveView('profile')}
               className={cn(
                   "flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground w-1/3",
-                  activeView === 'settings' && 'text-primary'
+                  activeView === 'profile' && 'text-primary'
               )}
           >
               <UserIcon />
