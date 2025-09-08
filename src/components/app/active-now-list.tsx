@@ -19,7 +19,7 @@ const statusRingColor: Record<string, string> = {
 export function ActiveNowList({ users }: { users: UserProfile[] }) {
     return (
         <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex w-max space-x-4 pb-2">
+            <div className="flex w-max space-x-4 pb-4">
                 {users.map(user => (
                     <UserNav key={user.id} user={user} as="trigger">
                         <TooltipProvider delayDuration={0}>
