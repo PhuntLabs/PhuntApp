@@ -23,7 +23,7 @@ export default function SignupPage() {
     e.preventDefault();
     try {
       await signup(email, password, username);
-      router.push('/channels/@me');
+      router.push('/channels/me');
     } catch (error: any) {
       toast({
         variant: 'destructive',

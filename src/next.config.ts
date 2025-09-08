@@ -21,8 +21,8 @@ const nextConfig: NextConfig = {
         destination: '/api/agora/token',
       },
       {
-        source: '/channels/@me',
-        destination: '/channels/@me',
+        source: '/channels/me',
+        destination: '/channels/me',
       }
     ]
   },

@@ -22,7 +22,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
-      router.push('/channels/@me');
+      router.push('/channels/me');
     } catch (error: any) {
       toast({
         variant: 'destructive',
