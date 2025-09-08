@@ -84,7 +84,7 @@ service cloud.firestore {
 
         // Authenticated user can create a message if they are a server member and the sender.
         allow create: if isMemberOf(get(/databases/$(database)/documents/servers/$(serverId)))
-                      && isUser(request.resource.data.sender);
+                      && (isUser(request.resource.data.sender) || request.resource.data.sender == 'system');
 
         // A user can only update/delete their own messages.
         allow update, delete: if isUser(resource.data.sender);
@@ -112,7 +112,7 @@ service cloud.firestore {
             // A user can create a message if they are a member of the chat and the sender.
             allow create: if isSignedIn() 
                         && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
-                        && isUser(request.resource.data.sender);
+                        && (isUser(request.resource.data.sender) || request.resource.data.sender == 'system');
 
             // A user can only update or delete their own messages.
             allow update, delete: if isUser(resource.data.sender);
@@ -139,27 +139,40 @@ service cloud.firestore {
     // =====================================================================
     // Mentions Collection
     // =====================================================================
-    match /mentions/{mentionId} {
-      // A user can only read their own mentions.
-      allow read: if isUser(resource.data.mentionedUserId);
-      // A user can only create a mention if they are the sender.
-      allow create: if isUser(request.resource.data.sender);
-      // Mentions are immutable and cannot be deleted.
+     match /mentions/{mentionId} {
+      // Allow create if the user is the sender of the mention.
+      allow create: if isSignedIn() && isUser(request.resource.data.sender);
+
+      // Allow read if the user is the one being mentioned.
+      allow read: if isSignedIn() && isUser(resource.data.mentionedUserId);
+      
+      // Nobody can update or delete mentions.
       allow update, delete: if false;
     }
-    
+
     // =====================================================================
     // Calls Collection
     // =====================================================================
     match /calls/{callId} {
       // Allow a user to create a call document if they are the caller.
-      allow create: if isSignedIn() && isUser(request.resource.data.caller.uid);
+      allow create: if isSignedIn();
       
       // Allow the caller or callee to read or update the call document.
-      allow read, update: if isSignedIn() && (isUser(resource.data.caller.uid) || isUser(resource.data.callee.uid));
+      allow read, update: if isSignedIn();
       
       // Prevent deletion of call history.
       allow delete: if false;
+    }
+
+    // =====================================================================
+    // Badges Collection
+    // =====================================================================
+    match /badges/{badgeId} {
+        // Anyone can read badge definitions
+        allow read;
+
+        // Only a specific admin user can create/update/delete badges
+        allow write: if isUser("d5XgUl9GPIOy15IpNjY41bpEBJ22"); // heina's UID
     }
   }
 }
