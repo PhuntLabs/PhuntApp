@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { create } from 'zustand';
@@ -72,6 +73,7 @@ export const useCallingStore = create<CallingState>((set, get) => ({
   inactivityTimer: null,
   
   initCall: async (caller, callee, chatId) => {
+    alert('initCall function started.');
     if (!APP_ID) {
       toast({ variant: 'destructive', title: 'Calling is not configured on this server.' });
       return;
@@ -104,12 +106,17 @@ export const useCallingStore = create<CallingState>((set, get) => ({
     set({ agoraClient: client, activeCall: newCall, micOn: true, cameraOn: true, isScreensharing: false });
     
     try {
+      alert('Requesting microphone and camera permissions...');
+      const tracks = await AgoraRTC.createMicrophoneAndCameraTracks();
+      alert('Permissions granted. Reaching API for token...');
+      
       const response = await fetch(`/api/agora/token?channelName=${channelName}&uid=${caller.uid}`);
       const { token } = await response.json();
       
+      alert('Token received. Joining Agora channel...');
       await client.join(APP_ID, channelName, token, Number(caller.uid));
       
-      const tracks = await AgoraRTC.createMicrophoneAndCameraTracks();
+      alert('Publishing tracks...');
       await client.publish(tracks);
 
       get().startInactivityCheck();

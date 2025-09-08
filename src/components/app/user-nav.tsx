@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { User } from 'firebase/auth';
@@ -217,13 +218,13 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const handleAddFriend = async () => {
     if (!currentUser || !user.displayName) return;
     try {
-        const result = await sendFriendRequest(user.displayName, {
-            id: currentUser.uid,
-            displayName: currentUser.displayName || 'Anonymous'
-        });
-        toast({ title: 'Success', description: result });
+      const result = await sendFriendRequest(user.displayName, {
+        id: currentUser.uid,
+        displayName: currentUser.displayName || 'Anonymous',
+      });
+      toast({ title: 'Success', description: result });
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Error', description: e.message });
+      toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
   };
 
@@ -263,6 +264,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   };
   
   const handleInitiateCall = () => {
+    alert('Call button clicked in user popover.');
     if (!currentUser || !user) return;
     // For now, we assume a call from the profile popover is in a DM context.
     // A more robust implementation would check for an existing chat.
@@ -370,8 +372,8 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                             </div>
                              {!isCurrentUser && (
                                 <div className="flex items-center gap-2 ml-auto">
-                                    <Button size="icon" className="rounded-full size-9 bg-secondary/80 hover:bg-secondary" onClick={() => initCall(currentUser!, user)}><Phone/></Button>
-                                    <Button size="icon" className="rounded-full size-9 bg-secondary/80 hover:bg-secondary" onClick={() => initCall(currentUser!, user)}><Video/></Button>
+                                    <Button size="icon" className="rounded-full size-9 bg-secondary/80 hover:bg-secondary" onClick={handleInitiateCall}><Phone/></Button>
+                                    <Button size="icon" className="rounded-full size-9 bg-secondary/80 hover:bg-secondary" onClick={handleInitiateCall}><Video/></Button>
                                 </div>
                             )}
                         </div>
