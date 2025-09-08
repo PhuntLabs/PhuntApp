@@ -10,6 +10,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { AvatarEffect, ProfileEffect } from '@/lib/types';
 import Image from 'next/image';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 // Mock components for preview
 const RainEffect = () => (
@@ -147,10 +149,10 @@ const profileEffects: { id: ProfileEffect, name: string, component: React.FC }[]
 
 const nameplates = [
     { id: 'none', name: 'None', url: '' },
-    { id: 'cityscape', name: 'Cityscape', url: 'https://picsum.photos/seed/cityscape-nameplate/300/60' },
-    { id: 'forest', name: 'Forest', url: 'https://picsum.photos/seed/forest-nameplate/300/60' },
-    { id: 'galaxy', name: 'Galaxy', url: 'https://picsum.photos/seed/galaxy-nameplate/300/60' },
-    { id: 'ocean', name: 'Ocean', url: 'https://picsum.photos/seed/ocean-nameplate/300/60' },
+    { id: 'cityscape', name: 'Cityscape', url: 'https://picsum.photos/seed/cityscape-nameplate/300/60', hint: 'city buildings' },
+    { id: 'forest', name: 'Forest', url: 'https://picsum.photos/seed/forest-nameplate/300/60', hint: 'forest trees' },
+    { id: 'galaxy', name: 'Galaxy', url: 'https://picsum.photos/seed/galaxy-nameplate/300/60', hint: 'galaxy stars' },
+    { id: 'ocean', name: 'Ocean', url: 'https://picsum.photos/seed/ocean-nameplate/300/60', hint: 'ocean wave' },
 ];
 
 
@@ -161,6 +163,7 @@ export function ProfileSettings() {
   const [avatarEffect, setAvatarEffect] = useState<AvatarEffect>('none');
   const [profileEffect, setProfileEffect] = useState<ProfileEffect>('none');
   const [nameplateUrl, setNameplateUrl] = useState<string>('');
+  const [customNameplateInput, setCustomNameplateInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   
   useEffect(() => {
@@ -181,6 +184,15 @@ export function ProfileSettings() {
     } finally {
         setIsSaving(false);
     }
+  }
+
+  const handleSetCustomNameplate = () => {
+      if (customNameplateInput.trim()) {
+          setNameplateUrl(customNameplateInput.trim());
+          toast({ title: 'Custom Nameplate Set!', description: 'Your custom nameplate is ready. Click "Save All Changes" to apply it.' });
+      } else {
+          toast({ variant: 'destructive', title: 'Invalid URL', description: 'Please enter a valid image URL.' });
+      }
   }
 
   if (!user) return null;
@@ -276,36 +288,50 @@ export function ProfileSettings() {
             <CardTitle>Nameplate</CardTitle>
             <CardDescription>Make your name stand out in servers and chats with a custom background.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-           {nameplates.map(plate => (
-                <div
-                    key={plate.id}
-                    onClick={() => setNameplateUrl(plate.url)}
-                    className={cn(
-                        "relative flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 cursor-pointer transition-all",
-                         nameplateUrl === plate.url ? "border-primary bg-primary/10" : "border-transparent bg-muted/50 hover:bg-accent"
-                    )}
-                >
-                    <div className="w-full h-16 bg-accent rounded-lg relative overflow-hidden flex flex-col items-center justify-center p-2">
-                        {plate.url ? (
-                             <Image src={plate.url} alt={plate.name} fill className="object-cover" data-ai-hint={`${plate.name} background`} />
-                        ): (
-                            <div className="w-full h-full bg-muted"></div>
+        <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {nameplates.map(plate => (
+                    <div
+                        key={plate.id}
+                        onClick={() => setNameplateUrl(plate.url)}
+                        className={cn(
+                            "relative flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                            nameplateUrl === plate.url ? "border-primary bg-primary/10" : "border-transparent bg-muted/50 hover:bg-accent"
                         )}
-                        <div className="relative z-10 w-full bg-black/30 backdrop-blur-sm p-2 rounded-md">
-                            <div className="flex items-center gap-2">
-                                <Avatar className="size-8">
-                                     <AvatarImage src={user.photoURL || undefined} />
-                                     <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
-                                </Avatar>
-                                <p className="font-bold text-white text-shadow-md">{user.displayName}</p>
+                    >
+                        <div className="w-full h-16 bg-accent rounded-lg relative overflow-hidden flex flex-col items-center justify-center p-2">
+                            {plate.url ? (
+                                <Image src={plate.url} alt={plate.name} fill className="object-cover" data-ai-hint={plate.hint} />
+                            ): (
+                                <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-sm">Default</div>
+                            )}
+                            <div className="relative z-10 w-full bg-black/30 backdrop-blur-sm p-2 rounded-md">
+                                <div className="flex items-center gap-2">
+                                    <Avatar className="size-8">
+                                        <AvatarImage src={user.photoURL || undefined} />
+                                        <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <p className="font-bold text-white text-shadow-md">{user.displayName}</p>
+                                </div>
                             </div>
-                        </div>
 
+                        </div>
+                        <span className="font-medium text-sm">{plate.name}</span>
                     </div>
-                     <span className="font-medium text-sm">{plate.name}</span>
+                ))}
+            </div>
+            <div className="pt-4">
+                <Label htmlFor="custom-nameplate-url">Custom Nameplate URL</Label>
+                <div className="flex items-center gap-2 mt-1">
+                    <Input 
+                        id="custom-nameplate-url"
+                        placeholder="https://your.image/url.png"
+                        value={customNameplateInput}
+                        onChange={(e) => setCustomNameplateInput(e.target.value)}
+                    />
+                    <Button onClick={handleSetCustomNameplate}>Set</Button>
                 </div>
-           ))}
+            </div>
         </CardContent>
       </Card>
       
