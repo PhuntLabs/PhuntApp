@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Home, AtSign, User as UserIcon, Menu } from 'lucide-react';
+import { Home, AtSign, User as UserIcon, Menu, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PopulatedChat, Server, UserProfile, Channel } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
@@ -14,11 +14,11 @@ import { MobileSettingsPage } from './mobile/mobile-settings-page';
 import { Chat } from './chat';
 import { ChannelChat } from './channel-chat';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
-import { MentionsDialog } from './mentions-dialog';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MobileProfilePage } from './mobile/mobile-profile-page';
+import { MobileNotificationsPage } from './mobile/mobile-notifications-page';
 
 interface MobileLayoutProps {
     user: UserProfile;
@@ -168,14 +168,7 @@ export function MobileLayout({
       }
       if (activeView === 'notifications') {
          return (
-              <div className="flex-1 flex flex-col h-full">
-                 <div className="p-4 border-b">
-                    <h1 className="text-2xl font-bold">Mentions</h1>
-                </div>
-                 <MentionsDialog onJumpToMessage={onJumpToMessage}>
-                    <div className="p-4">Your mentions will appear here. (Content is in a dialog for now)</div>
-                 </MentionsDialog>
-              </div>
+              <MobileNotificationsPage onJumpToMessage={onJumpToMessage}/>
           );
     }
 
@@ -252,8 +245,8 @@ export function MobileLayout({
                   activeView === 'notifications' && 'text-primary'
               )}
           >
-              <AtSign />
-              <span className="text-xs">Mentions</span>
+              <Bell />
+              <span className="text-xs">Notifications</span>
           </button>
           <button
               onClick={() => setActiveView('profile')}

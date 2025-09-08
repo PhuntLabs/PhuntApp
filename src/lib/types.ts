@@ -146,6 +146,7 @@ export interface Mention {
         serverName: string;
         channelId: string;
         channelName: string;
+        serverIcon?: string;
     }
 }
 
