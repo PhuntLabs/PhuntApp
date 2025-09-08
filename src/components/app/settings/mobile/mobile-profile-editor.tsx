@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 // Mock components for preview
 const RainEffect = () => (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {Array.from({ length: 20 }).map((_, i) => (
+        {[...Array(20)].map((_, i) => (
             <div
                 key={i}
                 className="raindrop"
@@ -129,6 +129,7 @@ export function MobileProfileEditor() {
   const [avatarEffect, setAvatarEffect] = useState<AvatarEffect>('none');
   const [profileEffect, setProfileEffect] = useState<ProfileEffect>('none');
   const [nameplateUrl, setNameplateUrl] = useState<string>('');
+  const [profileColor, setProfileColor] = useState<string>('#000000');
   const [customNameplateInput, setCustomNameplateInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   
@@ -137,13 +138,14 @@ export function MobileProfileEditor() {
       setAvatarEffect(user.avatarEffect || 'none');
       setProfileEffect(user.profileEffect || 'none');
       setNameplateUrl(user.nameplateUrl || '');
+      setProfileColor(user.profileColor || '#000000');
     }
   }, [user]);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-        await updateUserProfile({ avatarEffect, profileEffect, nameplateUrl });
+        await updateUserProfile({ avatarEffect, profileEffect, nameplateUrl, profileColor });
         toast({ title: 'Profile Effects Updated', description: 'Your new look has been saved.' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
@@ -176,6 +178,29 @@ export function MobileProfileEditor() {
         </header>
         <ScrollArea className="flex-1">
             <div className="p-4 space-y-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Profile Color</CardTitle>
+                        <CardDescription>Customize the background color of your profile card.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex items-center gap-4">
+                        <Input 
+                            type="color" 
+                            value={profileColor} 
+                            onChange={(e) => setProfileColor(e.target.value)}
+                            className="w-16 h-10 p-1 bg-card border rounded-md cursor-pointer"
+                        />
+                        <div className="w-full h-24 rounded-lg relative overflow-hidden flex flex-col items-center justify-end p-2 border" style={{ backgroundColor: profileColor }}>
+                             <div className="relative z-10 w-full bg-black/30 backdrop-blur-sm p-2 rounded-md border">
+                                <div className="flex items-center gap-2">
+                                    <Avatar className="size-8"><AvatarImage src={user.photoURL || undefined} /><AvatarFallback>{user.displayName?.[0]}</AvatarFallback></Avatar>
+                                    <div><p className="font-bold text-sm text-white">{user.displayName}</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Avatar Decoration</CardTitle>

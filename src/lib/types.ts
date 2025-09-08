@@ -61,6 +61,7 @@ export interface UserProfile {
   badges?: string[]; // Now an array of badge IDs
   status?: UserStatus;
   customStatus?: string;
+  profileColor?: string;
   avatarEffect?: AvatarEffect;
   profileEffect?: ProfileEffect;
   nameplateUrl?: string;

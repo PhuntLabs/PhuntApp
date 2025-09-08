@@ -319,7 +319,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       </PopoverTrigger>
       <PopoverContent className="w-80 mb-2 p-0 border-none rounded-lg overflow-hidden" side="top" align="start">
         <TooltipProvider>
-            <div className="flex flex-col relative rounded-lg bg-popover">
+            <div className="flex flex-col relative rounded-lg" style={{ backgroundColor: user.profileColor || undefined }}>
                  <div className="relative">
                     <div className="h-24 bg-accent relative">
                         {user.bannerURL && (
@@ -328,19 +328,19 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                         {ProfileEffectComponent && <ProfileEffectComponent />}
                     </div>
 
-                    <div className="px-4 pb-4 bg-popover rounded-b-lg">
+                    <div className="px-4 pb-4 rounded-b-lg" style={{ backgroundColor: user.profileColor ? `${user.profileColor}B3` : undefined, backdropFilter: user.profileColor ? 'blur(4px)' : undefined }}>
                         <div className="flex items-end -mt-12">
                             <div className="relative">
                                 {AvatarEffectComponent && 'prototype' in AvatarEffectComponent ? (
                                     <AvatarEffectComponent>
-                                        <Avatar className="size-24 border-4 border-popover rounded-full">
+                                        <Avatar className="size-24 border-4 rounded-full" style={{ borderColor: user.profileColor || 'hsl(var(--popover))'}}>
                                             <AvatarImage src={displayUser.photoURL || undefined} />
                                             <AvatarFallback className="text-3xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                     </AvatarEffectComponent>
                                 ) : (
                                     <>
-                                        <Avatar className="size-24 border-4 border-popover rounded-full">
+                                        <Avatar className="size-24 border-4 rounded-full" style={{ borderColor: user.profileColor || 'hsl(var(--popover))'}}>
                                             <AvatarImage src={displayUser.photoURL || undefined} />
                                             <AvatarFallback className="text-3xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
                                         </Avatar>
@@ -348,7 +348,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                     </>
                                 )}
                                 
-                                <div className={cn("absolute bottom-1 right-1 w-6 h-6 rounded-full border-4 border-popover flex items-center justify-center", statusColor.replace('text-', 'bg-'))}>
+                                <div className={cn("absolute bottom-1 right-1 w-6 h-6 rounded-full border-4 flex items-center justify-center", statusColor.replace('text-', 'bg-'))} style={{ borderColor: user.profileColor || 'hsl(var(--popover))'}}>
                                     <Tooltip>
                                     <TooltipTrigger>
                                         {user.customStatus ? <MessageCircleMore className="size-3 text-white"/> : <StatusIcon className="size-3 text-white"/>}
