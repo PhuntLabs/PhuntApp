@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -37,6 +38,7 @@ import { MobileLayout } from '@/components/app/mobile-layout';
 import { ErrorBoundary } from '@/components/app/error-boundary';
 import { useCallingStore } from '@/hooks/use-calling-store';
 import { CallView } from '@/components/app/call-view';
+import { IncomingCallNotification } from '@/components/app/incoming-call-notification';
 
 
 export default function Home() {
@@ -49,7 +51,7 @@ export default function Home() {
   const { chats, loading: chatsLoading, addChat, removeChat } = useChats(authReady);
   const { servers, setServers, loading: serversLoading, createServer } = useServers(authReady);
   const { incomingRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest } = useFriendRequests(authReady);
-  const { activeCall } = useCallingStore();
+  const { activeCall, incomingCall } = useCallingStore();
 
 
   const [selectedChat, setSelectedChat] = useState<PopulatedChat | null>(null);
@@ -335,6 +337,7 @@ export default function Home() {
   return (
     <ErrorBoundary>
         {activeCall && <CallView />}
+        {incomingCall && <IncomingCallNotification />}
         {isMobileView ? (
             <MobileLayout 
                 user={user}

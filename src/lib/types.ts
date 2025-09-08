@@ -131,6 +131,21 @@ export interface Message {
   };
 }
 
+export type CallStatus = 'ringing' | 'active' | 'declined' | 'missed' | 'ended';
+
+export interface Call {
+  id: string;
+  channelName: string;
+  caller: UserProfile;
+  callee: UserProfile;
+  status: CallStatus;
+  createdAt: FieldValue;
+  endedAt?: FieldValue;
+  duration?: number; // in seconds
+  chatId: string; // DM chat ID
+  embedMessageId?: string;
+}
+
 export interface Mention {
     id: string;
     mentionedUserId: string;

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
@@ -155,8 +156,8 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
             </div>
         </UserNav>
          <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={() => initCall(otherMember as UserProfile)}><Phone /></Button>
-            <Button variant="ghost" size="icon" onClick={() => initCall(otherMember as UserProfile)}><Video /></Button>
+            <Button variant="ghost" size="icon" onClick={() => initCall(otherMember as UserProfile, chat.id)}><Phone /></Button>
+            <Button variant="ghost" size="icon" onClick={() => initCall(otherMember as UserProfile, chat.id)}><Video /></Button>
         </div>
       </header>
       <div className="flex flex-1 flex-col h-full bg-muted/20 overflow-hidden">
@@ -248,6 +249,7 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                           <MessageRenderer 
                             content={message.text} 
                             fileInfo={message.fileInfo}
+                            embed={message.embed}
                             reactions={message.reactions}
                             messageId={message.id}
                             messageContext={{ type: 'dm', chatId: chat.id }}
