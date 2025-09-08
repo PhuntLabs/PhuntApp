@@ -4,37 +4,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, getDoc, doc, orderBy } from 'firebase/firestore';
-import type { PopulatedChat, ChatDocument, UserProfile, BadgeType } from '@/lib/types';
+import type { PopulatedChat, ChatDocument, UserProfile } from '@/lib/types';
 import { useAuth } from './use-auth';
-
-function applySpecialBadges(profile: UserProfile): UserProfile {
-    const badges = new Set<BadgeType>(profile.badges || []);
-    const username = profile.displayName_lowercase || '';
-
-    // Developer badges
-    const developerEmails = ['raidensch0@gmail.com'];
-    const developerUsernames = ['testacc', 'aura farmer', 'thatguy123'];
-    if (
-        (profile.email && developerEmails.includes(profile.email)) ||
-        (username && developerUsernames.includes(username))
-    ) {
-        badges.add('developer');
-    }
-
-    // Heina's badges
-    if (username === 'heina') {
-        ['developer', 'beta tester', 'youtuber', 'tiktoker', 'goat', 'early supporter'].forEach(b => badges.add(b as BadgeType));
-    }
-
-    // RecBacon's badges
-    if (username === 'recbacon') {
-        ['early supporter', 'youtuber', 'beta tester', 'goat'].forEach(b => badges.add(b as BadgeType));
-    }
-
-
-    return { ...profile, badges: Array.from(badges) };
-}
-
 
 async function populateChat(chatDoc: ChatDocument): Promise<PopulatedChat> {
     if (!chatDoc.members) {
@@ -48,8 +19,8 @@ async function populateChat(chatDoc: ChatDocument): Promise<PopulatedChat> {
         const userDoc = await getDoc(doc(db, 'users', memberId));
         if (userDoc.exists()) {
             const userData = userDoc.data() as Omit<UserProfile, 'id'>;
-            const userWithBadges = applySpecialBadges({ id: userDoc.id, ...userData } as UserProfile);
-            return userWithBadges;
+            // Simplified return
+            return { id: userDoc.id, ...userData } as UserProfile;
         }
         // Fallback for missing user profiles
         return { id: memberId, uid: memberId, displayName: 'Unknown User', photoURL: null, isBot: memberId === 'echo_bot' };

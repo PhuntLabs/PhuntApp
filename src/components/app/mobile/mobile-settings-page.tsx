@@ -17,24 +17,40 @@ import { NotificationsSettings } from '../settings/notifications-settings';
 import { ConnectionsSettings } from '../settings/connections-settings';
 import { Input } from '@/components/ui/input';
 
-type SectionId = 'account' | 'profiles' | 'connections' | 'game-activity' | 'security' | 'theme' | 'developer' | 'bugs' | 'notifications';
+type SectionId = 'account' | 'profiles' | 'connections' | 'game-activity' | 'security' | 'theme' | 'developer' | 'bugs' | 'notifications' | 'privacy' | 'family' | 'authorized-apps' | 'devices' | 'clips' | 'qr' | 'shop' | 'quests';
 
 const accountSettings = [
   { id: 'account', label: 'My Account', icon: User, component: AccountSettings },
-  { id: 'profiles', label: 'Content & Social', icon: Hand, component: ProfileSettings },
-  { id: 'connections', label: 'Data & Privacy', icon: ShieldQuestion, component: ConnectionsSettings },
-  { id: 'game-activity', label: 'Family Center', icon: Users, component: GameActivitySettings },
-  { id: 'notifications', label: 'Authorized Apps', icon: KeyRound, component: NotificationsSettings },
-  { id: 'security', label: 'Devices', icon: MonitorSmartphone, component: SecuritySettings },
-  { id: 'theme', label: 'Connections', icon: Link2, component: ThemeSettings },
-  { id: 'developer', label: 'Clips', icon: Film, component: DeveloperSettings },
-  { id: 'bugs', label: 'Scan QR Code', icon: QrCode, component: BugReportSettings },
+  { id: 'profiles', label: 'Profiles', icon: Sparkles, component: ProfileSettings },
+  { id: 'privacy', label: 'Privacy & Safety', icon: Shield, component: SecuritySettings }, // Remapped
+  { id: 'family', label: 'Family Center', icon: Users, component: GameActivitySettings }, // Placeholder
+  { id: 'authorized-apps', label: 'Authorized Apps', icon: KeyRound, component: NotificationsSettings }, // Placeholder
+  { id: 'devices', label: 'Devices', icon: MonitorSmartphone, component: SecuritySettings }, // Placeholder
+  { id: 'connections', label: 'Connections', icon: Link2, component: ConnectionsSettings },
+  { id: 'clips', label: 'Clips', icon: Film, component: DeveloperSettings }, // Placeholder
+  { id: 'qr', label: 'Scan QR Code', icon: QrCode, component: BugReportSettings }, // Placeholder
+];
+
+const appSettings = [
+    { id: 'theme', label: 'Appearance', icon: Paintbrush, component: ThemeSettings },
+    { id: 'notifications', label: 'Notifications', icon: Bell, component: NotificationsSettings },
+];
+
+const activitySettings = [
+     { id: 'game-activity', label: 'Activity Status', icon: Gamepad, component: GameActivitySettings },
 ];
 
 const billingSettings = [
-    { id: 'shop', label: 'Shop', icon: Store, component: AccountSettings },
-    { id: 'quests', label: 'Quests', icon: Trophy, component: AccountSettings },
+    { id: 'shop', label: 'Shop', icon: Store, component: AccountSettings }, // Placeholder
+    { id: 'quests', label: 'Quests', icon: Trophy, component: AccountSettings }, // Placeholder
+];
+
+const debugSettings = [
+     { id: 'developer', label: 'Developer', icon: Code, component: DeveloperSettings },
+     { id: 'bugs', label: 'Bugs & Feedback', icon: Bug, component: BugReportSettings },
 ]
+
+const allSettings = [...accountSettings, ...appSettings, ...activitySettings, ...billingSettings, ...debugSettings];
 
 
 export function MobileSettingsPage() {
@@ -49,7 +65,7 @@ export function MobileSettingsPage() {
       setActiveSection(null);
   }
 
-  const ActiveComponent = accountSettings.find(s => s.id === activeSection)?.component;
+  const ActiveComponent = allSettings.find(s => s.id === activeSection)?.component;
 
   return (
     <div className="h-full relative overflow-hidden bg-background">
@@ -68,7 +84,7 @@ export function MobileSettingsPage() {
                             <Button variant="ghost" size="icon" onClick={handleCloseSection} className="mr-2">
                                 <ChevronLeft />
                             </Button>
-                            <h1 className="text-xl font-bold">{accountSettings.find(s=>s.id===activeSection)?.label}</h1>
+                            <h1 className="text-xl font-bold">{allSettings.find(s=>s.id===activeSection)?.label}</h1>
                         </div>
                         <ScrollArea className="flex-1 p-4">
                             <ActiveComponent />
@@ -94,9 +110,9 @@ export function MobileSettingsPage() {
                             </div>
                         </div>
                         <ScrollArea className="flex-1 px-4">
-                            <nav className="flex flex-col gap-1">
-                                <div className="space-y-2">
-                                    <h2 className="text-sm font-semibold text-muted-foreground px-3 pt-4">Account Settings</h2>
+                            <nav className="flex flex-col gap-4">
+                                <div className="space-y-1">
+                                    <h2 className="text-sm font-semibold text-muted-foreground px-3">Account Settings</h2>
                                      <div className="bg-card rounded-xl p-2 space-y-1">
                                         {accountSettings.map(section => (
                                             <button 
@@ -113,10 +129,64 @@ export function MobileSettingsPage() {
                                         ))}
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <h2 className="text-sm font-semibold text-muted-foreground px-3 pt-4">Billing Settings</h2>
+                                 <div className="space-y-1">
+                                    <h2 className="text-sm font-semibold text-muted-foreground px-3">App Settings</h2>
+                                     <div className="bg-card rounded-xl p-2 space-y-1">
+                                        {appSettings.map(section => (
+                                            <button 
+                                                key={section.id} 
+                                                onClick={() => handleSelectSection(section.id as SectionId)}
+                                                className="flex items-center justify-between w-full p-3 rounded-lg text-left hover:bg-secondary/50"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <section.icon className="size-5 text-muted-foreground"/>
+                                                    <span className="font-medium">{section.label}</span>
+                                                </div>
+                                                <ChevronRight className="size-5 text-muted-foreground" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                 <div className="space-y-1">
+                                    <h2 className="text-sm font-semibold text-muted-foreground px-3">Activity Settings</h2>
+                                     <div className="bg-card rounded-xl p-2 space-y-1">
+                                        {activitySettings.map(section => (
+                                            <button 
+                                                key={section.id} 
+                                                onClick={() => handleSelectSection(section.id as SectionId)}
+                                                className="flex items-center justify-between w-full p-3 rounded-lg text-left hover:bg-secondary/50"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <section.icon className="size-5 text-muted-foreground"/>
+                                                    <span className="font-medium">{section.label}</span>
+                                                </div>
+                                                <ChevronRight className="size-5 text-muted-foreground" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <h2 className="text-sm font-semibold text-muted-foreground px-3">Billing Settings</h2>
                                      <div className="bg-card rounded-xl p-2 space-y-1">
                                         {billingSettings.map(section => (
+                                            <button 
+                                                key={section.id} 
+                                                onClick={() => handleSelectSection(section.id as SectionId)}
+                                                className="flex items-center justify-between w-full p-3 rounded-lg text-left hover:bg-secondary/50"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <section.icon className="size-5 text-muted-foreground"/>
+                                                    <span className="font-medium">{section.label}</span>
+                                                </div>
+                                                <ChevronRight className="size-5 text-muted-foreground" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <h2 className="text-sm font-semibold text-muted-foreground px-3">Debug</h2>
+                                     <div className="bg-card rounded-xl p-2 space-y-1">
+                                        {debugSettings.map(section => (
                                             <button 
                                                 key={section.id} 
                                                 onClick={() => handleSelectSection(section.id as SectionId)}
