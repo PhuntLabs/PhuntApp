@@ -27,7 +27,7 @@ interface CallingState {
   listenForIncomingCalls: (userId: string) => void;
   stopListeningForIncomingCalls: () => void;
   setMicOn: (on: boolean) => void;
-  setCameraOn: (on: boolean) => void;
+  setCameraOn: (on: boolean) => Promise<void>;
   setIsScreensharing: (sharing: boolean) => void;
   setShowFullScreen: (show: boolean) => void;
   startInactivityCheck: () => void;
@@ -123,7 +123,7 @@ export const useCallingStore = create<CallingState>((set, get) => ({
       const { token } = await response.json();
       
       await client.join(APP_ID, channelName, token, caller.uid);
-      await client.publish(tracks);
+      await client.publish([tracks[0]]); // Only publish audio track initially
 
       get().startInactivityCheck();
       
@@ -165,7 +165,7 @@ export const useCallingStore = create<CallingState>((set, get) => ({
         set({ localTracks: tracks });
 
         await tracks[1].setEnabled(false); // Keep camera off by default
-        await client.publish(tracks);
+        await client.publish([tracks[0]]); // Only publish audio track initially
 
         get().startInactivityCheck();
 
@@ -269,9 +269,14 @@ export const useCallingStore = create<CallingState>((set, get) => ({
       }
   },
   setCameraOn: async (on: boolean) => {
-      const { localTracks } = get();
-      if (localTracks && localTracks[1]) {
+      const { localTracks, agoraClient } = get();
+      if (localTracks && localTracks[1] && agoraClient) {
           await localTracks[1].setEnabled(on);
+           if (on) {
+                await agoraClient.publish(localTracks[1]);
+            } else {
+                await agoraClient.unpublish(localTracks[1]);
+            }
           set({ cameraOn: on });
       }
   },
