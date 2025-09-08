@@ -217,13 +217,13 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const handleAddFriend = async () => {
     if (!currentUser || !user.displayName) return;
     try {
-      const result = await sendFriendRequest(user.displayName, {
-        id: currentUser.uid,
-        displayName: currentUser.displayName || 'Anonymous'
-      });
-      toast({ title: 'Success', description: result });
+        const result = await sendFriendRequest(user.displayName, {
+            id: currentUser.uid,
+            displayName: currentUser.displayName || 'Anonymous'
+        });
+        toast({ title: 'Success', description: result });
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
+        toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
   };
 
@@ -263,11 +263,11 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   };
   
   const handleInitiateCall = () => {
-      if (!currentUser || !user) return;
-      // In a real app, you would also need the chat ID between these two users
-      // For now, we'll assume a placeholder or that it can be derived.
-      initCall(currentUser, user, 'placeholder_chat_id');
-  }
+    if (!currentUser || !user) return;
+    // For now, we assume a call from the profile popover is in a DM context.
+    // A more robust implementation would check for an existing chat.
+    initCall(currentUser, user, 'placeholder_chat_id');
+  };
 
   const handleCancel = () => {
     if (serverContext && user) {
