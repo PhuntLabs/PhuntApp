@@ -131,11 +131,11 @@ export default function Home() {
   }, [servers, serversLoading, authReady, initialLoad, chats]);
 
 
-  const handleSendMessage = async (text: string, imageUrl?: string, replyTo?: Message['replyTo']) => {
+  const handleSendMessage = async (text: string, file?: File, replyTo?: Message['replyTo']) => {
     if (!authUser || !selectedChat) return;
-    const sentMessage = await sendMessage(text, imageUrl, replyTo);
+    const sentMessage = await sendMessage(text, file, replyTo);
 
-    if (sentMessage && !imageUrl) { // Don't echo images for now
+    if (sentMessage && !file) { // Don't echo images for now
         const echoBot = selectedChat.members.find(m => m.id === BOT_ID);
         if (echoBot) {
             processEcho({ chatId: selectedChat.id, message: { id: sentMessage.id, text, sender: authUser.uid }});
@@ -487,5 +487,3 @@ export default function Home() {
     </ErrorBoundary>
   );
 }
-
-    
