@@ -39,9 +39,9 @@ export function MobileDMList({ chats, onSelectChat, onAddUser }: MobileDMListPro
     return otherMember?.displayName?.toLowerCase().includes(search.toLowerCase());
   });
 
-  const activeFriends = chats
+  const allFriends = chats
     .map(chat => chat.members.find(m => m.id !== user?.uid))
-    .filter((member): member is UserProfile => !!member && member.status !== 'offline');
+    .filter((member): member is UserProfile => !!member);
 
 
   return (
@@ -67,10 +67,10 @@ export function MobileDMList({ chats, onSelectChat, onAddUser }: MobileDMListPro
       </div>
       
       <ScrollArea className="flex-1">
-        {activeFriends.length > 0 && (
+        {allFriends.length > 0 && (
             <div className="p-4 space-y-2">
                  <h3 className="text-sm font-semibold text-muted-foreground uppercase">Active Now</h3>
-                 <ActiveNowList users={activeFriends} />
+                 <ActiveNowList users={allFriends} />
                  <Separator className="!mt-4"/>
             </div>
         )}

@@ -46,9 +46,9 @@ const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType,
 export function DirectMessages({ directMessages, selectedChat, onSelectChat, onAddUser, onAddBot, onDeleteChat, loading }: DirectMessagesProps) {
   const { user } = useAuth();
   
-  const activeFriends = directMessages
+  const allFriends = directMessages
     .map(chat => chat.members.find(m => m.id !== user?.uid))
-    .filter((member): member is UserProfile => !!member && member.status !== 'offline');
+    .filter((member): member is UserProfile => !!member);
 
   if (loading) {
     return (
@@ -66,10 +66,10 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
   
   return (
     <>
-      {activeFriends.length > 0 && (
+      {allFriends.length > 0 && (
           <div className="p-2 space-y-2">
             <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase">Active Now</h3>
-            <ActiveNowList users={activeFriends} />
+            <ActiveNowList users={allFriends} />
             <Separator />
           </div>
       )}
