@@ -20,13 +20,9 @@ export function DeveloperSettings() {
     const { toast } = useToast();
     const { isMobileView, setIsMobileView, isPwaMode } = useMobileView();
 
-    const handleToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const handleToggle = () => {
         if (isPwaMode) return;
-        
-        // This is a hack to get the underlying Switch's state
-        // because of the way the click event is handled on the label.
-        const currentChecked = (e.currentTarget.previousSibling as HTMLButtonElement)?.dataset?.state === 'checked';
-        setIsMobileView(!currentChecked);
+        setIsMobileView(!isMobileView);
     }
     
     const handleCallingToggle = async (enabled: boolean) => {
@@ -84,9 +80,9 @@ export function DeveloperSettings() {
                             id="mobile-view-toggle"
                             checked={isMobileView}
                             disabled={isPwaMode}
-                            onClick={(e) => { e.preventDefault(); handleToggle(e); }}
+                            onCheckedChange={handleToggle}
                         />
-                        <Label htmlFor="mobile-view-toggle" onClick={(e) => e.preventDefault()}>Enable Mobile UI</Label>
+                        <Label htmlFor="mobile-view-toggle">Enable Mobile UI</Label>
                     </div>
                      {isPwaMode && (
                         <Alert className="mt-4">
