@@ -263,9 +263,8 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   };
   
   const handleInitiateCall = () => {
-    alert('Button Pressed');
     if (!currentUser) {
-        alert('Current user is not available.');
+        toast({variant: 'destructive', title: "You must be logged in to make a call."});
         return;
     };
     initCall(currentUser, user, 'placeholder_chat_id');

@@ -126,7 +126,7 @@ export function MobileLayout({
 
     if (isChatOpen) {
        if (selectedChat && authUser) {
-           return <Chat chat={selectedChat} messages={dmMessages} onSendMessage={onSendDM} onEditMessage={onEditDM} onDeleteMessage={onDeleteDM} currentUser={authUser} onBack={handleBackFromChat} />;
+           return <Chat chat={selectedChat} messages={dmMessages} onSendMessage={onSendDM} onEditMessage={onEditDM} onDeleteMessage={onDeleteDM} currentUser={authUser} onBack={handleBackFromChat} onInitiateCall={() => {}} />;
        }
        if (selectedServer && sidebarProps.selectedChannel && authUser) {
            return <ChannelChat channel={sidebarProps.selectedChannel} server={selectedServer} currentUser={authUser} members={sidebarProps.members} messages={channelMessages} onSendMessage={onSendChannelMessage} onEditMessage={onEditChannelMessage} onDeleteMessage={onDeleteChannelMessage} onBack={handleBackFromChat} />;
