@@ -96,6 +96,12 @@ const nextConfig: NextConfig = {
         hostname: 'i.scdn.co',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'phuntapp.netlify.app',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
