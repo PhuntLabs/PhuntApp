@@ -297,7 +297,7 @@ export default function AppRootPage() {
                 onDeleteChannelMessage={deleteChannelMessage}
             />
         ) : (
-            <div className="flex h-screen bg-background text-sm">
+            <div className="flex h-screen bg-secondary/30 text-sm">
                 <Servers 
                     servers={servers}
                     loading={serversLoading} 
@@ -401,3 +401,4 @@ export default function AppRootPage() {
     </ErrorBoundary>
   );
 }
+

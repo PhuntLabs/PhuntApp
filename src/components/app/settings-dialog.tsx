@@ -164,7 +164,7 @@ export function SettingsDialog({ children, defaultSection = 'account', onOpenCha
              {renderSection()}
           </div>
           <DialogClose asChild>
-            <Button variant="ghost" size="icon" className="absolute right-4 top-4 rounded-full">
+            <Button variant="ghost" size="icon" className="absolute right-4 top-4 rounded-sm">
                 <X className="size-5" />
                 <span className="sr-only">Close</span>
             </Button>
