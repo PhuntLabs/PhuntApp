@@ -72,7 +72,7 @@ interface ServerSidebarProps {
   selectedChannel: Channel | null;
   members: Partial<UserProfile>[];
   onSelectChannel: (channel: Channel) => void;
-  onCreateChannel: (name: string) => Promise<void>;
+  onCreateChannel: (name: string, type: ChannelType) => Promise<void>;
   onUpdateChannel: (channelId: string, data: Partial<Channel>) => Promise<void>;
   onDeleteChannel: (channelId: string) => Promise<void>;
   onUpdateServer: (serverId: string, data: Partial<Omit<Server, 'id'>>) => Promise<void>;

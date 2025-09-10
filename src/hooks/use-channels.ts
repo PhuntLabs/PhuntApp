@@ -48,7 +48,7 @@ export function useChannels(serverId: string | undefined) {
   }, [serverId]);
 
 
-  const createChannel = useCallback(async (name: string): Promise<Channel | null> => {
+  const createChannel = useCallback(async (name: string, type: ChannelType = 'text'): Promise<Channel | null> => {
     if (!authUser || !serverId) throw new Error("Authentication or server context is missing.");
     
     const sanitizedName = name.trim().toLowerCase().replace(/\s+/g, '-');
@@ -67,7 +67,7 @@ export function useChannels(serverId: string | undefined) {
       name: sanitizedName,
       serverId: serverId,
       createdAt: serverTimestamp(),
-      type: 'text' // Default type
+      type: type
     };
     
     const channelRef = await addDoc(channelsRef, channelPayload);

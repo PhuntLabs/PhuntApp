@@ -1,9 +1,8 @@
 
-
 'use client';
 
 import { useState } from 'react';
-import type { Server, Channel, UserProfile } from '@/lib/types';
+import type { Server, Channel, UserProfile, ChannelType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChevronDown, Plus, Settings, Trash, UserPlus, Pencil, MoreVertical, Search, ListFilter, Hash, Mic, Volume2, Gem, Bell, CheckCircle } from 'lucide-react';
@@ -66,7 +65,7 @@ interface MobileServerViewProps {
   onSelectChannel: (channel: Channel) => void;
   onUpdateServer: (serverId: string, data: Partial<Omit<Server, 'id'>>) => Promise<void>;
   onDeleteServer: (serverId: string) => Promise<void>;
-  onCreateChannel: (name: string) => Promise<void>;
+  onCreateChannel: (name: string, type: ChannelType) => Promise<void>;
   onUpdateChannel: (channelId: string, data: Partial<Channel>) => Promise<void>;
   onDeleteChannel: (channelId: string) => Promise<void>;
   onClose?: () => void;
