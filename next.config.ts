@@ -102,6 +102,12 @@ const nextConfig: NextConfig = {
         hostname: 'phuntapp.netlify.app',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.paypalobjects.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
