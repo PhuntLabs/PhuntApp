@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Separator } from '../ui/separator';
 import { usePathname, useRouter } from 'next/navigation';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface ServersProps {
     servers: Server[];
