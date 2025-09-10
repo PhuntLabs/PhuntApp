@@ -61,8 +61,8 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
             <div className="w-20 flex flex-col items-center py-3 gap-3 bg-background/50">
                 <div className="size-12 rounded-full bg-muted animate-pulse" />
                  <Separator className="w-8 bg-border/50" />
-                <div className="size-12 rounded-3xl bg-muted animate-pulse" />
-                <div className="size-12 rounded-3xl bg-muted animate-pulse" />
+                <div className="size-12 rounded-full bg-muted animate-pulse" />
+                <div className="size-12 rounded-full bg-muted animate-pulse" />
             </div>
         );
     }
@@ -81,7 +81,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                 )} 
                             />
                             <div className={cn(
-                                "size-12 rounded-3xl transition-all duration-200 bg-secondary flex items-center justify-center",
+                                "size-12 rounded-full transition-all duration-200 bg-secondary flex items-center justify-center",
                                 !selectedServer && !isDiscoveryActive && !isGamesActive && !isMusicActive ? 'rounded-2xl bg-primary' : 'group-hover:rounded-2xl group-hover:bg-primary'
                             )}>
                                 <MessageSquare className="size-7 text-white/80" />
@@ -143,8 +143,8 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                     )} 
                                 />
                                 <Avatar className={cn(
-                                    "size-12 rounded-3xl transition-all duration-200 bg-secondary",
-                                    selectedServer?.id === server.id ? 'rounded-2xl bg-primary' : 'group-hover:rounded-2xl group-hover:bg-primary'
+                                    "size-12 rounded-full transition-all duration-200 bg-secondary",
+                                    selectedServer?.id === server.id ? 'rounded-2xl' : 'group-hover:rounded-2xl'
                                 )}>
                                     <AvatarImage src={server.photoURL || undefined} alt={server.name} />
                                     <AvatarFallback className="font-bold text-lg bg-transparent">
@@ -164,7 +164,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                     <TooltipTrigger asChild>
                         <AddServerDialog onCreateServer={onCreateServer}>
                             <button className="group">
-                                <Avatar className="size-12 rounded-3xl bg-secondary transition-all duration-200 group-hover:rounded-2xl group-hover:bg-green-600">
+                                <Avatar className="size-12 rounded-full bg-secondary transition-all duration-200 group-hover:rounded-2xl group-hover:bg-green-600">
                                     <AvatarFallback className="text-green-400 group-hover:text-white transition-colors duration-200 bg-transparent">
                                         <Plus size={24} />
                                     </AvatarFallback>
@@ -189,7 +189,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                     )} 
                                 />
                                 <Avatar className={cn(
-                                    "size-12 rounded-3xl bg-secondary transition-all duration-200 group-hover:rounded-2xl",
+                                    "size-12 rounded-full bg-secondary transition-all duration-200 group-hover:rounded-2xl",
                                     isDiscoveryActive ? 'rounded-2xl bg-green-600' : 'group-hover:bg-green-600'
                                 )}>
                                     <AvatarFallback className={cn("bg-transparent text-green-400 transition-colors duration-200", isDiscoveryActive ? "text-white" : "group-hover:text-white")}>
@@ -216,7 +216,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                     )} 
                                 />
                                 <Avatar className={cn(
-                                    "size-12 rounded-3xl bg-secondary transition-all duration-200 group-hover:rounded-2xl",
+                                    "size-12 rounded-full bg-secondary transition-all duration-200 group-hover:rounded-2xl",
                                     isGamesActive ? 'rounded-2xl bg-green-600' : 'group-hover:bg-green-600'
                                 )}>
                                     <AvatarFallback className={cn("bg-transparent text-green-400 transition-colors duration-200", isGamesActive ? "text-white" : "group-hover:text-white")}>
@@ -243,7 +243,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                                     )} 
                                 />
                                 <Avatar className={cn(
-                                    "size-12 rounded-3xl bg-secondary transition-all duration-200 group-hover:rounded-2xl",
+                                    "size-12 rounded-full bg-secondary transition-all duration-200 group-hover:rounded-2xl",
                                     isMusicActive ? 'rounded-2xl bg-green-600' : 'group-hover:bg-green-600'
                                 )}>
                                     <AvatarFallback className={cn("bg-transparent text-green-400 transition-colors duration-200", isMusicActive ? "text-white" : "group-hover:text-white")}>

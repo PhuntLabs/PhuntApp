@@ -78,7 +78,6 @@ function NavigationEvents() {
 
   return (
     <div className="fixed inset-0 bg-background/80 z-[200] flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
-        <Image src="https://phuntapp.netlify.app/icons/icon-512x512.png" alt="Phunt Logo" width={128} height={128} />
         <Loader2 className="size-8 animate-spin text-primary" />
     </div>
   );
@@ -384,7 +383,6 @@ export default function AppRootPage() {
   if (loading || chatsLoading || serversLoading || !authUser || !user) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
-        <Image src="https://phuntapp.netlify.app/icons/icon-512x512.png" alt="Phunt Logo" width={128} height={128} />
         <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
