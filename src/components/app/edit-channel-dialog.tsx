@@ -14,8 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Channel, ChannelType, Server, Permission } from '@/lib/types';
-import { Hash, Megaphone, ScrollText, MessageSquare, Plus, X } from 'lucide-react';
+import type { Channel, ChannelType, Server, Permission, Role } from '@/lib/types';
+import { Hash, Megaphone, ScrollText, MessageSquare, Plus, X, Check } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { allPermissionDetails } from '@/lib/permissions';
 import { Switch } from '../ui/switch';
@@ -60,7 +60,7 @@ export function EditChannelDialog({ children, channel, server, onUpdateChannel, 
   const [channelType, setChannelType] = useState(channel.type || 'text');
   const [channelTopic, setChannelTopic] = useState(channel.topic || '');
   const [permissionOverwrites, setPermissionOverwrites] = useState(channel.permissionOverwrites || {});
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [selectedRoleForPerms, setSelectedRoleForPerms] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -70,7 +70,7 @@ export function EditChannelDialog({ children, channel, server, onUpdateChannel, 
       setChannelType(channel.type || 'text');
       setChannelTopic(channel.topic || '');
       setPermissionOverwrites(channel.permissionOverwrites || {});
-      setSelectedRole(null);
+      setSelectedRoleForPerms(null);
     }
   }, [channel, isOpen]);
 
@@ -103,7 +103,6 @@ export function EditChannelDialog({ children, channel, server, onUpdateChannel, 
           }
           if (value === 'unset') {
               delete newOverwrites[roleId][permission];
-              // if role has no more overwrites, remove it
               if(Object.keys(newOverwrites[roleId]).length === 0) {
                   delete newOverwrites[roleId];
               }
@@ -122,122 +121,131 @@ export function EditChannelDialog({ children, channel, server, onUpdateChannel, 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-2xl h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Edit Channel</DialogTitle>
-        </DialogHeader>
-        <Tabs defaultValue="overview" className="flex-1 min-h-0">
-             <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="permissions">Permissions</TabsTrigger>
-            </TabsList>
-            <ScrollArea className="h-[calc(100%-80px)] mt-4">
-                 <form onSubmit={handleSubmit} className="pr-4">
-                    <TabsContent value="overview">
-                        <div className="grid gap-4 py-4">
-                             <div className="space-y-2">
-                              <Label htmlFor="channel-name">Channel Name</Label>
-                              <Input
-                                id="channel-name"
-                                value={channelName}
-                                onChange={(e) => setChannelName(e.target.value)}
-                                required
-                              />
-                            </div>
-                             <div className="space-y-2">
-                              <Label htmlFor="channel-topic">Channel Topic</Label>
-                              <Textarea
-                                id="channel-topic"
-                                value={channelTopic}
-                                onChange={(e) => setChannelTopic(e.target.value)}
-                                placeholder="Let everyone know what this channel is about"
-                                maxLength={1024}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Channel Type</Label>
-                              <Select value={channelType} onValueChange={(value) => setChannelType(value as ChannelType)}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a channel type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {channelTypes.map(({ value, label, icon: Icon }) => (
-                                    <SelectItem key={value} value={value}>
-                                      <div className="flex items-center gap-2">
-                                        <Icon className="size-4" />
-                                        <span>{label}</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                        </div>
-                    </TabsContent>
-                     <TabsContent value="permissions">
-                        <div className="space-y-4 py-4">
-                            <Label>Role Permissions</Label>
-                            <div className="space-y-2">
-                                {rolesWithOverwrites.map(role => (
-                                    <div key={role.id} className="flex items-center justify-between p-2 rounded-md border" style={{ borderColor: role.color }}>
-                                        <span className="font-medium" style={{ color: role.color }}>{role.name}</span>
-                                        <Button size="sm" variant="outline" onClick={() => setSelectedRole(role.id)}>Edit</Button>
-                                    </div>
-                                ))}
-                            </div>
-                            <Select onValueChange={(roleId) => setSelectedRole(roleId)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Add overwrite for a role..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {server.roles?.map(role => (
-                                        <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                             {selectedRole && (
-                                <div className="p-4 border rounded-lg mt-4">
-                                    <h3 className="font-semibold mb-4">Editing: {server.roles?.find(r => r.id === selectedRole)?.name}</h3>
-                                    <div className="space-y-3">
-                                        {allPermissionDetails.map(perm => {
-                                            const roleOverwrite = permissionOverwrites[selectedRole]?.[perm.id];
-                                            const state: 'allow' | 'deny' | 'inherit' = roleOverwrite === true ? 'allow' : roleOverwrite === false ? 'deny' : 'inherit';
-
-                                            return (
-                                                <div key={perm.id} className="flex items-center justify-between">
-                                                    <div className="space-y-0.5">
-                                                        <p className="text-sm font-medium">{perm.name}</p>
-                                                        <p className="text-xs text-muted-foreground">{perm.description}</p>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Button size="icon" variant="ghost" onClick={() => handlePermissionChange(selectedRole, perm.id, false)} className={cn("size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive", state === 'deny' && 'bg-destructive/20 text-destructive')}>
-                                                          <X className="size-4"/>
-                                                        </Button>
-                                                        <Button size="icon" variant="ghost" onClick={() => handlePermissionChange(selectedRole, perm.id, 'unset')} className={cn("size-8", state === 'inherit' && 'bg-accent')}>
-                                                          <div className="w-3 h-0.5 bg-current"/>
-                                                        </Button>
-                                                        <Button size="icon" variant="ghost" onClick={() => handlePermissionChange(selectedRole, perm.id, true)} className={cn("size-8 text-muted-foreground hover:bg-green-500/10 hover:text-green-500", state === 'allow' && 'bg-green-500/20 text-green-500')}>
-                                                           <Hash className="size-4" />
-                                                        </Button>
-                                                    </div>
+      <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
+        <div className="flex gap-4 flex-1 min-h-0">
+            <aside className="w-52 flex-shrink-0 bg-secondary/30 p-4">
+                 <Tabs defaultValue="overview" orientation="vertical" className="w-full">
+                    <TabsList className="w-full h-auto flex-col items-start bg-transparent p-0">
+                        <TabsTrigger value="overview" className="w-full justify-start data-[state=active]:bg-accent">Overview</TabsTrigger>
+                        <TabsTrigger value="permissions" className="w-full justify-start data-[state=active]:bg-accent">Permissions</TabsTrigger>
+                    </TabsList>
+                 </Tabs>
+            </aside>
+            <main className="flex-1">
+                <ScrollArea className="h-full">
+                    <form onSubmit={handleSubmit} className="p-6 h-full flex flex-col">
+                        <DialogHeader>
+                            <DialogTitle>Edit #{channel.name}</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex-1 py-4">
+                            <Tabs defaultValue="overview" className="w-full">
+                                <TabsContent value="overview">
+                                    <div className="grid gap-4 py-4">
+                                        <div className="space-y-2">
+                                        <Label htmlFor="channel-name">Channel Name</Label>
+                                        <Input
+                                            id="channel-name"
+                                            value={channelName}
+                                            onChange={(e) => setChannelName(e.target.value)}
+                                            required
+                                        />
+                                        </div>
+                                        <div className="space-y-2">
+                                        <Label htmlFor="channel-topic">Channel Topic</Label>
+                                        <Textarea
+                                            id="channel-topic"
+                                            value={channelTopic}
+                                            onChange={(e) => setChannelTopic(e.target.value)}
+                                            placeholder="Let everyone know what this channel is about"
+                                            maxLength={1024}
+                                        />
+                                        </div>
+                                        <div className="space-y-2">
+                                        <Label>Channel Type</Label>
+                                        <Select value={channelType} onValueChange={(value) => setChannelType(value as ChannelType)}>
+                                            <SelectTrigger>
+                                            <SelectValue placeholder="Select a channel type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                            {channelTypes.map(({ value, label, icon: Icon }) => (
+                                                <SelectItem key={value} value={value}>
+                                                <div className="flex items-center gap-2">
+                                                    <Icon className="size-4" />
+                                                    <span>{label}</span>
                                                 </div>
-                                            )
-                                        })}
+                                                </SelectItem>
+                                            ))}
+                                            </SelectContent>
+                                        </Select>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                </TabsContent>
+                                <TabsContent value="permissions">
+                                    <div className="space-y-4 py-4">
+                                        <Label>Role Permissions</Label>
+                                        <div className="space-y-2">
+                                            {rolesWithOverwrites.map(role => (
+                                                <div key={role.id} className="flex items-center justify-between p-2 rounded-md border" style={{ borderColor: role.color }}>
+                                                    <span className="font-medium" style={{ color: role.color }}>{role.name}</span>
+                                                    <Button size="sm" type="button" variant="outline" onClick={() => setSelectedRoleForPerms(role.id)}>Edit</Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <Select onValueChange={(roleId) => setSelectedRoleForPerms(roleId)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Add overwrite for a role..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {server.roles?.map(role => (
+                                                    <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+
+                                        {selectedRoleForPerms && (
+                                            <div className="p-4 border rounded-lg mt-4">
+                                                <h3 className="font-semibold mb-4">Editing: {server.roles?.find(r => r.id === selectedRoleForPerms)?.name}</h3>
+                                                <div className="space-y-3">
+                                                    {allPermissionDetails.map(perm => {
+                                                        const roleOverwrite = permissionOverwrites[selectedRoleForPerms]?.[perm.id];
+                                                        const state: 'allow' | 'deny' | 'inherit' = roleOverwrite === true ? 'allow' : roleOverwrite === false ? 'deny' : 'inherit';
+                                                        return (
+                                                            <div key={perm.id} className="flex items-center justify-between">
+                                                                <div className="space-y-0.5">
+                                                                    <p className="text-sm font-medium">{perm.name}</p>
+                                                                    <p className="text-xs text-muted-foreground">{perm.description}</p>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Button type="button" size="icon" variant="ghost" onClick={() => handlePermissionChange(selectedRoleForPerms, perm.id, false)} className={cn("size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive", state === 'deny' && 'bg-destructive/20 text-destructive')}>
+                                                                    <X className="size-4"/>
+                                                                    </Button>
+                                                                    <Button type="button" size="icon" variant="ghost" onClick={() => handlePermissionChange(selectedRoleForPerms, perm.id, 'unset')} className={cn("size-8", state === 'inherit' && 'bg-accent')}>
+                                                                    <div className="w-3 h-0.5 bg-current"/>
+                                                                    </Button>
+                                                                    <Button type="button" size="icon" variant="ghost" onClick={() => handlePermissionChange(selectedRoleForPerms, perm.id, true)} className={cn("size-8 text-muted-foreground hover:bg-green-500/10 hover:text-green-500", state === 'allow' && 'bg-green-500/20 text-green-500')}>
+                                                                        <Check className="size-4" />
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
                         </div>
-                     </TabsContent>
-                     <DialogFooter className="sticky bottom-0 bg-background py-4">
-                        <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-                        <Button type="submit" disabled={isLoading || !channelName.trim()}>
-                          {isLoading ? 'Saving...' : 'Save Changes'}
-                        </Button>
-                    </DialogFooter>
-                 </form>
-            </ScrollArea>
-        </Tabs>
+                        <DialogFooter className="sticky bottom-0 bg-background py-4 mt-auto">
+                            <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+                            <Button type="submit" disabled={isLoading || !channelName.trim()}>
+                            {isLoading ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </ScrollArea>
+            </main>
+        </div>
       </DialogContent>
     </Dialog>
   );

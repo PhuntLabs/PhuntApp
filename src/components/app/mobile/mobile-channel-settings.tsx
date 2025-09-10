@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,6 +16,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface MobileChannelSettingsProps {
   trigger: React.ReactNode;
@@ -73,26 +76,38 @@ export function MobileChannelSettings({ trigger, channel, server, onUpdateChanne
               <Save />
             </Button>
           </SheetHeader>
-          <div className="flex-1 p-4 space-y-6 overflow-y-auto">
-            <div className="space-y-2">
-              <Label htmlFor="mobile-channel-name">Channel Name</Label>
-              <Input
-                id="mobile-channel-name"
-                value={channelName}
-                onChange={(e) => setChannelName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="mobile-channel-topic">Channel Topic</Label>
-              <Textarea
-                id="mobile-channel-topic"
-                value={channelTopic}
-                onChange={(e) => setChannelTopic(e.target.value)}
-                placeholder="Let everyone know what this channel is about"
-              />
-            </div>
-             {/* TODO: Add permissions editing for mobile */}
-          </div>
+          <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
+             <TabsList className="grid w-full grid-cols-2 mx-auto px-2">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="permissions">Permissions</TabsTrigger>
+            </TabsList>
+             <ScrollArea className="flex-1 p-4 space-y-6">
+                <TabsContent value="overview">
+                     <div className="space-y-6">
+                        <div className="space-y-2">
+                        <Label htmlFor="mobile-channel-name">Channel Name</Label>
+                        <Input
+                            id="mobile-channel-name"
+                            value={channelName}
+                            onChange={(e) => setChannelName(e.target.value)}
+                        />
+                        </div>
+                        <div className="space-y-2">
+                        <Label htmlFor="mobile-channel-topic">Channel Topic</Label>
+                        <Textarea
+                            id="mobile-channel-topic"
+                            value={channelTopic}
+                            onChange={(e) => setChannelTopic(e.target.value)}
+                            placeholder="Let everyone know what this channel is about"
+                        />
+                        </div>
+                     </div>
+                </TabsContent>
+                <TabsContent value="permissions">
+                    <p className="text-muted-foreground text-center p-8">Permissions management is not yet available on mobile.</p>
+                </TabsContent>
+            </ScrollArea>
+          </Tabs>
         </div>
       </SheetContent>
     </Sheet>
