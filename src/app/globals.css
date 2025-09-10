@@ -9,23 +9,23 @@ body {
 
 @layer base {
   :root, .dark, .custom {
-    --background: 222 47% 11%;
+    --background: 224 22% 18%; /* Darker blue-gray */
     --foreground: 210 40% 98%;
-    --card: 222 47% 14%;
+    --card: 224 22% 18%; /* Match background */
     --card-foreground: 210 40% 98%;
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
     --primary: 173 96% 39%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 17%;
+    --secondary: 225 21% 13%; /* Even darker for sidebars */
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 22%;
+    --muted: 217 33% 25%; /* Controls separator and some borders */
     --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 25%;
+    --accent: 217 33% 28%; /* Hover states */
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 217 33% 20%;
+    --border: 217 33% 22%;
     --input: 217 33% 20%;
     --ring: 173 96% 39%;
     --chart-1: 180 70% 50%;

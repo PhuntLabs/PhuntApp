@@ -4,8 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Server, UserProfile, UserStatus } from "@/lib/types";
-import { Crown, MessageCircleMore } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Crown, Bot, Music, Gamepad2 } from "lucide-react";
 import { UserNav } from "./user-nav";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -27,7 +26,7 @@ const statusConfig: Record<UserStatus, { color: string }> = {
 export function MemberList({ members, server, loading }: MemberListProps) {
     if (loading) {
         return (
-             <div className="w-60 flex-shrink-0 bg-card p-2 space-y-2">
+             <div className="w-60 flex-shrink-0 bg-secondary p-2 space-y-2">
                 <h2 className="text-sm font-semibold uppercase text-muted-foreground px-2">Members — ?</h2>
                 <div className="flex items-center gap-2 p-2">
                     <Skeleton className="size-8 rounded-full" />
@@ -49,55 +48,69 @@ export function MemberList({ members, server, loading }: MemberListProps) {
     const roles = [...(server.roles || [])].sort((a,b) => a.priority - b.priority);
     const membersByRole: { [roleName: string]: Partial<UserProfile>[] } = {};
     const membersWithoutRoles: Partial<UserProfile>[] = [];
+    const onlineMembers: Partial<UserProfile>[] = [];
+    const offlineMembers: Partial<UserProfile>[] = [];
 
-    roles.forEach(role => {
-        membersByRole[role.name] = [];
-    });
-    
     members.forEach(member => {
-        const memberRoleIds = server.memberDetails?.[member.uid!]?.roles || [];
-        const topRole = roles.find(role => memberRoleIds.includes(role.id));
-
-        if (topRole) {
-            membersByRole[topRole.name].push(member);
-        } else {
-            membersWithoutRoles.push(member);
-        }
+      if (member.status !== 'offline') {
+        onlineMembers.push(member);
+      } else {
+        offlineMembers.push(member);
+      }
     });
 
+    const roleGroups = roles
+      .map(role => ({
+        ...role,
+        members: onlineMembers.filter(member => server.memberDetails?.[member.uid!]?.roles.includes(role.id))
+      }))
+      .filter(roleGroup => roleGroup.members.length > 0);
+
+    const onlineMembersWithoutRole = onlineMembers.filter(member => {
+        const memberRoles = server.memberDetails?.[member.uid!]?.roles || [];
+        return !roles.some(r => memberRoles.includes(r.id));
+    });
 
     return (
-        <aside className="w-60 flex-shrink-0 bg-card p-2 overflow-y-auto">
-             <h2 className="text-sm font-semibold uppercase text-muted-foreground px-2 mb-2">Members — {members.length}</h2>
-             {roles.map(role => {
-                if (membersByRole[role.name]?.length > 0) {
-                    return (
-                        <div key={role.id}>
-                            <h3 className="text-xs font-bold uppercase text-muted-foreground px-2 mt-4" style={{ color: role.color }}>
-                                {role.name} — {membersByRole[role.name].length}
-                            </h3>
-                            <div className="space-y-1 mt-1">
-                                {membersByRole[role.name][0] && membersByRole[role.name].map(member => (
-                                     <MemberItem key={member.uid} member={member} server={server} topRoleColor={role.color} />
-                                ))}
-                            </div>
-                        </div>
-                    )
-                }
-                return null;
-             })}
-              {membersWithoutRoles.length > 0 && (
-                <div>
-                     <h3 className="text-xs font-bold uppercase text-muted-foreground px-2 mt-4">
-                        Members — {membersWithoutRoles.length}
+        <aside className="w-60 flex-shrink-0 bg-secondary p-2 overflow-y-auto">
+             {roleGroups.map(roleGroup => (
+                <div key={roleGroup.id} className="mb-4">
+                    <h3 className="text-xs font-bold uppercase text-muted-foreground px-2" style={{ color: roleGroup.color }}>
+                        {roleGroup.name} — {roleGroup.members.length}
                     </h3>
                     <div className="space-y-1 mt-1">
-                        {membersWithoutRoles.map(member => (
+                        {roleGroup.members.map(member => (
+                            <MemberItem key={member.uid} member={member} server={server} topRoleColor={roleGroup.color} />
+                        ))}
+                    </div>
+                </div>
+             ))}
+
+            {onlineMembersWithoutRole.length > 0 && (
+                <div className="mb-4">
+                    <h3 className="text-xs font-bold uppercase text-muted-foreground px-2">
+                        Online — {onlineMembersWithoutRole.length}
+                    </h3>
+                     <div className="space-y-1 mt-1">
+                        {onlineMembersWithoutRole.map(member => (
                              <MemberItem key={member.uid} member={member} server={server} />
                         ))}
                     </div>
                 </div>
-             )}
+            )}
+
+            {offlineMembers.length > 0 && (
+                <div className="mb-4">
+                    <h3 className="text-xs font-bold uppercase text-muted-foreground px-2">
+                        Offline — {offlineMembers.length}
+                    </h3>
+                     <div className="space-y-1 mt-1 opacity-60">
+                        {offlineMembers.map(member => (
+                             <MemberItem key={member.uid} member={member} server={server} />
+                        ))}
+                    </div>
+                </div>
+            )}
         </aside>
     )
 }
@@ -113,46 +126,57 @@ const MemberItem = ({ member, server, topRoleColor }: { member: Partial<UserProf
       photoURL: serverProfile?.avatar || member.photoURL,
     };
 
+    let activityText = member.customStatus || '';
+    let ActivityIcon = null;
+    if (member.currentGame) {
+      activityText = `Playing ${member.currentGame.name}`;
+      ActivityIcon = Gamepad2;
+    } else if (member.currentSong) {
+      activityText = `Listening to ${member.currentSong.title}`;
+      ActivityIcon = Music;
+    } else if (member.isBot) {
+      activityText = "Bot"
+      ActivityIcon = Bot;
+    }
+
     return (
-         <Popover>
-            <PopoverTrigger asChild>
-                <div className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer relative overflow-hidden">
-                    {member.nameplateUrl && (
-                        <Image
-                            src={member.nameplateUrl}
-                            alt=""
-                            fill
-                            className="object-cover opacity-50 group-hover:opacity-75 transition-opacity"
-                        />
-                    )}
-                    <div className="relative z-10 flex items-center gap-2 w-full">
-                        <div className="relative">
-                            <Avatar className="size-8">
-                                <AvatarImage src={displayUser.photoURL || undefined} />
-                                <AvatarFallback>{displayUser.displayName?.[0]}</AvatarFallback>
-                            </Avatar>
-                            <div className={cn(
-                                "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-card flex items-center justify-center", 
-                                statusConfig[status].color
-                            )}>
-                                {member.customStatus && <MessageCircleMore className="size-2 text-white/70" />}
-                            </div>
-                        </div>
-                        <div className="flex-1 overflow-hidden">
-                            <span className={cn("font-medium text-sm truncate", member.nameplateUrl ? 'text-white text-shadow-sm' : '')} style={{ color: member.nameplateUrl ? undefined : topRoleColor }}>
+        <UserNav user={member as UserProfile} serverContext={server} as="trigger">
+            <div className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer relative overflow-hidden group/member">
+                {member.nameplateUrl && (
+                    <Image
+                        src={member.nameplateUrl}
+                        alt=""
+                        fill
+                        className="object-cover opacity-50 group-hover/member:opacity-75 transition-opacity"
+                    />
+                )}
+                <div className="relative z-10 flex items-center gap-2 w-full">
+                    <div className="relative">
+                        <Avatar className="size-8">
+                            <AvatarImage src={displayUser.photoURL || undefined} />
+                            <AvatarFallback>{displayUser.displayName?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className={cn(
+                            "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-secondary", 
+                            statusConfig[status].color
+                        )} />
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                        <div className="flex items-center">
+                            <span className="font-medium text-sm truncate" style={{ color: topRoleColor }}>
                                 {displayUser.displayName}
                             </span>
-                            {member.customStatus && (
-                                <p className={cn("text-xs truncate", member.nameplateUrl ? 'text-white/80' : 'text-muted-foreground')}>{member.customStatus}</p>
-                            )}
+                             {isOwner && <Crown className="size-4 text-yellow-500 ml-1.5" />}
                         </div>
-                        {isOwner && <Crown className="size-4 text-yellow-500 z-10" />}
+                        {activityText && (
+                            <p className="text-xs truncate text-muted-foreground flex items-center gap-1.5">
+                                {ActivityIcon && <ActivityIcon className="size-3"/>}
+                                {activityText}
+                            </p>
+                        )}
                     </div>
                 </div>
-            </PopoverTrigger>
-             <PopoverContent className="w-80 mb-2 p-0 border-none" side="left" align="start">
-                <UserNav user={member as UserProfile} serverContext={server}/>
-            </PopoverContent>
-        </Popover>
+            </div>
+        </UserNav>
     )
 }
