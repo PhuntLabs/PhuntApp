@@ -11,17 +11,17 @@ import { UserNav } from './user-nav';
 
 
 interface ActiveNowListProps {
-  friends: UserProfile[];
+  users: UserProfile[];
   pendingRequests: FriendRequest[];
   onAcceptFriendRequest: (requestId: string, fromUser: {id: string, displayName: string}) => void;
   onDeclineFriendRequest: (requestId: string) => void;
 }
 
-export function ActiveNowList({ friends, pendingRequests, onAcceptFriendRequest, onDeclineFriendRequest }: ActiveNowListProps) {
+export function ActiveNowList({ users, pendingRequests, onAcceptFriendRequest, onDeclineFriendRequest }: ActiveNowListProps) {
     const [activeTab, setActiveTab] = useState('online');
 
-    const onlineFriends = friends.filter(f => f.status && f.status !== 'offline');
-    const allFriends = friends;
+    const onlineFriends = users.filter(f => f.status && f.status !== 'offline');
+    const allFriends = users;
     
     const renderList = () => {
         let list: UserProfile[] = [];
