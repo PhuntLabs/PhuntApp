@@ -332,7 +332,7 @@ export default function AppRootPage() {
                         />
                         )}
                     </div>
-                     <div className="p-2 bg-secondary">
+                     <div className="p-2 bg-secondary/50">
                         <div className="flex items-center justify-between">
                             <UserNav user={user} />
                             <div className="flex items-center">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -81,7 +82,6 @@ export default function JoinServerPage() {
             toast({
                 title: 'Welcome!',
                 description: `You have successfully joined the ${server?.name} server.`,
-                className: 'bg-green-500 text-white'
             });
             router.push('/channels/me');
         } catch (e: any) {

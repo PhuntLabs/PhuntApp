@@ -46,10 +46,6 @@ export function MemberList({ members, server, loading }: MemberListProps) {
     }
     
     const roles = [...(server.roles || [])].sort((a,b) => a.priority - b.priority);
-    const membersByRole: { [roleName: string]: Partial<UserProfile>[] } = {};
-
-    const onlineMembers = members.filter(m => m.status !== 'offline');
-    const offlineMembers = members.filter(m => m.status === 'offline');
     
     const getTopRole = (member: Partial<UserProfile>): (typeof roles[0] & { isOwner: boolean }) | null => {
         if (member.uid === server.ownerId) {
@@ -62,6 +58,9 @@ export function MemberList({ members, server, loading }: MemberListProps) {
         return memberRoles.length > 0 ? { ...memberRoles[0], isOwner: false } : null;
     }
 
+    const onlineMembers = members.filter(m => m.status !== 'offline');
+    const offlineMembers = members.filter(m => m.status === 'offline');
+    
     const groupedMembers: { [roleName: string]: { role: (typeof roles[0] & { isOwner?: boolean }), members: Partial<UserProfile>[] }} = {};
 
     onlineMembers.forEach(member => {
@@ -153,7 +152,7 @@ const MemberItem = ({ member, server, topRoleColor }: { member: Partial<UserProf
                     <Image
                         src={member.nameplateUrl}
                         alt="Nameplate"
-                        layout="fill"
+                        fill
                         objectFit="cover"
                         className="absolute inset-0 rounded-md opacity-30 group-hover/member:opacity-50 transition-opacity"
                     />
