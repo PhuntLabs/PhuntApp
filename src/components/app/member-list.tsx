@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,7 +27,7 @@ const statusConfig: Record<UserStatus, { color: string }> = {
 export function MemberList({ members, server, loading }: MemberListProps) {
     if (loading) {
         return (
-             <div className="w-60 flex-shrink-0 bg-secondary/30 p-2 space-y-2">
+             <div className="w-60 flex-shrink-0 bg-card p-2 space-y-2">
                 <h2 className="text-sm font-semibold uppercase text-muted-foreground px-2">Members — ?</h2>
                 <div className="flex items-center gap-2 p-2">
                     <Skeleton className="size-8 rounded-full" />
@@ -66,7 +67,7 @@ export function MemberList({ members, server, loading }: MemberListProps) {
 
 
     return (
-        <aside className="w-60 flex-shrink-0 bg-secondary/30 p-2 overflow-y-auto">
+        <aside className="w-60 flex-shrink-0 bg-card p-2 overflow-y-auto">
              <h2 className="text-sm font-semibold uppercase text-muted-foreground px-2 mb-2">Members — {members.length}</h2>
              {roles.map(role => {
                 if (membersByRole[role.name]?.length > 0) {
@@ -131,7 +132,7 @@ const MemberItem = ({ member, server, topRoleColor }: { member: Partial<UserProf
                                 <AvatarFallback>{displayUser.displayName?.[0]}</AvatarFallback>
                             </Avatar>
                             <div className={cn(
-                                "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-secondary/30 flex items-center justify-center", 
+                                "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-card flex items-center justify-center", 
                                 statusConfig[status].color
                             )}>
                                 {member.customStatus && <MessageCircleMore className="size-2 text-white/70" />}

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { SidebarProvider, SidebarTrigger, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState, useMemo, Suspense } from 'react';
@@ -443,7 +443,7 @@ export default function AppRootPage() {
         ) : (
             <SidebarProvider>
             
-            <div className="flex h-screen bg-secondary">
+            <div className="flex h-screen bg-card">
                 <Servers 
                 servers={servers}
                 loading={serversLoading} 
@@ -454,7 +454,7 @@ export default function AppRootPage() {
                 />
                 
                 <div className="flex flex-1 min-w-0">
-                <div className="w-64 flex-shrink-0 bg-card flex flex-col hidden md:flex">
+                <div className="w-64 flex-shrink-0 bg-background flex flex-col hidden md:flex">
                     <div className="flex-1 overflow-y-auto">
                         {server ? (
                         <ServerSidebar 
@@ -470,21 +470,7 @@ export default function AppRootPage() {
                             onDeleteServer={handleDeleteServer}
                         />
                         ) : (
-                        <>
-                            <div className="p-4 border-b">
-                                <h2 className="font-semibold text-lg truncate">Direct Messages</h2>
-                            </div>
-                            <div className="py-2">
-                                <SidebarMenu>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton 
-                                        isActive={dmView === 'friends'}
-                                        onClick={() => setDmView('friends')}
-                                        >
-                                            <Users /> Friends
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                </SidebarMenu>
+                        <div className="p-4">
                             <DirectMessages
                                 directMessages={chats}
                                 selectedChat={selectedChat}
@@ -494,8 +480,7 @@ export default function AppRootPage() {
                                 onDeleteChat={handleDeleteChat}
                                 loading={chatsLoading}
                             />
-                            </div>
-                        </>
+                        </div>
                         )}
                     </div>
                     {activeCall && agoraClient ? (
@@ -515,20 +500,25 @@ export default function AppRootPage() {
                     )}
                 </div>
                 
-                <main className="flex-1 flex flex-col bg-background min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
+                 <div className="flex-1 flex flex-col bg-card min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
                     {server && selectedChannel && authUser ? (
-                    <ChannelChat 
-                        channel={selectedChannel} 
-                        server={server} 
-                        currentUser={authUser}
-                        members={members}
-                        messages={channelMessages}
-                        onSendMessage={sendChannelMessage}
-                        onEditMessage={editChannelMessage}
-                        onDeleteMessage={deleteChannelMessage}
-                    />
+                     <div className="flex flex-1 min-h-0">
+                        <main className="flex-1 flex flex-col min-w-0">
+                            <ChannelChat 
+                                channel={selectedChannel} 
+                                server={server} 
+                                currentUser={authUser}
+                                members={members}
+                                messages={channelMessages}
+                                onSendMessage={sendChannelMessage}
+                                onEditMessage={editChannelMessage}
+                                onDeleteMessage={deleteChannelMessage}
+                            />
+                        </main>
+                        <MemberList members={members as UserProfile[]} server={server} loading={serverDetailsLoading} />
+                     </div>
                     ) : server ? (
-                    <div className="flex flex-1 items-center justify-center h-full bg-background">
+                    <div className="flex flex-1 items-center justify-center h-full">
                         <div className="text-center">
                         <h2 className="text-xl font-medium text-foreground">{`Welcome to ${server.name}`}</h2>
                         <p className="text-muted-foreground">Select a channel to start talking.</p>
@@ -546,7 +536,7 @@ export default function AppRootPage() {
                         onInitiateCall={(callee) => initCall(user, callee, selectedChat.id)}
                     />
                     ) : (
-                    <div className="flex flex-col flex-1 h-full bg-background">
+                    <div className="flex flex-col flex-1 h-full">
                          <div className="p-4 border-b flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2">
@@ -580,7 +570,7 @@ export default function AppRootPage() {
                          </div>
                     </div>
                     )}
-                </main>
+                 </div>
                 </div>
             </div>
             </SidebarProvider>

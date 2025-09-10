@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSkeleton } from '@/components/ui/sidebar';
@@ -65,13 +66,6 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
   
   return (
     <>
-      {allFriends.length > 0 && (
-          <div className="p-2 space-y-2">
-            <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase">Active Now</h3>
-            <ActiveNowList users={allFriends} />
-            <Separator />
-          </div>
-      )}
       <SidebarGroup>
         <SidebarGroupLabel className="flex items-center justify-between">
           Direct Messages
@@ -128,7 +122,7 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
                           <AvatarFallback>{chatName[0]}</AvatarFallback>
                         </Avatar>
                          <div className={cn(
-                              "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-secondary/30",
+                              "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background",
                               statusConfig[status].color
                           )} />
                       </div>
