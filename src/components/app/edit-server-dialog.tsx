@@ -11,6 +11,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -27,7 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Server, CustomEmoji, Role, Permission, UserProfile, ServerTag } from '@/lib/types';
-import { Globe, Trash, Smile, ImagePlus, X, Palette, GripVertical, Plus, ShieldQuestion, Users, Search, Sword, Zap, Car, Bike, Tag } from 'lucide-react';
+import { Globe, Trash, Smile, ImagePlus, X, Palette, GripVertical, Plus, ShieldQuestion, Users, Search, Sword, Zap, Car, Bike, Tag, LogOut } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Textarea } from '../ui/textarea';
 import { Switch } from '../ui/switch';
@@ -47,6 +48,7 @@ import { useMobileView } from '@/hooks/use-mobile-view';
 import { MobileServerSettings } from './mobile/mobile-server-settings';
 import { v4 as uuidv4 } from 'uuid';
 import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
 
 function generateRandomHexColor() {
   return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
@@ -323,18 +325,26 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
   const filteredMembers = members.filter(member => 
       member.displayName?.toLowerCase().includes(memberSearch.toLowerCase())
   );
+  
+   const hasChanges =
+    serverName !== server.name ||
+    serverIcon !== (server.photoURL || '') ||
+    serverBanner !== (server.bannerURL || '') ||
+    isPublic !== (server.isPublic || false) ||
+    description !== (server.description || '') ||
+    JSON.stringify(customEmojis) !== JSON.stringify(server.customEmojis || []) ||
+    JSON.stringify(roles.map(r => ({ ...r, priority: roles.indexOf(r) }))) !== JSON.stringify((server.roles || []).sort((a,b) => a.priority - b.priority)) ||
+    inviteLink !== (server.customInviteLink || '');
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Server Settings: {server.name}</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
         <div className="flex gap-4 flex-1 min-h-0">
-            <aside className="w-52 flex-shrink-0">
-                 <Tabs defaultValue={activeTab} onValueChange={setActiveTab} orientation="vertical">
+            <aside className="w-52 flex-shrink-0 bg-secondary/30 p-4">
+                 <Tabs defaultValue={activeTab} onValueChange={setActiveTab} orientation="vertical" className="h-full flex flex-col">
                     <TabsList className="w-full h-auto flex-col items-start bg-transparent p-0">
+                        <DialogTitle className="px-2 pb-2 text-sm font-semibold">{server.name}</DialogTitle>
                         <TabsTrigger value="general" className="w-full justify-start data-[state=active]:bg-accent">Overview</TabsTrigger>
                         <TabsTrigger value="roles" className="w-full justify-start data-[state=active]:bg-accent">Roles</TabsTrigger>
                         <TabsTrigger value="emojis" className="w-full justify-start data-[state=active]:bg-accent">Emojis</TabsTrigger>
@@ -342,320 +352,329 @@ export function EditServerDialog({ children, server, onUpdateServer, onDeleteSer
                         <TabsTrigger value="members" className="w-full justify-start data-[state=active]:bg-accent">Members</TabsTrigger>
                         <TabsTrigger value="discovery" className="w-full justify-start data-[state=active]:bg-accent">Discovery</TabsTrigger>
                         <Separator className="my-2"/>
-                        <TabsTrigger value="danger-zone" className="w-full justify-start text-destructive data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">Delete Server</TabsTrigger>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10">Delete Server</Button>
+                          </AlertDialogTrigger>
+                           <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the
+                                    <span className="font-bold"> {server.name} </span>
+                                    server and all of its data.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+                                    {isDeleting ? 'Deleting...' : 'Yes, delete server'}
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </TabsList>
                  </Tabs>
             </aside>
-            <main className="flex-1 overflow-y-auto pr-2 border-l pl-4">
-                 <Tabs defaultValue={activeTab} value={activeTab} className="w-full">
-                    <TabsContent value="general" className="mt-0">
-                        <div className="grid gap-4 py-4">
-                             <div className="space-y-1">
-                                <Label htmlFor="server-name">Server Name</Label>
-                                <Input id="server-name" value={serverName} onChange={(e) => setServerName(e.target.value)} required/>
-                            </div>
-                            <div className="space-y-1">
-                                <Label htmlFor="server-icon">Icon URL</Label>
-                                <Input id="server-icon" value={serverIcon} onChange={(e) => setServerIcon(e.target.value)} placeholder="https://image.url/icon.png"/>
-                            </div>
-                            <div className="space-y-1">
-                                <Label htmlFor="server-banner">Banner URL</Label>
-                                <Input id="server-banner" value={serverBanner} onChange={(e) => setServerBanner(e.target.value)} placeholder="https://image.url/banner.png"/>
-                            </div>
-                            <Separator />
-                             <div className="space-y-1">
-                                <Label htmlFor="system-channel">System Messages Channel</Label>
-                                <DialogDescription>
-                                    The channel where system messages like welcome messages will be sent.
-                                </DialogDescription>
-                                <Select value={systemChannelId} onValueChange={(value) => setSystemChannelId(value)}>
-                                    <SelectTrigger id="system-channel">
-                                        <SelectValue placeholder="Select a channel" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">None</SelectItem>
-                                        {textChannels.map(channel => (
-                                            <SelectItem key={channel.id} value={channel.id}>#{channel.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <Separator />
-                            <div className="space-y-1">
-                                <Label htmlFor="invite-link">Custom Invite Link</Label>
-                                <div className="flex items-center">
-                                    <span className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-l-md border border-r-0">/join/</span>
-                                    <Input id="invite-link" value={inviteLink} onChange={(e) => setInviteLink(e.target.value.replace(/[^a-zA-Z0-9-]/g, ''))} placeholder="my-cool-server" className="rounded-l-none"/>
-                                </div>
-                            </div>
-                        </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="roles" className="mt-0 space-y-4 py-4">
-                        <DialogDescription>
-                            Use roles to group your server members and assign permissions. Drag to reorder.
-                        </DialogDescription>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                            <div className="space-y-2">
-                                 <div className="flex items-center justify-between">
-                                    <Label>Roles</Label>
-                                    <Button size="sm" variant="outline" onClick={handleAddRole}><Plus className="size-4 mr-2"/> Add</Button>
-                                </div>
-                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                                    <SortableContext items={roles} strategy={verticalListSortingStrategy}>
-                                        <div className="space-y-2">
-                                        {roles.map((role, index) => (
-                                            <SortableRoleItem 
-                                                key={role.id}
-                                                role={role}
-                                                index={index}
-                                                onRemove={handleRemoveRole}
-                                                onSelect={setSelectedRole}
-                                                selectedRole={selectedRole}
-                                                canBeRemoved={true}
-                                            />
-                                        ))}
+            <main className="flex-1">
+                <ScrollArea className="h-full">
+                    <div className="p-6 h-full flex flex-col">
+                        <DialogHeader>
+                            <DialogTitle className="text-2xl capitalize">{activeTab.replace('-', ' ')}</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex-1 py-4">
+                            <Tabs defaultValue={activeTab} value={activeTab} className="w-full">
+                                <TabsContent value="general" className="mt-0">
+                                    <div className="grid gap-4 py-4">
+                                        <div className="space-y-1">
+                                            <Label htmlFor="server-name">Server Name</Label>
+                                            <Input id="server-name" value={serverName} onChange={(e) => setServerName(e.target.value)} required/>
                                         </div>
-                                    </SortableContext>
-                                </DndContext>
-                            </div>
-                            <ScrollArea className="h-[60vh]">
-                            <div className="space-y-4 border rounded-lg p-4">
-                                {activeRoleForEditing ? (
-                                <>
-                                    <h4 className="font-semibold">Editing: <span style={{ color: activeRoleForEditing?.color }}>{activeRoleForEditing?.name}</span></h4>
-                                    <div className="space-y-2">
-                                        <Label>Role Name</Label>
-                                        <Input value={activeRoleForEditing.name} onChange={(e) => handleUpdateRole(activeRoleForEditing.id, { name: e.target.value })}/>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Role Color</Label>
-                                        <Input type="color" value={activeRoleForEditing.color} onChange={(e) => handleUpdateRole(activeRoleForEditing.id, { color: e.target.value })} className="w-full h-10 p-1"/>
-                                    </div>
-                                    <Separator/>
-                                    <h4 className="font-semibold">Permissions</h4>
-                                    <div className="space-y-3">
-                                        {allPermissionDetails.map(perm => {
-                                            return (
-                                            <div key={perm.id} className="flex items-center justify-between space-x-2">
-                                                <div className="grid gap-1.5 leading-none">
-                                                    <label htmlFor={`perm-${perm.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                                        {perm.name}
-                                                    </label>
-                                                </div>
-                                                 <Switch
-                                                    id={`perm-${perm.id}`}
-                                                    checked={activeRoleForEditing.permissions?.[perm.id] || false}
-                                                    onCheckedChange={(checked) => handlePermissionChange(activeRoleForEditing.id, perm.id, !!checked)}
-                                                    disabled={activeRoleForEditing.permissions?.['administrator'] && perm.id !== 'administrator'}
-                                                />
+                                        <div className="space-y-1">
+                                            <Label htmlFor="server-icon">Icon URL</Label>
+                                            <Input id="server-icon" value={serverIcon} onChange={(e) => setServerIcon(e.target.value)} placeholder="https://image.url/icon.png"/>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label htmlFor="server-banner">Banner URL</Label>
+                                            <Input id="server-banner" value={serverBanner} onChange={(e) => setServerBanner(e.target.value)} placeholder="https://image.url/banner.png"/>
+                                        </div>
+                                        <Separator />
+                                        <div className="space-y-1">
+                                            <Label htmlFor="system-channel">System Messages Channel</Label>
+                                            <DialogDescription>
+                                                The channel where system messages like welcome messages will be sent.
+                                            </DialogDescription>
+                                            <Select value={systemChannelId} onValueChange={(value) => setSystemChannelId(value)}>
+                                                <SelectTrigger id="system-channel">
+                                                    <SelectValue placeholder="Select a channel" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="none">None</SelectItem>
+                                                    {textChannels.map(channel => (
+                                                        <SelectItem key={channel.id} value={channel.id}>#{channel.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <Separator />
+                                        <div className="space-y-1">
+                                            <Label htmlFor="invite-link">Custom Invite Link</Label>
+                                            <div className="flex items-center">
+                                                <span className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-l-md border border-r-0">/join/</span>
+                                                <Input id="invite-link" value={inviteLink} onChange={(e) => setInviteLink(e.target.value.replace(/[^a-zA-Z0-9-]/g, ''))} placeholder="my-cool-server" className="rounded-l-none"/>
                                             </div>
-                                        )})}
+                                        </div>
                                     </div>
-                                </>
-                                ) : (
-                                    <div className="text-center text-muted-foreground py-10">
-                                        <p>Select a role to edit.</p>
-                                    </div>
-                                )}
-                            </div>
-                            </ScrollArea>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="tags" className="mt-0 space-y-4 py-4">
-                         <DialogDescription>
-                            Create a unique server-wide tag that members can choose to display next to their name. Max 4 characters.
-                        </DialogDescription>
-                         <div className="p-3 border rounded-lg space-y-3">
-                            <h4 className="font-semibold text-sm">Server Member Tag</h4>
-                             <div className="flex items-end gap-2">
-                                 <div className="space-y-1.5 flex-1">
-                                    <Label htmlFor="tag-name">Tag Name (4 chars max)</Label>
-                                    <Input id="tag-name" value={serverTag?.name || ''} onChange={(e) => handleTagUpdate('name', e.target.value)} maxLength={4} placeholder="e.g. Pro"/>
-                                </div>
-                                 <div className="space-y-1.5">
-                                     <Label htmlFor="tag-icon">Tag Icon</Label>
-                                      <Select value={serverTag?.icon || 'Sword'} onValueChange={(value: any) => handleTagUpdate('icon', value)}>
-                                        <SelectTrigger id="tag-icon">
-                                            <SelectValue placeholder="Select an icon"/>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {Object.entries(tagIcons).map(([name, Icon]) => (
-                                                <SelectItem key={name} value={name}>
-                                                    <div className="flex items-center gap-2">
-                                                        <Icon className="size-4"/> {name}
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <div>
-                                <Label>Preview</Label>
-                                <div className="p-2 mt-1 bg-muted rounded-md flex items-center justify-center">
-                                    <Badge variant="secondary" className="gap-1.5 text-base">
-                                        {(tagIcons as any)[serverTag?.icon || 'Sword'] && React.createElement((tagIcons as any)[serverTag?.icon || 'Sword'], { className: 'size-4' })} 
-                                        {serverTag?.name || 'Tag'}
-                                    </Badge>
-                                </div>
-                            </div>
-                        </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="discovery" className="mt-0">
-                        <div className="py-4 space-y-4">
-                            <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                                <div className="space-y-0.5">
-                                    <Label>Make Discoverable</Label>
+                                </TabsContent>
+                                
+                                <TabsContent value="roles" className="mt-0 space-y-4 py-4">
                                     <DialogDescription>
-                                    Allow your server to be listed on the public discovery page.
+                                        Use roles to group your server members and assign permissions. Drag to reorder.
                                     </DialogDescription>
-                                </div>
-                                <Switch checked={isPublic} onCheckedChange={setIsPublic}/>
-                            </div>
-                            <div className="space-y-1">
-                                <Label htmlFor="description">Server Description</Label>
-                                <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Tell everyone what your server is about!" maxLength={300} disabled={!isPublic}/>
-                                <p className="text-xs text-muted-foreground">{description.length} / 300</p>
-                            </div>
-                        </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="emojis" className="mt-0">
-                        <div className="py-4 space-y-4">
-                            <DialogDescription>
-                                Add up to 10 custom emojis to your server.
-                            </DialogDescription>
-                            <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                                {customEmojis.map((emoji, index) => (
-                                    <div key={index} className="flex items-center justify-between p-2 border rounded-md">
-                                        <div className="flex items-center gap-3">
-                                            <Image src={emoji.url} alt={emoji.name} width={32} height={32} className="rounded-sm" />
-                                            <code className="text-sm">:{emoji.name}:</code>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <Label>Roles</Label>
+                                                <Button size="sm" variant="outline" onClick={handleAddRole}><Plus className="size-4 mr-2"/> Add</Button>
+                                            </div>
+                                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                                <SortableContext items={roles} strategy={verticalListSortingStrategy}>
+                                                    <div className="space-y-2">
+                                                    {roles.map((role, index) => (
+                                                        <SortableRoleItem 
+                                                            key={role.id}
+                                                            role={role}
+                                                            index={index}
+                                                            onRemove={handleRemoveRole}
+                                                            onSelect={setSelectedRole}
+                                                            selectedRole={selectedRole}
+                                                            canBeRemoved={true}
+                                                        />
+                                                    ))}
+                                                    </div>
+                                                </SortableContext>
+                                            </DndContext>
                                         </div>
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveEmoji(index)} className="size-7 text-muted-foreground">
-                                            <X className="size-4" />
-                                        </Button>
+                                        <ScrollArea className="h-[60vh]">
+                                        <div className="space-y-4 border rounded-lg p-4">
+                                            {activeRoleForEditing ? (
+                                            <>
+                                                <h4 className="font-semibold">Editing: <span style={{ color: activeRoleForEditing?.color }}>{activeRoleForEditing?.name}</span></h4>
+                                                <div className="space-y-2">
+                                                    <Label>Role Name</Label>
+                                                    <Input value={activeRoleForEditing.name} onChange={(e) => handleUpdateRole(activeRoleForEditing.id, { name: e.target.value })}/>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Role Color</Label>
+                                                    <Input type="color" value={activeRoleForEditing.color} onChange={(e) => handleUpdateRole(activeRoleForEditing.id, { color: e.target.value })} className="w-full h-10 p-1"/>
+                                                </div>
+                                                <Separator/>
+                                                <h4 className="font-semibold">Permissions</h4>
+                                                <div className="space-y-3">
+                                                    {allPermissionDetails.map(perm => {
+                                                        return (
+                                                        <div key={perm.id} className="flex items-center justify-between space-x-2">
+                                                            <div className="grid gap-1.5 leading-none">
+                                                                <label htmlFor={`perm-${perm.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                                    {perm.name}
+                                                                </label>
+                                                            </div>
+                                                            <Switch
+                                                                id={`perm-${perm.id}`}
+                                                                checked={activeRoleForEditing.permissions?.[perm.id] || false}
+                                                                onCheckedChange={(checked) => handlePermissionChange(activeRoleForEditing.id, perm.id, !!checked)}
+                                                                disabled={activeRoleForEditing.permissions?.['administrator'] && perm.id !== 'administrator'}
+                                                            />
+                                                        </div>
+                                                    )})}
+                                                </div>
+                                            </>
+                                            ) : (
+                                                <div className="text-center text-muted-foreground py-10">
+                                                    <p>Select a role to edit.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        </ScrollArea>
                                     </div>
-                                ))}
-                            </div>
-                            
-                            {customEmojis.length < 10 && (
-                                <div className="p-3 border rounded-lg space-y-3">
-                                    <h4 className="font-semibold text-sm">Add Emoji</h4>
-                                    <div className="flex items-end gap-2">
-                                        <div className="space-y-1.5 flex-1">
-                                            <Label htmlFor="emoji-name">Emoji Name</Label>
-                                            <Input id="emoji-name" value={newEmojiName} onChange={(e) => setNewEmojiName(e.target.value)} placeholder="e.g. happycat"/>
-                                        </div>
-                                        <div className="space-y-1.5 flex-1">
-                                            <Label htmlFor="emoji-url">Emoji URL or Upload</Label>
-                                            <div className="flex gap-2">
-                                                <Input id="emoji-url" value={newEmojiUrl} onChange={(e) => { setNewEmojiUrl(e.target.value); setNewEmojiFile(null); }} disabled={!!newEmojiFile} placeholder="https://..."/>
-                                                <Button type="button" variant="outline" size="icon" onClick={() => emojiFileRef.current?.click()}><ImagePlus className="size-4"/></Button>
-                                                <input type="file" ref={emojiFileRef} className="hidden" accept="image/png, image/jpeg, image/gif" onChange={handleEmojiFileChange} />
+                                </TabsContent>
+
+                                <TabsContent value="tags" className="mt-0 space-y-4 py-4">
+                                    <DialogDescription>
+                                        Create a unique server-wide tag that members can choose to display next to their name. Max 4 characters.
+                                    </DialogDescription>
+                                    <div className="p-3 border rounded-lg space-y-3">
+                                        <h4 className="font-semibold text-sm">Server Member Tag</h4>
+                                        <div className="flex items-end gap-2">
+                                            <div className="space-y-1.5 flex-1">
+                                                <Label htmlFor="tag-name">Tag Name (4 chars max)</Label>
+                                                <Input id="tag-name" value={serverTag?.name || ''} onChange={(e) => handleTagUpdate('name', e.target.value)} maxLength={4} placeholder="e.g. Pro"/>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="tag-icon">Tag Icon</Label>
+                                                <Select value={serverTag?.icon || 'Sword'} onValueChange={(value: any) => handleTagUpdate('icon', value)}>
+                                                    <SelectTrigger id="tag-icon">
+                                                        <SelectValue placeholder="Select an icon"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {Object.entries(tagIcons).map(([name, Icon]) => (
+                                                            <SelectItem key={name} value={name}>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Icon className="size-4"/> {name}
+                                                                </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
                                         </div>
-                                        <Button type="button" onClick={handleAddEmoji} disabled={isSaving}>Add</Button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </TabsContent>
-                    
-                     <TabsContent value="members" className="mt-0">
-                        <DialogDescription className="py-4">
-                            Manage server members and their roles.
-                        </DialogDescription>
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Search members..." 
-                                className="pl-10 mb-4"
-                                value={memberSearch}
-                                onChange={(e) => setMemberSearch(e.target.value)}
-                            />
-                        </div>
-                        <ScrollArea className="h-[55vh]">
-                            <div className="space-y-2 pr-4">
-                                {filteredMembers.map(member => (
-                                    <div key={member.uid} className="flex items-center gap-4 p-2 rounded-md hover:bg-accent">
-                                        <Avatar>
-                                            <AvatarImage src={member.photoURL || undefined} />
-                                            <AvatarFallback>{member.displayName?.[0]}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1">
-                                            <p className="font-semibold">{member.displayName}</p>
-                                            <p className="text-xs text-muted-foreground">@{member.displayName_lowercase}</p>
+                                        <div>
+                                            <Label>Preview</Label>
+                                            <div className="p-2 mt-1 bg-muted rounded-md flex items-center justify-center">
+                                                <Badge variant="secondary" className="gap-1.5 text-base">
+                                                    {(tagIcons as any)[serverTag?.icon || 'Sword'] && React.createElement((tagIcons as any)[serverTag?.icon || 'Sword'], { className: 'size-4' })} 
+                                                    {serverTag?.name || 'Tag'}
+                                                </Badge>
+                                            </div>
                                         </div>
-                                        <Select onValueChange={(roleId) => handleMemberRoleChange(member.uid!, roleId, !server.memberDetails[member.uid!]?.roles.includes(roleId))}>
-                                            <SelectTrigger className="w-48">
-                                                <SelectValue placeholder="Manage Roles" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {roles.map(role => (
-                                                    <div key={role.id} className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                                                        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-                                                            <Checkbox
-                                                                checked={server.memberDetails[member.uid!]?.roles.includes(role.id)}
-                                                                onCheckedChange={(checked) => handleMemberRoleChange(member.uid!, role.id, !!checked)}
-                                                            />
-                                                        </span>
-                                                        {role.name}
-                                                    </div>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
                                     </div>
-                                ))}
-                            </div>
-                        </ScrollArea>
-                    </TabsContent>
-                    
-                    <TabsContent value="danger-zone" className="mt-0">
-                        <div className="py-4 space-y-4">
-                            <h3 className="font-semibold text-destructive">Delete Server</h3>
-                            <p className="text-sm text-muted-foreground">
-                                Permanently delete the <span className="font-bold">{server.name}</span> server. This action cannot be undone.
-                            </p>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" className="w-full justify-between">
-                                        Delete Server <Trash className="size-4" />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete the
-                                        <span className="font-bold"> {server.name} </span>
-                                        server and all of its data.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
-                                        {isDeleting ? 'Deleting...' : 'Yes, delete server'}
-                                    </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                                </TabsContent>
+                                
+                                <TabsContent value="discovery" className="mt-0">
+                                    <div className="py-4 space-y-4">
+                                        <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                                            <div className="space-y-0.5">
+                                                <Label>Make Discoverable</Label>
+                                                <DialogDescription>
+                                                Allow your server to be listed on the public discovery page.
+                                                </DialogDescription>
+                                            </div>
+                                            <Switch checked={isPublic} onCheckedChange={setIsPublic}/>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label htmlFor="description">Server Description</Label>
+                                            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Tell everyone what your server is about!" maxLength={300} disabled={!isPublic}/>
+                                            <p className="text-xs text-muted-foreground">{description.length} / 300</p>
+                                        </div>
+                                    </div>
+                                </TabsContent>
+                                
+                                <TabsContent value="emojis" className="mt-0">
+                                    <div className="py-4 space-y-4">
+                                        <DialogDescription>
+                                            Add up to 10 custom emojis to your server.
+                                        </DialogDescription>
+                                        <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                            {customEmojis.map((emoji, index) => (
+                                                <div key={index} className="flex items-center justify-between p-2 border rounded-md">
+                                                    <div className="flex items-center gap-3">
+                                                        <Image src={emoji.url} alt={emoji.name} width={32} height={32} className="rounded-sm" />
+                                                        <code className="text-sm">:{emoji.name}:</code>
+                                                    </div>
+                                                    <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveEmoji(index)} className="size-7 text-muted-foreground">
+                                                        <X className="size-4" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        
+                                        {customEmojis.length < 10 && (
+                                            <div className="p-3 border rounded-lg space-y-3">
+                                                <h4 className="font-semibold text-sm">Add Emoji</h4>
+                                                <div className="flex items-end gap-2">
+                                                    <div className="space-y-1.5 flex-1">
+                                                        <Label htmlFor="emoji-name">Emoji Name</Label>
+                                                        <Input id="emoji-name" value={newEmojiName} onChange={(e) => setNewEmojiName(e.target.value)} placeholder="e.g. happycat"/>
+                                                    </div>
+                                                    <div className="space-y-1.5 flex-1">
+                                                        <Label htmlFor="emoji-url">Emoji URL or Upload</Label>
+                                                        <div className="flex gap-2">
+                                                            <Input id="emoji-url" value={newEmojiUrl} onChange={(e) => { setNewEmojiUrl(e.target.value); setNewEmojiFile(null); }} disabled={!!newEmojiFile} placeholder="https://..."/>
+                                                            <Button type="button" variant="outline" size="icon" onClick={() => emojiFileRef.current?.click()}><ImagePlus className="size-4"/></Button>
+                                                            <input type="file" ref={emojiFileRef} className="hidden" accept="image/png, image/jpeg, image/gif" onChange={handleEmojiFileChange} />
+                                                        </div>
+                                                    </div>
+                                                    <Button type="button" onClick={handleAddEmoji} disabled={isSaving}>Add</Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </TabsContent>
+                                
+                                <TabsContent value="members" className="mt-0">
+                                    <DialogDescription className="py-4">
+                                        Manage server members and their roles.
+                                    </DialogDescription>
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                                        <Input 
+                                            placeholder="Search members..." 
+                                            className="pl-10 mb-4"
+                                            value={memberSearch}
+                                            onChange={(e) => setMemberSearch(e.target.value)}
+                                        />
+                                    </div>
+                                    <ScrollArea className="h-[55vh]">
+                                        <div className="space-y-2 pr-4">
+                                            {filteredMembers.map(member => (
+                                                <div key={member.uid} className="flex items-center gap-4 p-2 rounded-md hover:bg-accent">
+                                                    <Avatar>
+                                                        <AvatarImage src={member.photoURL || undefined} />
+                                                        <AvatarFallback>{member.displayName?.[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex-1">
+                                                        <p className="font-semibold">{member.displayName}</p>
+                                                        <p className="text-xs text-muted-foreground">@{member.displayName_lowercase}</p>
+                                                    </div>
+                                                    <Select onValueChange={(roleId) => handleMemberRoleChange(member.uid!, roleId, !server.memberDetails[member.uid!]?.roles.includes(roleId))}>
+                                                        <SelectTrigger className="w-48">
+                                                            <SelectValue placeholder="Manage Roles" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {roles.map(role => (
+                                                                <div key={role.id} className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                                                                    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                                                                        <Checkbox
+                                                                            checked={server.memberDetails[member.uid!]?.roles.includes(role.id)}
+                                                                            onCheckedChange={(checked) => handleMemberRoleChange(member.uid!, role.id, !!checked)}
+                                                                        />
+                                                                    </span>
+                                                                    {role.name}
+                                                                </div>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </ScrollArea>
+                                </TabsContent>
+                            </Tabs>
                         </div>
-                    </TabsContent>
-                 </Tabs>
+                         {hasChanges && (
+                            <div className={cn("sticky bottom-4 left-0 right-0 p-2 mx-auto w-fit bg-card border shadow-lg rounded-lg flex items-center gap-4 transition-all duration-300", hasChanges ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none")}>
+                                <p className="text-sm">You have unsaved changes.</p>
+                                <Button size="sm" variant="ghost" onClick={() => setIsOpen(true)}>Reset</Button>
+                                <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                                    {isSaving ? 'Saving...' : 'Save Changes'}
+                                </Button>
+                            </div>
+                        )}
+                         <DialogFooter className="sticky bottom-0 bg-background py-4 mt-auto sm:justify-between">
+                            <DialogClose asChild>
+                                 <Button variant="ghost">Close</Button>
+                            </DialogClose>
+                        </DialogFooter>
+                    </div>
+                </ScrollArea>
+                 <DialogClose asChild>
+                    <Button variant="ghost" size="icon" className="absolute right-4 top-4 rounded-full">
+                        <X className="size-5" />
+                        <span className="sr-only">Close</span>
+                    </Button>
+                </DialogClose>
             </main>
         </div>
-        <DialogFooter className="border-t pt-4 mt-auto flex sm:justify-between">
-            <div>
-                 <Button variant="ghost" onClick={() => setIsOpen(false)}>Close</Button>
-            </div>
-            <Button onClick={handleSave} disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save Changes'}
-            </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

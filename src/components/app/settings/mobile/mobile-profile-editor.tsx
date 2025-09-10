@@ -13,7 +13,7 @@ import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Save, Sparkles, Palette, Type, Ban } from 'lucide-react';
+import { Save, Sparkles, Palette, Type, Ban, ChevronLeft } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -122,7 +122,7 @@ const nameplates = [
 ];
 
 
-export function MobileProfileEditor() {
+export function MobileProfileEditor({onClose}: {onClose?: () => void}) {
   const { user, updateUserProfile } = useAuth();
   const { toast } = useToast();
 
@@ -147,6 +147,7 @@ export function MobileProfileEditor() {
     try {
         await updateUserProfile({ avatarEffect, profileEffect, nameplateUrl, profileColor });
         toast({ title: 'Profile Effects Updated', description: 'Your new look has been saved.' });
+        if(onClose) onClose();
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
     } finally {
@@ -168,13 +169,11 @@ export function MobileProfileEditor() {
   return (
     <div className="flex flex-col h-full bg-background">
         <header className="p-4 border-b flex-shrink-0 flex items-center justify-between">
-            <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
+            <Button variant="ghost" onClick={onClose}><ChevronLeft className="mr-2"/> Back</Button>
             <h1 className="font-semibold text-lg">Profile Theme</h1>
-            <DialogClose asChild>
-                <Button onClick={handleSave} disabled={isSaving}>
-                    <Save className="mr-2" /> Save
-                </Button>
-            </DialogClose>
+            <Button onClick={handleSave} disabled={isSaving}>
+                <Save className="mr-2" /> Save
+            </Button>
         </header>
         <ScrollArea className="flex-1">
             <div className="p-4 space-y-6">

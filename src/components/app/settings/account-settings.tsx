@@ -63,7 +63,7 @@ export function AccountSettings() {
         <div>
             <h2 className="text-2xl font-bold">My Account</h2>
         </div>
-        <div className="relative rounded-lg overflow-hidden border">
+        <div className="relative rounded-lg overflow-hidden border bg-secondary/30">
             <div className="h-24 bg-accent">
                 {user.bannerURL && <Image src={user.bannerURL} alt="Banner" fill className="object-cover"/>}
             </div>
@@ -111,6 +111,15 @@ export function AccountSettings() {
                     </div>
                      <Button variant="secondary">Add</Button>
                 </div>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Password and Authentication</CardTitle>
+            </CardHeader>
+             <CardContent>
+                 <Button onClick={handlePasswordReset}>Change Password</Button>
             </CardContent>
         </Card>
     </div>

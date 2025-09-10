@@ -53,31 +53,42 @@ export function MobileSettingsPage() {
   }
 
   const ActiveComponent = allSettings.find(s => s.id === activeSection)?.component;
+  const ActiveSectionTitle = allSettings.find(s => s.id === activeSection)?.label;
+
 
   return (
     <div className="h-full relative overflow-hidden bg-background">
-        <AnimatePresence>
-            <motion.div 
-                key={activeSection ? 'section' : 'list'}
-                initial={{ x: activeSection ? '100%' : '-100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: activeSection ? '-100%' : '100%' }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="absolute inset-0"
-            >
-                {activeSection && ActiveComponent ? (
+        <AnimatePresence initial={false}>
+            {activeSection && ActiveComponent ? (
+                 <motion.div 
+                    key="section"
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    className="absolute inset-0 z-10"
+                >
                     <div className="flex flex-col h-full bg-card">
                          <div className="p-4 border-b flex items-center">
                             <Button variant="ghost" size="icon" onClick={handleCloseSection} className="mr-2">
                                 <ChevronLeft />
                             </Button>
-                            <h1 className="text-xl font-bold">{allSettings.find(s=>s.id===activeSection)?.label}</h1>
+                            <h1 className="text-xl font-bold">{ActiveSectionTitle}</h1>
                         </div>
                         <ScrollArea className="flex-1 p-4">
                             <ActiveComponent />
                         </ScrollArea>
                     </div>
-                ) : (
+                </motion.div>
+            ) : (
+                <motion.div 
+                    key="list"
+                    initial={{ x: 0 }}
+                    animate={{ x: activeSection ? '-100%' : 0 }}
+                    exit={{ x: '-100%' }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    className="absolute inset-0"
+                >
                      <div className="flex flex-col h-full">
                         <div className="p-4 border-b flex items-center gap-2">
                              <Button variant="ghost" size="icon">
@@ -155,8 +166,8 @@ export function MobileSettingsPage() {
                             </nav>
                         </ScrollArea>
                     </div>
-                )}
-            </motion.div>
+                </motion.div>
+            )}
         </AnimatePresence>
     </div>
   );
