@@ -490,8 +490,17 @@ export default function AppRootPage() {
                     {activeCall && agoraClient ? (
                         <ActiveCallView client={agoraClient} />
                     ) : (
-                    <div className="bg-background/30 p-2">
-                        <UserNav user={user} logout={logout}/>
+                    <div className="bg-secondary p-2 border-t border-border">
+                         <div className="p-1 bg-card rounded-lg flex items-center justify-between border border-border">
+                            <UserNav user={user} as="button" />
+                            <div className="flex items-center">
+                                <SettingsDialog>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <Settings className="size-5" />
+                                    </Button>
+                                </SettingsDialog>
+                            </div>
+                        </div>
                     </div>
                     )}
                 </div>
