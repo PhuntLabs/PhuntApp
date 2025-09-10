@@ -27,7 +27,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
 import { BOT_ID, BOT_USERNAME } from '@/ai/bots/config';
-import { AtSign, Mic, Settings, Loader2 } from 'lucide-react';
+import { AtSign, Mic, Settings, Loader2, Users, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServerSidebar } from '@/components/app/server-sidebar';
 import { MemberList } from '@/components/app/member-list';
@@ -40,7 +40,9 @@ import { ErrorBoundary } from '@/components/app/error-boundary';
 import { useCallingStore } from '@/hooks/use-calling-store';
 import { IncomingCallNotification } from '@/components/app/incoming-call-notification';
 import Image from 'next/image';
-import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { ActiveNowList } from '@/components/app/active-now-list';
+import { cn } from '@/lib/utils';
 
 
 const ActiveCallView = dynamic(() => import('@/components/app/active-call-view').then(mod => mod.ActiveCallView), {
@@ -101,6 +103,7 @@ export default function AppRootPage() {
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [dmView, setDmView] = useState('online');
 
   const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat);
   const { server, setServer, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
@@ -325,9 +328,9 @@ export default function AppRootPage() {
     }
   }
 
-  const handleCreateChannel = async (name: string) => {
+  const handleCreateChannel = async (name: string, type: ChannelType) => {
     try {
-      const newChannel = await createChannel(name);
+      const newChannel = await createChannel(name, type);
       if (newChannel) {
         // Local state update can be removed if using snapshots effectively
         toast({ title: `#${newChannel.name} created!` });
@@ -378,6 +381,10 @@ export default function AppRootPage() {
       }
     }
   };
+
+  const allFriends = useMemo(() => chats
+    .map(chat => chat.members.find(m => m.id !== user?.uid))
+    .filter((member): member is UserProfile => !!member), [chats, user]);
 
 
   if (loading || chatsLoading || serversLoading || !authUser || !user) {
@@ -464,23 +471,20 @@ export default function AppRootPage() {
                         />
                         ) : (
                         <>
-                            <div className="p-4 border-b flex items-center justify-between">
+                            <div className="p-4 border-b">
                                 <h2 className="font-semibold text-lg truncate">Direct Messages</h2>
-                                <div className="flex items-center">
-                                    <MentionsDialog onJumpToMessage={handleJumpToMessage}>
-                                        <Button variant="ghost" size="icon" className="size-7 text-muted-foreground"><AtSign className="size-4"/></Button>
-                                    </MentionsDialog>
-                                    <SidebarTrigger />
-                                </div>
                             </div>
                             <div className="py-2">
-                            {incomingRequests.length > 0 && (
-                                <PendingRequests
-                                requests={incomingRequests}
-                                onAccept={handleAcceptFriendRequest}
-                                onDecline={handleDeclineFriendRequest}
-                                />
-                            )}
+                                <SidebarMenu>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton 
+                                        isActive={dmView === 'friends'}
+                                        onClick={() => setDmView('friends')}
+                                        >
+                                            <Users /> Friends
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                </SidebarMenu>
                             <DirectMessages
                                 directMessages={chats}
                                 selectedChat={selectedChat}
@@ -542,18 +546,41 @@ export default function AppRootPage() {
                         onInitiateCall={(callee) => initCall(user, callee, selectedChat.id)}
                     />
                     ) : (
-                    <div className="flex flex-1 items-center justify-center h-full bg-background">
-                        <div className="text-center">
-                        <h2 className="text-xl font-medium text-foreground">No Chat Selected</h2>
-                        <p className="text-muted-foreground">Select a conversation from the sidebar or add a friend to start chatting.</p>
-                        </div>
+                    <div className="flex flex-col flex-1 h-full bg-background">
+                         <div className="p-4 border-b flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <Users />
+                                    <h2 className="font-semibold">Friends</h2>
+                                </div>
+                                <Separator orientation="vertical" className="h-6"/>
+                                <div className="flex items-center gap-2">
+                                     <Button variant="ghost" size="sm" className={cn(dmView === 'online' && "bg-accent")}>Online</Button>
+                                     <Button variant="ghost" size="sm" className={cn(dmView === 'all' && "bg-accent")}>All</Button>
+                                     <Button variant="ghost" size="sm" className={cn(dmView === 'pending' && "bg-accent")}>Pending</Button>
+                                     <Button variant="ghost" size="sm" className={cn(dmView === 'blocked' && "bg-accent")}>Blocked</Button>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="icon"><MentionsDialog onJumpToMessage={handleJumpToMessage}><AtSign className="size-4"/></MentionsDialog></Button>
+                                <Button className="bg-green-600 hover:bg-green-700"><UserPlus className="mr-2"/> Add Friend</Button>
+                            </div>
+                         </div>
+                         <div className="flex-1 flex">
+                            <div className="flex-1 p-4">
+                               <ActiveNowList users={allFriends} />
+                            </div>
+                             <div className="w-80 border-l p-4">
+                                 <h3 className="text-lg font-bold">Active Now</h3>
+                                 <div className="text-center text-muted-foreground pt-10">
+                                     <p className="font-semibold">It's quiet for now...</p>
+                                     <p className="text-sm">When a friend starts an activity—like playing a game or hanging out on voice—we’ll show it here!</p>
+                                 </div>
+                             </div>
+                         </div>
                     </div>
                     )}
                 </main>
-
-                {server && members.length > 0 && (
-                    <MemberList server={server} members={members} loading={serverDetailsLoading} />
-                )}
                 </div>
             </div>
             </SidebarProvider>

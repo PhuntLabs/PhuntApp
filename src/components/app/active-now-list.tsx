@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { UserNav } from './user-nav';
 import { Gamepad2 } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Separator } from '../ui/separator';
 
 const statusRingColor: Record<string, string> = {
     online: 'ring-green-500',
@@ -29,60 +31,73 @@ export function ActiveNowList({ users }: { users: UserProfile[] }) {
     const onlineUsers = users.filter(u => u.status !== 'offline');
     const offlineUsers = users.filter(u => u.status === 'offline');
 
+    if (users.length === 0) {
+        return (
+            <div className="text-center text-muted-foreground pt-10">
+                <p className="font-semibold">No friends yet...</p>
+                <p className="text-sm">Use the "Add Friend" button to start connecting!</p>
+            </div>
+        )
+    }
+
     return (
-        <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex w-max space-x-4 pb-4">
-                {onlineUsers.map(user => (
-                     <UserNav key={user.id} user={user} as="trigger">
-                        <div className="w-48 h-20 rounded-lg bg-card border overflow-hidden cursor-pointer group relative">
-                             <div className="h-10 bg-accent/50 relative">
-                                {user.bannerURL && <Image src={user.bannerURL} alt="" fill className="object-cover opacity-50 group-hover:opacity-80 transition-opacity" />}
+        <div className="w-full">
+            <h3 className="uppercase text-xs font-bold text-muted-foreground mb-2">Online - {onlineUsers.length}</h3>
+            {onlineUsers.map(user => (
+                <UserNav key={user.id} user={user} as="trigger">
+                    <div className="w-full rounded-lg hover:bg-accent cursor-pointer group flex items-center justify-between p-2">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <Avatar className="size-8 rounded-full">
+                                    <AvatarImage src={user.photoURL || undefined} />
+                                    <AvatarFallback>{user.displayName[0]}</AvatarFallback>
+                                </Avatar>
+                                <div className={cn("absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-background", statusBgColor[user.status || 'offline'])} />
                             </div>
-                            <div className="p-1.5 flex items-end gap-2 absolute top-0 left-0 right-0 bottom-0">
-                                 <div className="relative">
-                                    <Avatar className="size-12 border-4 border-card rounded-full">
-                                        <AvatarImage src={user.photoURL || undefined} />
-                                        <AvatarFallback>{user.displayName[0]}</AvatarFallback>
-                                    </Avatar>
-                                    <div className={cn("absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-card", statusBgColor[user.status || 'offline'])} />
-                                </div>
-                                <div className="flex-1 overflow-hidden -space-y-1 pb-1">
-                                    <p className="text-sm font-semibold truncate">{user.displayName}</p>
-                                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                                        {user.currentGame ? <Gamepad2 className="size-3"/> : null}
-                                        {user.currentGame ? `Playing ${user.currentGame.name}` : user.customStatus || user.status}
-                                    </p>
-                                </div>
+                            <div className="overflow-hidden">
+                                <p className="text-sm font-semibold truncate">{user.displayName}</p>
+                                <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                                    {user.currentGame ? <Gamepad2 className="size-3"/> : null}
+                                    {user.currentGame ? `Playing ${user.currentGame.name}` : user.customStatus || user.status}
+                                </p>
                             </div>
                         </div>
-                     </UserNav>
-                ))}
-                 {offlineUsers.map(user => (
-                    <UserNav key={user.id} user={user} as="trigger">
-                        <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                                <TooltipTrigger>
-                                     <div className="w-20 h-20 rounded-lg bg-card border overflow-hidden cursor-pointer group relative">
-                                         <Avatar className="size-20 rounded-lg">
-                                            <AvatarImage src={user.photoURL || undefined} />
-                                            <AvatarFallback className="text-2xl">{user.displayName[0]}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="absolute inset-0 bg-black/50" />
-                                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
-                                            <p className="text-xs font-semibold text-white truncate px-1 rounded-full bg-black/30">{user.displayName}</p>
-                                        </div>
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p className="font-semibold">{user.displayName}</p>
-                                    <p className="capitalize">{user.status}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </UserNav>
-                ))}
-            </div>
-            <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+                        <div className="flex items-center gap-1">
+                             <Button size="icon" variant="ghost" className="size-8 rounded-full"><MessageSquareMore className="size-5"/></Button>
+                             <Button size="icon" variant="ghost" className="size-8 rounded-full"><MoreVertical className="size-5"/></Button>
+                        </div>
+                    </div>
+                </UserNav>
+            ))}
+
+            <h3 className="uppercase text-xs font-bold text-muted-foreground my-2">Offline - {offlineUsers.length}</h3>
+            {offlineUsers.map(user => (
+                <UserNav key={user.id} user={user} as="trigger">
+                    <div className="w-full rounded-lg hover:bg-accent cursor-pointer group flex items-center justify-between p-2">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <Avatar className="size-8 rounded-full opacity-50">
+                                    <AvatarImage src={user.photoURL || undefined} />
+                                    <AvatarFallback>{user.displayName[0]}</AvatarFallback>
+                                </Avatar>
+                            </div>
+                            <div className="opacity-50">
+                                <p className="text-sm font-semibold truncate">{user.displayName}</p>
+                                <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                                    Offline
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                             <Button size="icon" variant="ghost" className="size-8 rounded-full"><MessageSquareMore className="size-5"/></Button>
+                             <Button size="icon" variant="ghost" className="size-8 rounded-full"><MoreVertical className="size-5"/></Button>
+                        </div>
+                    </div>
+                </UserNav>
+            ))}
+        </div>
     );
 }
+
+// Dummy imports for button icons
+import { MessageSquareMore, MoreVertical } from 'lucide-react';
