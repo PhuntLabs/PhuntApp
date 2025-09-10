@@ -99,7 +99,7 @@ export default function AddQolforuPage() {
         return (
              <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
                 <Starfield />
-                 <Card className="w-full max-w-md text-center bg-card/80 backdrop-blur-sm z-10">
+                 <Card className="w-full max-w-md text-center bg-card/60 backdrop-blur-sm z-10">
                     <CardHeader>
                         <CardTitle>Authentication Required</CardTitle>
                     </CardHeader>
@@ -119,7 +119,7 @@ export default function AddQolforuPage() {
     return (
         <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
             <Starfield />
-            <Card className="w-full max-w-md bg-card/80 backdrop-blur-sm z-10">
+            <Card className="w-full max-w-md bg-card/60 backdrop-blur-sm z-10">
                 <CardHeader className="items-center text-center">
                     <Avatar className="size-24 mb-4">
                         <AvatarImage src={QOLFORU_BOT_PHOTO_URL} />

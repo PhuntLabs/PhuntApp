@@ -34,7 +34,7 @@ export default function SignupPage() {
   };
 
   return (
-    <Card className="w-full bg-card/80 backdrop-blur-sm">
+    <Card className="w-full bg-card/60 backdrop-blur-sm">
       <CardHeader>
         <CardTitle>Sign Up</CardTitle>
         <CardDescription>Create an account to start chatting.</CardDescription>

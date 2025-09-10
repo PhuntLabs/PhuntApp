@@ -93,7 +93,7 @@ export default function PreviewPage() {
     if (authLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background">
-                <p>Loading user details...</p>
+                <Loader2 className="size-8 animate-spin" />
             </div>
         )
     }
@@ -101,7 +101,7 @@ export default function PreviewPage() {
     return (
         <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
             <Starfield />
-             <Card className="w-full max-w-md bg-card/80 backdrop-blur-sm z-10">
+             <Card className="w-full max-w-md bg-card/60 backdrop-blur-sm z-10">
                 <CardHeader className="items-center text-center">
                     <div className="p-4 rounded-full bg-primary/20 mb-4">
                         <Eye className="size-12 text-primary" />
