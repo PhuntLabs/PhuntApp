@@ -1,100 +1,132 @@
+
 'use client';
 
-import type { UserProfile } from '@/lib/types';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import Image from 'next/image';
-import { UserNav } from './user-nav';
-import { Gamepad2 } from 'lucide-react';
+import type { UserProfile, FriendRequest } from '@/lib/types';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '../ui/button';
-import { Separator } from '../ui/separator';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { Check, X } from 'lucide-react';
+import { UserNav } from './user-nav';
 
-const statusRingColor: Record<string, string> = {
-    online: 'ring-green-500',
-    idle: 'ring-yellow-500',
-    dnd: 'ring-red-500',
-    offline: 'ring-gray-500',
+
+interface ActiveNowListProps {
+  friends: UserProfile[];
+  pendingRequests: FriendRequest[];
+  onAcceptFriendRequest: (requestId: string, fromUser: {id: string, displayName: string}) => void;
+  onDeclineFriendRequest: (requestId: string) => void;
 }
 
-const statusBgColor: Record<string, string> = {
-    online: 'bg-green-500',
-    idle: 'bg-yellow-500',
-    dnd: 'bg-red-500',
-    offline: 'bg-gray-500',
-};
+export function ActiveNowList({ friends, pendingRequests, onAcceptFriendRequest, onDeclineFriendRequest }: ActiveNowListProps) {
+    const [activeTab, setActiveTab] = useState('online');
 
+    const onlineFriends = friends.filter(f => f.status && f.status !== 'offline');
+    const allFriends = friends;
+    
+    const renderList = () => {
+        let list: UserProfile[] = [];
+        let emptyStateTitle = "";
+        let emptyStateDescription = "";
 
-export function ActiveNowList({ users }: { users: UserProfile[] }) {
+        switch (activeTab) {
+            case 'online':
+                list = onlineFriends;
+                emptyStateTitle = "No one's around to play with Wumpus.";
+                emptyStateDescription = "";
+                break;
+            case 'all':
+                list = allFriends;
+                emptyStateTitle = "No Friends";
+                 emptyStateDescription = "Wumpus is waiting for friends. You don’t have to though!";
+                break;
+             case 'pending':
+                return (
+                    <div className="p-4">
+                        <h2 className="text-xs font-bold uppercase text-muted-foreground mb-2">Pending — {pendingRequests.length}</h2>
+                        {pendingRequests.length > 0 ? pendingRequests.map(req => (
+                            <div key={req.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-accent border-b">
+                                <div>
+                                    <p className="font-semibold">{req.from.displayName}</p>
+                                    <p className="text-xs text-muted-foreground">Incoming Friend Request</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                     <Button variant="ghost" size="icon" className="size-8 bg-green-500/20 text-green-500 rounded-full" onClick={() => onAcceptFriendRequest(req.id, req.from)}>
+                                        <Check className="size-4"/>
+                                    </Button>
+                                     <Button variant="ghost" size="icon" className="size-8 bg-red-500/20 text-red-500 rounded-full" onClick={() => onDeclineFriendRequest(req.id)}>
+                                        <X className="size-4"/>
+                                    </Button>
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="text-center text-muted-foreground py-10">
+                                <p>There are no pending friend requests. Here's Wumpus for now.</p>
+                            </div>
+                        )}
+                    </div>
+                );
+             case 'blocked':
+                return (
+                    <div className="text-center text-muted-foreground py-10 p-4">
+                        <p>You can't unblock users yet, but this is where they would show up!</p>
+                    </div>
+                )
+            default:
+                return null;
+        }
 
-    const onlineUsers = users.filter(u => u.status !== 'offline');
-    const offlineUsers = users.filter(u => u.status === 'offline');
-
-    if (users.length === 0) {
+        if (list.length === 0) {
+            return (
+                <div className="text-center text-muted-foreground py-10 p-4">
+                    <h3 className="font-semibold">{emptyStateTitle}</h3>
+                    <p>{emptyStateDescription}</p>
+                </div>
+            )
+        }
+        
         return (
-            <div className="text-center text-muted-foreground pt-10">
-                <p className="font-semibold">No friends yet...</p>
-                <p className="text-sm">Use the "Add Friend" button to start connecting!</p>
+            <div className="p-4">
+                <h2 className="text-xs font-bold uppercase text-muted-foreground mb-2">{activeTab} — {list.length}</h2>
+                {list.map(friend => (
+                     <UserNav key={friend.id} user={friend}>
+                        <div className="flex items-center justify-between p-2 rounded-lg hover:bg-accent border-b">
+                            <div>
+                                <p className="font-semibold">{friend.displayName}</p>
+                                <p className="text-xs text-muted-foreground">{friend.customStatus || friend.status}</p>
+                            </div>
+                        </div>
+                    </UserNav>
+                ))}
             </div>
         )
+
     }
 
     return (
-        <div className="w-full">
-            <h3 className="uppercase text-xs font-bold text-muted-foreground mb-2">Online - {onlineUsers.length}</h3>
-            {onlineUsers.map(user => (
-                <UserNav key={user.id} user={user} as="trigger">
-                    <div className="w-full rounded-lg hover:bg-accent cursor-pointer group flex items-center justify-between p-2">
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <Avatar className="size-8 rounded-full">
-                                    <AvatarImage src={user.photoURL || undefined} />
-                                    <AvatarFallback>{user.displayName[0]}</AvatarFallback>
-                                </Avatar>
-                                <div className={cn("absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-background", statusBgColor[user.status || 'offline'])} />
-                            </div>
-                            <div className="overflow-hidden">
-                                <p className="text-sm font-semibold truncate">{user.displayName}</p>
-                                <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                                    {user.currentGame ? <Gamepad2 className="size-3"/> : null}
-                                    {user.currentGame ? `Playing ${user.currentGame.name}` : user.customStatus || user.status}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                             <Button size="icon" variant="ghost" className="size-8 rounded-full"><MessageSquareMore className="size-5"/></Button>
-                             <Button size="icon" variant="ghost" className="size-8 rounded-full"><MoreVertical className="size-5"/></Button>
-                        </div>
-                    </div>
-                </UserNav>
-            ))}
-
-            <h3 className="uppercase text-xs font-bold text-muted-foreground my-2">Offline - {offlineUsers.length}</h3>
-            {offlineUsers.map(user => (
-                <UserNav key={user.id} user={user} as="trigger">
-                    <div className="w-full rounded-lg hover:bg-accent cursor-pointer group flex items-center justify-between p-2">
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <Avatar className="size-8 rounded-full opacity-50">
-                                    <AvatarImage src={user.photoURL || undefined} />
-                                    <AvatarFallback>{user.displayName[0]}</AvatarFallback>
-                                </Avatar>
-                            </div>
-                            <div className="opacity-50">
-                                <p className="text-sm font-semibold truncate">{user.displayName}</p>
-                                <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                                    Offline
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                             <Button size="icon" variant="ghost" className="size-8 rounded-full"><MessageSquareMore className="size-5"/></Button>
-                             <Button size="icon" variant="ghost" className="size-8 rounded-full"><MoreVertical className="size-5"/></Button>
-                        </div>
-                    </div>
-                </UserNav>
-            ))}
+        <div className="h-full flex flex-col">
+            <header className="p-4 border-b flex items-center shrink-0 gap-4">
+                <div className="font-semibold">Friends</div>
+                <div className="h-6 w-px bg-border"/>
+                <div className="flex items-center gap-2 text-sm">
+                    <Button variant="ghost" size="sm" onClick={() => setActiveTab('online')} className={cn(activeTab === 'online' && 'bg-accent')}>Online</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setActiveTab('all')} className={cn(activeTab === 'all' && 'bg-accent')}>All</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setActiveTab('pending')} className={cn(activeTab === 'pending' && 'bg-accent')}>Pending</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setActiveTab('blocked')} className={cn(activeTab === 'blocked' && 'bg-accent')}>Blocked</Button>
+                </div>
+                 <Button size="sm" className="bg-green-600 text-white hover:bg-green-700 ml-auto">Add Friend</Button>
+            </header>
+            <div className="flex flex-1 min-h-0">
+                <ScrollArea className="flex-1">
+                    {renderList()}
+                </ScrollArea>
+                <aside className="w-80 border-l p-4 space-y-4">
+                     <h2 className="text-xl font-bold">Active Now</h2>
+                     <div className="text-center py-10 text-muted-foreground">
+                        <p className="font-semibold">It's quiet for now...</p>
+                        <p className="text-sm">When a friend starts an activity—like playing a game or hanging out on voice—we’ll show it here!</p>
+                     </div>
+                </aside>
+            </div>
         </div>
     );
 }

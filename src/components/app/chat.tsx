@@ -1,41 +1,27 @@
 
-
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { User } from 'firebase/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import type { PopulatedChat, Message, UserProfile, Emoji, CustomEmoji, UserStatus } from '@/lib/types';
-import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck, Phone, Video, ChevronLeft, CircleDot, Moon, XCircle, Info, Grid3x3 } from 'lucide-react';
+import type { PopulatedChat, Message, UserProfile, UserStatus } from '@/lib/types';
+import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck, Phone, Video, ChevronLeft, CircleDot, Moon, XCircle, Info, Grid3x3, Users, Inbox } from 'lucide-react';
 import { UserNav } from './user-nav';
 import { cn } from '@/lib/utils';
-import { Badge } from '../ui/badge';
 import { format } from 'date-fns';
 import { MessageRenderer } from './message-renderer';
 import { ChatInput } from './chat-input';
 import { useTypingStatus } from '@/hooks/use-typing-status';
-import { useChat } from '@/hooks/use-chat';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import Image from 'next/image';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { useBadges } from '@/hooks/use-badges';
 import { useCallingStore } from '@/hooks/use-calling-store';
 import { useAuth } from '@/hooks/use-auth';
 import dynamic from 'next/dynamic';
-import { Separator } from '../ui/separator';
 
 const CallView = dynamic(() => import('@/components/app/call-view').then(mod => mod.CallView), {
   ssr: false,
 });
 
-
-const tagIcons = {
-    Sword, Zap, Car, Bike
-};
 
 const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType, color: string }> = {
     online: { label: 'Online', icon: CircleDot, color: 'bg-green-500' },
@@ -60,10 +46,8 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { handleTyping } = useTypingStatus(chat.id);
-  const { getBadgeDetails, getBadgeIcon } = useBadges();
   const { activeCall } = useCallingStore();
   
   const typingUsers = useMemo(() => {
@@ -120,8 +104,6 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   const chatName = otherMember?.displayName || chat.name || 'Chat';
   const chatAvatar = otherMember?.photoURL;
   const isBotChat = otherMember?.isBot;
-  const status = otherMember?.status || 'offline';
-  const { label: statusLabel, icon: StatusIcon, color: statusColor } = statusConfig[status];
   
   const isCallActiveInThisChat = activeCall && activeCall.chatId === chat.id;
 
@@ -146,44 +128,27 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
   }
 
   return (
-    <div className="flex h-full bg-background">
-      <div className={cn("flex flex-col h-full bg-background flex-1", isInfoOpen && 'hidden md:flex')}>
-        <header className="p-3 flex items-center gap-3 border-b bg-gradient-to-r from-card to-background">
-          {onBack && (
-              <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={onBack}>
-                  <ChevronLeft />
-              </Button>
-          )}
-          {sidebarTrigger}
-          <UserNav user={otherMember as UserProfile} as="trigger">
-              <div className="flex items-center gap-3 cursor-pointer flex-1">
-                  <div className="relative">
-                      <Avatar className="size-10">
-                        <AvatarImage src={chatAvatar || undefined} />
-                        <AvatarFallback>{chatName?.[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className={cn("absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-background", statusConfig[status].color)} />
-                  </div>
-                  <div className="flex flex-col -space-y-1">
-                    <h1 className="text-base font-semibold">{chatName}</h1>
-                    <p className="text-xs text-muted-foreground">{otherMember?.members?.length || 2} members</p>
-                  </div>
-              </div>
-          </UserNav>
+    <div className="flex flex-col h-full bg-background">
+      <header className="p-3 flex items-center gap-3 border-b flex-shrink-0">
+          <Avatar className="size-6">
+              <AvatarImage src={chatAvatar || undefined} />
+              <AvatarFallback>{chatName?.[0]}</AvatarFallback>
+          </Avatar>
+          <h1 className="text-base font-semibold">{chatName}</h1>
           <div className="ml-auto flex items-center gap-1">
               <Button variant="ghost" size="icon" onClick={handleCallClick}><Phone /></Button>
-              <Button variant="ghost" size="icon" onClick={() => setIsInfoOpen(!isInfoOpen)}><Info /></Button>
-              <Button variant="ghost" size="icon"><Grid3x3 /></Button>
+              <Button variant="ghost" size="icon" disabled><Video /></Button>
+              <Button variant="ghost" size="icon" disabled><Users /></Button>
+              <Button variant="ghost" size="icon" disabled><Inbox /></Button>
           </div>
-        </header>
+      </header>
         {isCallActiveInThisChat && (
             <div className="h-96">
               <CallView />
             </div>
-          )}
-        <div className="flex flex-1 flex-col h-full overflow-hidden">
+        )}
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
           <ScrollArea className="flex-1" ref={scrollAreaRef as any}>
-            <TooltipProvider>
             <div className="p-4 space-y-1">
               {messages.length === 0 ? (
                   <div className="flex flex-col justify-end items-start p-4 h-full">
@@ -199,59 +164,75 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
                     const sender = chat.members.find(m => m.id === message.sender) as UserProfile;
                     const isCurrentUser = message.sender === currentUser?.uid;
                     const isEditing = editingMessageId === message.id;
-                    const isMentioned = message.mentions?.includes(currentUser.uid);
 
                     const prevMessage = messages[index - 1];
-                    const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender || !!message.replyTo;
-                    
-                    if (!sender) return null;
+                    const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender || !!message.replyTo || (new Date((message.timestamp as any)?.toDate()).getTime() - new Date((prevMessage.timestamp as any)?.toDate()).getTime() > 5 * 60 * 1000);
 
-                    const isHeina = sender.displayName?.toLowerCase() === 'heina';
-                    
                     return (
-                      <div
-                        key={message.id}
-                        className={cn(
-                          "group relative flex flex-col",
-                          isCurrentUser ? "items-end" : "items-start",
-                          isFirstInGroup ? "mt-3" : "mt-0",
-                        )}
-                      >
-                       <div className={cn("flex gap-3 items-start", isCurrentUser && "flex-row-reverse")}>
-                          {isFirstInGroup && (
-                            <UserNav user={sender} as="trigger">
-                              <Avatar className="size-10 cursor-pointer mt-1">
-                                <AvatarImage src={sender?.photoURL || undefined} />
-                                <AvatarFallback>{sender?.displayName?.[0]}</AvatarFallback>
-                              </Avatar>
-                            </UserNav>
-                          )}
-                          <div 
+                        <div
+                            key={message.id}
                             className={cn(
-                              "p-3 rounded-2xl max-w-md",
-                              isCurrentUser ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card rounded-bl-none",
-                              !isFirstInGroup && (isCurrentUser ? "mr-14" : "ml-14")
+                                "group relative flex items-start gap-4 py-0.5 px-4 rounded-md hover:bg-foreground/5",
+                                isFirstInGroup ? "mt-4" : "mt-0"
                             )}
-                          >
-                               <MessageRenderer 
-                                  content={message.text} 
-                                  fileInfo={message.fileInfo}
-                                  embed={message.embed}
-                                  reactions={message.reactions}
-                                  messageId={message.id}
-                                  messageContext={{ type: 'dm', chatId: chat.id }}
-                                />
-                          </div>
-                       </div>
-                      </div>
+                        >
+                            {isFirstInGroup ? (
+                                <Avatar className="size-10 cursor-pointer">
+                                    <AvatarImage src={sender?.photoURL || undefined} />
+                                    <AvatarFallback>{sender?.displayName?.[0]}</AvatarFallback>
+                                </Avatar>
+                            ) : (
+                                <div className="w-10 flex-shrink-0 text-right text-xs text-muted-foreground/0 group-hover:text-muted-foreground/100">
+                                    {message.timestamp ? format((message.timestamp as any).toDate(), 'HH:mm') : ''}
+                                </div>
+                            )}
+                            <div className="flex-1 pt-1">
+                                {isFirstInGroup && (
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="font-semibold cursor-pointer hover:underline">{sender?.displayName}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {message.timestamp ? format((message.timestamp as any).toDate(), 'PPpp') : 'sending...'}
+                                        </span>
+                                    </div>
+                                )}
+                                {isEditing ? (
+                                    <div className="flex-1 py-1">
+                                        <ChatInput 
+                                            onSendMessage={(text) => handleSaveEdit(message.id)}
+                                            onTyping={() => {}}
+                                            placeholder="Edit message..."
+                                            members={[]}
+                                        />
+                                    </div>
+                                ) : (
+                                    <MessageRenderer 
+                                        content={message.text}
+                                        fileInfo={message.fileInfo}
+                                        embed={message.embed}
+                                        reactions={message.reactions}
+                                        messageId={message.id}
+                                        messageContext={{ type: 'dm', chatId: chat.id }}
+                                    />
+                                )}
+                                {message.edited && !isEditing && <span className="text-xs text-muted-foreground/70 ml-2">(edited)</span>}
+                            </div>
+                            {!isEditing && (
+                                <div className="absolute right-4 top-0 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md border p-0.5 shadow-md">
+                                    <Button variant="ghost" size="icon" className="size-6"><SmilePlus className="size-4" /></Button>
+                                    <Button variant="ghost" size="icon" className="size-6"><Reply className="size-4" /></Button>
+                                    {isCurrentUser && (
+                                        <Button variant="ghost" size="icon" className="size-6" onClick={() => handleEdit(message)}><Pencil className="size-4" /></Button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     )
                   })
               )}
             </div>
-            </TooltipProvider>
           </ScrollArea>
           <TypingIndicator />
-          <div className="p-2 md:p-4 border-t">
+          <div className="p-4 border-t flex-shrink-0">
               {replyingTo && (
                   <div className="flex items-center justify-between text-sm bg-secondary px-3 py-1.5 rounded-t-md -mb-1 mx-[-1px]">
                       <p className="text-muted-foreground">
@@ -270,35 +251,6 @@ export function Chat({ chat, messages, onSendMessage, onEditMessage, onDeleteMes
             />
           </div>
         </div>
-      </div>
-       {isInfoOpen && otherMember && (
-         <div className="w-80 border-l bg-card flex flex-col">
-            <div className="p-4 border-b text-center">
-              <Button variant="ghost" size="icon" className="absolute top-3 right-3" onClick={() => setIsInfoOpen(false)}><X/></Button>
-              <Avatar className="size-20 mx-auto">
-                <AvatarImage src={otherMember.photoURL || undefined} />
-                <AvatarFallback className="text-3xl">{otherMember.displayName[0]}</AvatarFallback>
-              </Avatar>
-              <h3 className="mt-2 text-lg font-semibold">{otherMember.displayName}</h3>
-              <p className="text-sm text-muted-foreground">{statusLabel}</p>
-            </div>
-            <div className="p-4 space-y-4">
-              <div>
-                <h4 className="font-semibold text-sm">Description</h4>
-                <p className="text-sm text-muted-foreground">{otherMember.bio || "No description provided."}</p>
-              </div>
-              <Separator />
-               <div>
-                <h4 className="font-semibold text-sm mb-2">Media</h4>
-                <div className="grid grid-cols-3 gap-1">
-                   <div className="aspect-square bg-muted rounded-md"/>
-                   <div className="aspect-square bg-muted rounded-md"/>
-                   <div className="aspect-square bg-muted rounded-md"/>
-                </div>
-              </div>
-            </div>
-         </div>
-       )}
     </div>
   );
 }

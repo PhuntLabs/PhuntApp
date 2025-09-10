@@ -9,12 +9,6 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Separator } from '../ui/separator';
 import { usePathname, useRouter } from 'next/navigation';
-import { Badge } from '../ui/badge';
-import { useAuth } from '@/hooks/use-auth';
-import { useChats } from '@/hooks/use-chats';
-import Image from 'next/image';
-import { useMobileView } from '@/hooks/use-mobile-view';
-import Link from 'next/link';
 
 interface ServersProps {
     servers: Server[];
@@ -28,32 +22,11 @@ interface ServersProps {
 export function Servers({ servers, loading, onCreateServer, selectedServer, onSelectServer, onSelectChat }: ServersProps) {
     const router = useRouter();
     const pathname = usePathname();
-    const { user, authUser } = useAuth();
-    const { isMobileView } = useMobileView();
     const isDiscoveryActive = pathname === '/discovery';
-    const isGamesActive = pathname.startsWith('/games');
-    const isMusicActive = pathname.startsWith('/music');
-
-    const { chats } = useChats(!!authUser);
-
-    const unreadChats = chats.filter(chat => 
-        chat.unreadCount && user && (chat.unreadCount[user.uid] || 0) > 0
-    );
 
     const handleSelectDMRoot = () => {
         if (pathname !== '/channels/me') router.push('/channels/me');
         onSelectServer(null);
-    }
-    
-    const handleSelectUnreadChat = (chat: PopulatedChat) => {
-        if (pathname !== '/channels/me') router.push('/channels/me');
-        onSelectServer(null);
-        onSelectChat(chat);
-    }
-
-    const handleSelectServer = (server: Server | null) => {
-        if (pathname !== '/channels/me') router.push('/channels/me');
-        onSelectServer(server);
     }
     
     if (loading) {
@@ -69,20 +42,20 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
     
     return (
         <TooltipProvider>
-            <div className="w-20 flex-shrink-0 h-full flex flex-col items-center py-3 gap-4 bg-secondary overflow-y-auto">
+            <div className="w-[72px] flex-shrink-0 h-full flex flex-col items-center py-3 gap-2 bg-secondary overflow-y-auto">
                 {/* Direct Messages Button */}
                 <Tooltip>
                     <TooltipTrigger asChild>
                          <button onClick={handleSelectDMRoot} className="relative group">
                             <div 
                                 className={cn(
-                                    "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-primary rounded-r-full transition-all duration-200",
-                                    !selectedServer && !isDiscoveryActive && !isGamesActive && !isMusicActive ? "h-9" : "group-hover:h-5"
+                                    "absolute -left-3 top-1/2 -translate-y-1/2 h-2 w-1 bg-white rounded-r-full transition-all duration-300",
+                                    !selectedServer ? "h-10" : "group-hover:h-5"
                                 )} 
                             />
                             <div className={cn(
                                 "size-12 rounded-full transition-all duration-200 bg-card flex items-center justify-center",
-                                !selectedServer && !isDiscoveryActive && !isGamesActive && !isMusicActive ? 'rounded-2xl bg-primary text-primary-foreground' : 'group-hover:rounded-2xl group-hover:bg-primary group-hover:text-primary-foreground'
+                                !selectedServer ? 'rounded-2xl bg-blue-600 text-white' : 'group-hover:rounded-2xl group-hover:bg-blue-600 group-hover:text-white'
                             )}>
                                 <MessageSquare className="size-6" />
                             </div>
@@ -95,32 +68,36 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
 
                 <Separator className="w-8 bg-border/50" />
                 
-                {servers.map((server) => (
-                    <Tooltip key={server.id}>
-                        <TooltipTrigger asChild>
-                            <button onClick={() => handleSelectServer(server)} className="relative group">
-                                <div 
-                                    className={cn(
-                                        "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-foreground rounded-r-full transition-all duration-200",
-                                        selectedServer?.id === server.id ? "h-9" : "group-hover:h-5"
-                                    )} 
-                                />
-                                <Avatar className={cn(
-                                    "size-12 rounded-full transition-all duration-200 bg-card",
-                                    selectedServer?.id === server.id ? 'rounded-2xl' : 'group-hover:rounded-2xl'
-                                )}>
-                                    <AvatarImage src={server.photoURL || undefined} alt={server.name} />
-                                    <AvatarFallback className="font-bold text-lg bg-transparent">
-                                        {server.name.charAt(0).toUpperCase()}
-                                    </AvatarFallback>
-                                </Avatar>
-                            </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                            <p>{server.name}</p>
-                        </TooltipContent>
-                    </Tooltip>
-                ))}
+                <ScrollArea className="flex-1 w-full">
+                    <div className="flex flex-col items-center gap-2">
+                    {servers.map((server) => (
+                        <Tooltip key={server.id}>
+                            <TooltipTrigger asChild>
+                                <button onClick={() => onSelectServer(server)} className="relative group">
+                                    <div 
+                                        className={cn(
+                                            "absolute -left-3 top-1/2 -translate-y-1/2 h-2 w-1 bg-white rounded-r-full transition-all duration-300",
+                                            selectedServer?.id === server.id ? "h-10" : "group-hover:h-5"
+                                        )} 
+                                    />
+                                    <Avatar className={cn(
+                                        "size-12 rounded-full transition-all duration-200 bg-card",
+                                        selectedServer?.id === server.id ? 'rounded-2xl' : 'group-hover:rounded-2xl'
+                                    )}>
+                                        <AvatarImage src={server.photoURL || undefined} alt={server.name} />
+                                        <AvatarFallback className="font-bold text-lg bg-transparent">
+                                            {server.name.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                                <p>{server.name}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    ))}
+                    </div>
+                </ScrollArea>
 
                  {/* Add Server Button */}
                 <Tooltip>
@@ -137,6 +114,21 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                     </TooltipTrigger>
                     <TooltipContent side="right">
                         <p>Add a Server</p>
+                    </TooltipContent>
+                </Tooltip>
+                 {/* Discovery Button */}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button className="group" onClick={() => router.push('/discovery')}>
+                            <Avatar className="size-12 rounded-full bg-card transition-all duration-200 group-hover:rounded-2xl group-hover:bg-green-600">
+                                <AvatarFallback className="text-green-400 group-hover:text-white transition-colors duration-200 bg-transparent">
+                                    <Compass size={24} />
+                                </AvatarFallback>
+                            </Avatar>
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                        <p>Explore Public Servers</p>
                     </TooltipContent>
                 </Tooltip>
             </div>

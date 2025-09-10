@@ -1,12 +1,11 @@
 
 'use client';
 
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState, useMemo, Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { AgoraRTCProvider } from 'agora-rtc-react';
 
 import { UserNav } from '@/components/app/user-nav';
 import { Chat } from '@/components/app/chat';
@@ -21,71 +20,23 @@ import { useServer } from '@/hooks/use-server';
 import { useChannels } from '@/hooks/use-channels';
 import { useChannelMessages } from '@/hooks/use-channel-messages';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
-import { PendingRequests } from '@/components/app/pending-requests';
-import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
 import { BOT_ID, BOT_USERNAME } from '@/ai/bots/config';
-import { AtSign, Mic, Settings, Loader2, Users, UserPlus, MessageCircle, Search } from 'lucide-react';
+import { Loader2, Mic, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServerSidebar } from '@/components/app/server-sidebar';
 import { MemberList } from '@/components/app/member-list';
 import { SettingsDialog } from '@/components/app/settings-dialog';
 import { UpdateLog } from '@/components/app/update-log';
-import { MentionsDialog } from '@/components/app/mentions-dialog';
 import { useMobileView } from '@/hooks/use-mobile-view';
 import { MobileLayout } from '@/components/app/mobile-layout';
 import { ErrorBoundary } from '@/components/app/error-boundary';
 import { useCallingStore } from '@/hooks/use-calling-store';
 import { IncomingCallNotification } from '@/components/app/incoming-call-notification';
-import Image from 'next/image';
-import { Separator } from '@/components/ui/separator';
 import { ActiveNowList } from '@/components/app/active-now-list';
-import { cn } from '@/lib/utils';
-import { AddUserDialog } from '@/components/app/add-user-dialog';
-import { Input } from '@/components/ui/input';
-
-
-const ActiveCallView = dynamic(() => import('@/components/app/active-call-view').then(mod => mod.ActiveCallView), {
-  ssr: false,
-});
-
-function NavigationEvents() {
-  const pathname = usePathname();
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const handleStart = () => setLoading(true);
-    const handleComplete = () => setLoading(false);
-    
-    // This is a simplified example. For a full implementation, you might need Next's navigation events.
-    // We'll use a timeout to simulate the end of loading for now.
-    const originalPush = history.pushState;
-    history.pushState = function(...args) {
-        handleStart();
-        originalPush.apply(this, args);
-        setTimeout(handleComplete, 1000); // Simulate loading time
-    }
-    
-    window.addEventListener('popstate', handleStart);
-    // You'd also need to handle when navigation is complete.
-    
-    // For this example, we'll just link it to pathname changes.
-     setLoading(true);
-     const timer = setTimeout(() => setLoading(false), 500); // simulate loading
-     return () => clearTimeout(timer);
-
-  }, [pathname]);
-
-  if (!loading) return null;
-
-  return (
-    <div className="fixed inset-0 bg-background/80 z-[200] flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
-        <Loader2 className="size-8 animate-spin text-primary" />
-    </div>
-  );
-}
 
 
 export default function AppRootPage() {
@@ -105,7 +56,6 @@ export default function AppRootPage() {
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [initialLoad, setInitialLoad] = useState(true);
-  const [dmView, setDmView] = useState('online');
 
   const { messages, sendMessage, editMessage, deleteMessage } = useChat(selectedChat);
   const { server, setServer, members, loading: serverDetailsLoading, updateServer, deleteServer } = useServer(selectedServer?.id);
@@ -170,12 +120,7 @@ export default function AppRootPage() {
     
     if (initialLoad && (!selectedChat || !chats.find(c => c.id === selectedChat.id)) && chats.length > 0 && !selectedServer) {
         if (!isMobileView) {
-            const mostRecentChat = chats.reduce((prev, current) => {
-                const prevTime = (prev.lastMessageTimestamp as any)?.toMillis() || (prev.createdAt as any)?.toMillis() || 0;
-                const currentTime = (current.lastMessageTimestamp as any)?.toMillis() || (current.createdAt as any)?.toMillis() || 0;
-                return (prevTime > currentTime) ? prev : current;
-            });
-            handleSelectChat(mostRecentChat);
+            handleSelectChat(chats[0]);
         }
     } else if (chats.length === 0 && !selectedServer && !isMobileView) {
         setSelectedChat(null);
@@ -220,55 +165,6 @@ export default function AppRootPage() {
     }
   }
 
-  const handleCreateChatWithBot = async () => {
-    if (!user) return;
-
-    try {
-        await handleSendFriendRequest(BOT_USERNAME);
-        toast({ title: "Friend Request Sent", description: `A request was sent to ${BOT_USERNAME}. It will accept automatically.`});
-
-    } catch (e: any) {
-        if (e.message.includes('already friends') || e.message.includes('already pending')) {
-             toast({ title: "You are already friends!", description: `You can already chat with ${BOT_USERNAME}.`})
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: e.message });
-        }
-    }
-  };
-
-  const handleAcceptFriendRequest = async (requestId: string, fromUser: { id: string, displayName: string }) => {
-     if (!authUser) return;
-    try {
-        await acceptFriendRequest(requestId, fromUser);
-        toast({ title: 'Friend Added!', description: `You and ${fromUser.displayName} are now friends.` });
-
-    } catch(e: any) {
-        toast({ variant: 'destructive', title: 'Error', description: e.message });
-    }
-  }
-
-  const handleDeclineFriendRequest = async (requestId: string) => {
-    try {
-        await declineFriendRequest(requestId);
-        toast({ title: 'Request Declined' });
-    } catch(e: any) {
-        toast({ variant: 'destructive', title: 'Error', description: e.message });
-    }
-  }
-
-  const handleDeleteChat = async (chatId: string) => {
-    try {
-        await deleteDoc(doc(db, 'chats', chatId));
-        removeChat(chatId); 
-        if (selectedChat?.id === chatId) {
-            setSelectedChat(null);
-        }
-        toast({title: 'Chat Removed'});
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Error', description: e.message });
-    }
-  }
-
   const handleCreateServer = async (name: string) => {
     try {
         const newServer = await createServer(name);
@@ -290,11 +186,7 @@ export default function AppRootPage() {
     
     if (server === null) {
       // If navigating to DMs from a server
-      const mostRecentUnread = getMostRecentUnreadChat;
-      if (mostRecentUnread) {
-        handleSelectChat(mostRecentUnread);
-      } else if (chats.length > 0) {
-        // Select the most recent chat if none are unread
+      if (chats.length > 0) {
         handleSelectChat(chats[0]);
       }
     }
@@ -309,16 +201,6 @@ export default function AppRootPage() {
   
   const handleSelectChannel = async (channel: Channel) => {
     setSelectedChannel(channel);
-  }
-
-  const handleDeleteServer = async (serverId: string) => {
-    try {
-      await deleteServer(serverId);
-      toast({ title: "Server Deleted" });
-      handleSelectServer(null);
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error Deleting Server', description: e.message });
-    }
   }
 
   const handleUpdateServer = async (serverId: string, data: Partial<Omit<Server, 'id'>>) => {
@@ -363,27 +245,6 @@ export default function AppRootPage() {
     }
   }
 
-  const handleJumpToMessage = (context: { type: 'dm', chatId: string } | { type: 'channel', serverId: string, channelId: string }) => {
-    if (context.type === 'dm') {
-      const chat = chats.find(c => c.id === context.chatId);
-      if (chat) {
-        handleSelectServer(null);
-        handleSelectChat(chat);
-      }
-    } else {
-      const serverToSelect = servers.find(s => s.id === context.serverId);
-      if (serverToSelect) {
-        handleSelectServer(serverToSelect);
-        // The channel data will be on the server object after the state updates
-        // We select it in an effect to ensure data consistency
-        const channelToSelect = serverToSelect.channels?.find(c => c.id === context.channelId);
-        if (channelToSelect) {
-            setSelectedChannel(channelToSelect);
-        }
-      }
-    }
-  };
-
   const allFriends = useMemo(() => chats
     .map(chat => chat.members.find(m => m.id !== user?.uid))
     .filter((member): member is UserProfile => !!member), [chats, user]);
@@ -396,18 +257,10 @@ export default function AppRootPage() {
       </div>
     );
   }
-  
-  const handleAcceptCall = async (call: any) => {
-      if (!user) return;
-      await acceptCall(call, user);
-  }
 
   return (
     <ErrorBoundary>
       <SidebarProvider>
-        <Suspense fallback={null}>
-            <NavigationEvents />
-        </Suspense>
         <UpdateLog />
         {incomingCall && <IncomingCallNotification />}
         {isMobileView ? (
@@ -429,10 +282,10 @@ export default function AppRootPage() {
                 onUpdateChannel={handleUpdateChannel}
                 onDeleteChannel={handleDeleteChannel}
                 onUpdateServer={handleUpdateServer}
-                onDeleteServer={handleDeleteServer}
+                onDeleteServer={deleteServer}
                 onAddUser={handleSendFriendRequest}
-                onAddBot={handleCreateChatWithBot}
-                onDeleteChat={handleDeleteChat}
+                onAddBot={() => {}}
+                onDeleteChat={() => {}}
                 // Message props
                 dmMessages={messages}
                 onSendDM={handleSendMessage}
@@ -444,69 +297,57 @@ export default function AppRootPage() {
                 onDeleteChannelMessage={deleteChannelMessage}
             />
         ) : (
-            <div className="flex h-screen bg-background">
+            <div className="flex h-screen bg-background text-sm">
                 <Servers 
-                servers={servers}
-                loading={serversLoading} 
-                onCreateServer={handleCreateServer} 
-                selectedServer={selectedServer}
-                onSelectServer={handleSelectServer}
-                onSelectChat={handleSelectChat}
+                    servers={servers}
+                    loading={serversLoading} 
+                    onCreateServer={handleCreateServer} 
+                    selectedServer={selectedServer}
+                    onSelectServer={handleSelectServer}
+                    onSelectChat={handleSelectChat}
                 />
                 
-                <div className="flex flex-1 min-w-0">
-                    <div className="w-64 flex-shrink-0 bg-card flex flex-col">
-                        <div className="flex-1 overflow-y-auto">
-                            {server ? (
-                            <ServerSidebar 
-                                server={server}
-                                channels={channels}
-                                members={members as UserProfile[]}
-                                selectedChannel={selectedChannel}
-                                onSelectChannel={handleSelectChannel}
-                                onCreateChannel={handleCreateChannel}
-                                onUpdateChannel={handleUpdateChannel}
-                                onDeleteChannel={handleDeleteChannel}
-                                onUpdateServer={handleUpdateServer}
-                                onDeleteServer={handleDeleteServer}
-                            />
-                            ) : (
-                            <div className="p-3">
-                                <div className="px-3 pb-3">
-                                     <div className="relative">
-                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                                        <Input placeholder="Search" className="bg-input pl-9 h-9" />
-                                    </div>
-                               </div>
-                               <DirectMessages
-                                    directMessages={chats}
-                                    selectedChat={selectedChat}
-                                    onSelectChat={handleSelectChat}
-                                    onAddUser={handleSendFriendRequest}
-                                    onAddBot={handleCreateChatWithBot}
-                                    onDeleteChat={handleDeleteChat}
-                                    loading={chatsLoading}
-                                />
-                            </div>
-                            )}
-                        </div>
-                        {activeCall && agoraClient ? (
-                            <ActiveCallView client={agoraClient} />
+                <div className="w-64 flex-shrink-0 bg-card flex flex-col">
+                    <div className="flex-1 overflow-y-auto">
+                        {server ? (
+                        <ServerSidebar 
+                            server={server}
+                            channels={channels}
+                            members={members as UserProfile[]}
+                            selectedChannel={selectedChannel}
+                            onSelectChannel={handleSelectChannel}
+                            onCreateChannel={handleCreateChannel}
+                            onUpdateChannel={handleUpdateChannel}
+                            onDeleteChannel={handleDeleteChannel}
+                            onUpdateServer={handleUpdateServer}
+                            onDeleteServer={deleteServer}
+                        />
                         ) : (
-                        <div className="bg-secondary p-2">
-                            <div className="p-1 bg-card rounded-lg flex items-center justify-between border border-border">
-                                <UserNav user={user} as="button" />
-                                <div className="flex items-center">
-                                    <SettingsDialog>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <Settings className="size-5" />
-                                        </Button>
-                                    </SettingsDialog>
-                                </div>
-                            </div>
-                        </div>
+                        <DirectMessages
+                            directMessages={chats}
+                            selectedChat={selectedChat}
+                            onSelectChat={handleSelectChat}
+                            onAddUser={handleSendFriendRequest}
+                            loading={chatsLoading}
+                        />
                         )}
                     </div>
+                     <div className="bg-secondary p-2">
+                        <div className="p-1 bg-card rounded-lg flex items-center justify-between">
+                            <UserNav user={user} as="button" />
+                            <div className="flex items-center">
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Mic className="size-5" />
+                                </Button>
+                                <SettingsDialog>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <Settings className="size-5" />
+                                    </Button>
+                                </SettingsDialog>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                  <div className="flex-1 flex flex-col bg-background min-w-0">
                     {server && selectedChannel && authUser ? (
@@ -528,9 +369,8 @@ export default function AppRootPage() {
                     ) : server ? (
                     <div className="flex flex-1 items-center justify-center h-full">
                         <div className="text-center">
-                        <h2 className="text-xl font-medium text-foreground">{`Welcome to ${server.name}`}</h2>
-                        <p className="text-muted-foreground">Select a channel to start talking.</p>
-
+                            <h2 className="text-xl font-medium text-foreground">{`Welcome to ${server.name}`}</h2>
+                            <p className="text-muted-foreground">Select a channel to start talking.</p>
                         </div>
                     </div>
                     ) : selectedChat && user ? (
@@ -544,25 +384,14 @@ export default function AppRootPage() {
                         onInitiateCall={(callee) => initCall(user, callee, selectedChat.id)}
                     />
                     ) : (
-                    <div className="flex flex-col flex-1 h-full">
-                         <div className="p-4 border-b flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                    <Users />
-                                    <h2 className="font-semibold">Friends</h2>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="icon"><MentionsDialog onJumpToMessage={handleJumpToMessage}><AtSign className="size-4"/></MentionsDialog></Button>
-                            </div>
-                         </div>
-                         <div className="flex-1 p-4">
-                            <ActiveNowList users={allFriends} />
-                         </div>
-                    </div>
+                        <ActiveNowList 
+                            friends={allFriends}
+                            pendingRequests={incomingRequests}
+                            onAcceptFriendRequest={acceptFriendRequest}
+                            onDeclineFriendRequest={declineFriendRequest}
+                        />
                     )}
                  </div>
-                </div>
             </div>
         )}
       </SidebarProvider>

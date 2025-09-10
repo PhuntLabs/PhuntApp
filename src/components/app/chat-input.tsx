@@ -18,8 +18,6 @@ import { executeSlashCommand, SlashCommandOutput } from '@/ai/flows/slash-comman
 import { useMobileView } from '@/hooks/use-mobile-view';
 import { cn } from '@/lib/utils';
 import { Input } from '../ui/input';
-import { uploadFile } from '@/ai/flows/upload-file-flow';
-
 
 const standardEmojis: Emoji[] = [
     { name: "grinning", char: "😀", keywords: ["happy", "joy", "smile"] },
@@ -291,7 +289,7 @@ export function ChatInput({
     };
 
     const AutocompletePopover = () => (
-        <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border rounded-lg shadow-lg p-2 max-h-60 overflow-y-auto z-10">
+        <div className="absolute bottom-full left-0 right-0 mb-2 bg-popover border rounded-lg shadow-lg p-2 max-h-60 overflow-y-auto z-10">
            {autocompleteType === 'mention' && (
                 <div className="space-y-1">
                     {filteredMembers.map(member => (
@@ -359,7 +357,7 @@ export function ChatInput({
                     </Button>
                 </div>
             )}
-            <div className="flex items-center gap-2 bg-input p-1 rounded-xl">
+            <div className="flex items-start gap-2 bg-muted p-2 rounded-xl">
                  <input
                     type="file"
                     ref={fileInputRef}
@@ -375,7 +373,7 @@ export function ChatInput({
                     onClick={() => fileInputRef.current?.click()}
                     disabled={disabled || isSubmitting}
                 >
-                    <Paperclip className="size-5 text-muted-foreground"/>
+                    <Plus className="size-5 text-muted-foreground bg-accent rounded-full p-0.5"/>
                 </Button>
                 <Textarea
                     ref={inputRef}
@@ -427,8 +425,7 @@ export function ChatInput({
                             </Tabs>
                         </PopoverContent>
                     </Popover>
-
-                    <Button type="submit" size="icon" className="size-9" disabled={disabled || isSubmitting || (text.trim() === '' && !attachment)}>
+                     <Button type="submit" size="icon" className="size-9" disabled={disabled || isSubmitting || (text.trim() === '' && !attachment)}>
                         <Send className="size-4" />
                     </Button>
                 </div>
