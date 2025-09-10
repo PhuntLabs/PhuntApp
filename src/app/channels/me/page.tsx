@@ -404,6 +404,7 @@ export default function AppRootPage() {
 
   return (
     <ErrorBoundary>
+      <SidebarProvider>
         <Suspense fallback={null}>
             <NavigationEvents />
         </Suspense>
@@ -564,6 +565,7 @@ export default function AppRootPage() {
                 </div>
             </div>
         )}
+      </SidebarProvider>
     </ErrorBoundary>
   );
 }
