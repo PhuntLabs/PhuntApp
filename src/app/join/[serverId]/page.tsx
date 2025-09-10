@@ -12,6 +12,46 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, CheckCircle, XCircle } from 'lucide-react';
 import { useServers } from '@/hooks/use-servers';
 
+const Starfield = () => {
+    const [stars, setStars] = useState<React.ReactNode[]>([]);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    useEffect(() => {
+        if (isClient) {
+            const generateStars = () => {
+                const newStars = [...Array(100)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="absolute bg-white rounded-full star"
+                        style={{
+                            top: `${Math.random() * 100}%`,
+                            left: `${Math.random() * 100}%`,
+                            width: `${Math.random() * 2 + 1}px`,
+                            height: `${Math.random() * 2 + 1}px`,
+                            animationDelay: `${Math.random() * 5}s`,
+                            animationDuration: `${2 + Math.random() * 3}s`,
+                        }}
+                    />
+                ));
+                setStars(newStars);
+            };
+            generateStars();
+        }
+    }, [isClient]);
+
+    if (!isClient) return null;
+
+    return (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {stars}
+        </div>
+    );
+};
+
 export default function JoinServerPage() {
     const { serverId } = useParams() as { serverId: string };
     const { server, loading: serverLoading, joinServer } = useServer(serverId);
@@ -63,8 +103,9 @@ export default function JoinServerPage() {
 
     if (!server) {
          return (
-            <div className="flex min-h-screen items-center justify-center bg-background">
-                <Card className="w-full max-w-md text-center">
+            <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
+                <Starfield />
+                <Card className="w-full max-w-md text-center bg-card/80 backdrop-blur-sm z-10">
                      <CardHeader>
                         <CardTitle className="text-destructive">Server Not Found</CardTitle>
                     </CardHeader>
@@ -80,8 +121,9 @@ export default function JoinServerPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-4">
-             <Card className="w-full max-w-md">
+        <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
+            <Starfield />
+             <Card className="w-full max-w-md bg-card/80 backdrop-blur-sm z-10">
                 <CardHeader className="items-center text-center">
                     <Avatar className="h-24 w-24 rounded-2xl mb-4">
                         <AvatarImage src={server.photoURL || undefined} alt={server.name}/>

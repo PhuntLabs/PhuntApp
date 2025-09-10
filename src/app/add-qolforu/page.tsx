@@ -1,20 +1,61 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useServers } from '@/hooks/use-servers';
 import { useServer } from '@/hooks/use-server';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ensureQolforuBotUser } from '@/ai/flows/qolforu-bot-flow';
 import { QOLFORU_BOT_PHOTO_URL } from '@/ai/bots/qolforu-config';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+
+const Starfield = () => {
+    const [stars, setStars] = useState<React.ReactNode[]>([]);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    useEffect(() => {
+        if (isClient) {
+            const generateStars = () => {
+                const newStars = [...Array(100)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="absolute bg-white rounded-full star"
+                        style={{
+                            top: `${Math.random() * 100}%`,
+                            left: `${Math.random() * 100}%`,
+                            width: `${Math.random() * 2 + 1}px`,
+                            height: `${Math.random() * 2 + 1}px`,
+                            animationDelay: `${Math.random() * 5}s`,
+                            animationDuration: `${2 + Math.random() * 3}s`,
+                        }}
+                    />
+                ));
+                setStars(newStars);
+            };
+            generateStars();
+        }
+    }, [isClient]);
+
+    if (!isClient) return null;
+
+    return (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {stars}
+        </div>
+    );
+};
+
 
 export default function AddQolforuPage() {
     const { user, authUser, loading: authLoading } = useAuth();
@@ -56,8 +97,9 @@ export default function AddQolforuPage() {
     
     if (!authUser) {
         return (
-             <div className="flex min-h-screen items-center justify-center">
-                 <Card className="w-full max-w-md text-center">
+             <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
+                <Starfield />
+                 <Card className="w-full max-w-md text-center bg-card/80 backdrop-blur-sm z-10">
                     <CardHeader>
                         <CardTitle>Authentication Required</CardTitle>
                     </CardHeader>
@@ -75,8 +117,9 @@ export default function AddQolforuPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-4">
-            <Card className="w-full max-w-md">
+        <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
+            <Starfield />
+            <Card className="w-full max-w-md bg-card/80 backdrop-blur-sm z-10">
                 <CardHeader className="items-center text-center">
                     <Avatar className="size-24 mb-4">
                         <AvatarImage src={QOLFORU_BOT_PHOTO_URL} />
