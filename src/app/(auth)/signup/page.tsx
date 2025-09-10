@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { MessageSquare } from 'lucide-react';
 
 export default function SignupPage() {
   const [username, setUsername] = useState('');
@@ -34,37 +35,36 @@ export default function SignupPage() {
   };
 
   return (
-    <Card className="w-full bg-card/30 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle>Sign Up</CardTitle>
-        <CardDescription>Create an account to start chatting.</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Card className="w-full max-w-lg bg-card/80 backdrop-blur-md border-white/10 mx-auto">
+       <CardContent className="p-8 md:p-12">
+         <div className="text-center mb-8">
+            <CardTitle className="text-3xl">Create an account</CardTitle>
+         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
            <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username" className="text-xs font-bold uppercase text-muted-foreground">Username</Label>
             <Input
               id="username"
               type="text"
-              placeholder="Your unique username"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              className="bg-secondary/50 border-border"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-xs font-bold uppercase text-muted-foreground">Email</Label>
             <Input
               id="email"
               type="email"
-              placeholder="m@example.com"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="bg-secondary/50 border-border"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-xs font-bold uppercase text-muted-foreground">Password</Label>
             <Input
               id="password"
               type="password"
@@ -72,18 +72,18 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={6}
+              className="bg-secondary/50 border-border"
             />
           </div>
-          <Button type="submit" className="w-full">
-            Sign Up
+          <Button type="submit" className="w-full h-11 text-base">
+            Continue
           </Button>
+           <div className="text-sm text-muted-foreground pt-2">
+            <Link href="/login" className="text-primary hover:underline">
+              Already have an account?
+            </Link>
+          </div>
         </form>
-        <div className="mt-4 text-center text-sm">
-          Already have an account?{' '}
-          <Link href="/login" className="underline">
-            Login
-          </Link>
-        </div>
       </CardContent>
     </Card>
   );

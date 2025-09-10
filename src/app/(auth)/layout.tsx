@@ -43,6 +43,14 @@ const Starfield = () => {
     );
 };
 
+const Orbits = () => (
+    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+        <div className="w-[800px] h-[800px] absolute rounded-full border border-white/10 animate-spin-slow"/>
+        <div className="w-[600px] h-[600px] absolute rounded-full border border-white/5 animate-spin-slow-reverse"/>
+        <div className="w-[400px] h-[400px] absolute rounded-full border border-white/10 animate-spin-slow"/>
+    </div>
+)
+
 
 export default function AuthLayout({
   children,
@@ -50,11 +58,13 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-background overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
       <Starfield />
-      <div className="relative z-10 w-full max-w-md p-4">
+      <Orbits />
+      <div className="relative z-10 w-full">
         {children}
       </div>
     </div>
   );
 }
+
