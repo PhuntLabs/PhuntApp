@@ -436,7 +436,7 @@ export default function AppRootPage() {
         ) : (
             <SidebarProvider>
             
-            <div className="flex h-screen bg-background/70">
+            <div className="flex h-screen bg-secondary">
                 <Servers 
                 servers={servers}
                 loading={serversLoading} 
@@ -447,7 +447,7 @@ export default function AppRootPage() {
                 />
                 
                 <div className="flex flex-1 min-w-0">
-                <div className="w-64 flex-shrink-0 bg-secondary/30 flex flex-col hidden md:flex">
+                <div className="w-64 flex-shrink-0 bg-card flex flex-col hidden md:flex">
                     <div className="flex-1 overflow-y-auto">
                         {server ? (
                         <ServerSidebar 
@@ -497,7 +497,7 @@ export default function AppRootPage() {
                     {activeCall && agoraClient ? (
                         <ActiveCallView client={agoraClient} />
                     ) : (
-                    <div className="bg-background/50 p-2 border-t border-border">
+                    <div className="bg-secondary p-2 border-t border-border">
                         <div className="flex items-center justify-between">
                         <UserNav user={user} logout={logout}/>
                         <div className="flex items-center gap-1">
@@ -511,7 +511,7 @@ export default function AppRootPage() {
                     )}
                 </div>
                 
-                <main className="flex-1 flex flex-col bg-background/50 min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
+                <main className="flex-1 flex flex-col bg-background min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
                     {server && selectedChannel && authUser ? (
                     <ChannelChat 
                         channel={selectedChannel} 
@@ -524,7 +524,7 @@ export default function AppRootPage() {
                         onDeleteMessage={deleteChannelMessage}
                     />
                     ) : server ? (
-                    <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
+                    <div className="flex flex-1 items-center justify-center h-full bg-background">
                         <div className="text-center">
                         <h2 className="text-xl font-medium text-foreground">{`Welcome to ${server.name}`}</h2>
                         <p className="text-muted-foreground">Select a channel to start talking.</p>
@@ -542,7 +542,7 @@ export default function AppRootPage() {
                         onInitiateCall={(callee) => initCall(user, callee, selectedChat.id)}
                     />
                     ) : (
-                    <div className="flex flex-1 items-center justify-center h-full bg-muted/20">
+                    <div className="flex flex-1 items-center justify-center h-full bg-background">
                         <div className="text-center">
                         <h2 className="text-xl font-medium text-foreground">No Chat Selected</h2>
                         <p className="text-muted-foreground">Select a conversation from the sidebar or add a friend to start chatting.</p>
