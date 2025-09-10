@@ -71,22 +71,6 @@ export function SecuritySettings() {
         setIsGenerating(false);
     }
   };
-
-  const handlePasswordReset = async () => {
-    try {
-      await sendPasswordReset();
-      toast({
-        title: 'Password Reset Email Sent',
-        description: 'Check your inbox for instructions to reset your password.',
-      });
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to Send Email',
-        description: error.message,
-      });
-    }
-  };
   
   const handleVerify = async () => {
       setIsVerifying(true);
@@ -123,7 +107,7 @@ export function SecuritySettings() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold">Security</h2>
+      <h2 className="text-2xl font-bold">Privacy & Safety</h2>
       <p className="text-muted-foreground">Manage your account's security settings.</p>
 
        <Card className="mt-6">
@@ -198,27 +182,6 @@ export function SecuritySettings() {
                 )}
             </CardFooter>
       </Card>
-      
-       {isMobileView && (
-            <Card className="mt-6 border-destructive/50">
-                <CardHeader>
-                    <CardTitle>Password</CardTitle>
-                    <CardDescription>
-                        To change your password, send a reset link to your email.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button variant="secondary" onClick={handlePasswordReset}>
-                        <MailWarning className="mr-2 size-4"/>
-                        Send Password Reset Email
-                    </Button>
-                </CardContent>
-            </Card>
-        )}
     </div>
   );
 }
-
-    
-
-    

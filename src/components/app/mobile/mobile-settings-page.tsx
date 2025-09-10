@@ -19,23 +19,25 @@ import { Input } from '@/components/ui/input';
 
 type SectionId = 'account' | 'profiles' | 'connections' | 'game-activity' | 'security' | 'theme' | 'developer' | 'bugs' | 'notifications' | 'privacy' | 'family' | 'authorized-apps' | 'devices' | 'clips' | 'qr' | 'shop' | 'quests';
 
-const appSettings = [
-    { id: 'theme', label: 'Appearance', icon: Paintbrush, component: ThemeSettings },
-    { id: 'notifications', label: 'Notifications', icon: Bell, component: NotificationsSettings },
-    { id: 'connections', label: 'Connections', icon: Link2, component: ConnectionsSettings },
-];
+const userSettingsSections = [
+  { id: 'account', label: 'My Account', icon: User, component: AccountSettings },
+  { id: 'profiles', label: 'Profiles', icon: Sparkles, component: ProfileSettings },
+  { id: 'security', label: 'Privacy & Safety', icon: Shield, component: SecuritySettings },
+  { id: 'connections', label: 'Connections', icon: Link2, component: ConnectionsSettings },
+] as const;
 
-const activitySettings = [
-     { id: 'game-activity', label: 'Activity Status', icon: Gamepad, component: GameActivitySettings },
+const appSettingsSections = [
+  { id: 'theme', label: 'Appearance', icon: Paintbrush, component: ThemeSettings },
+  { id: 'notifications', label: 'Notifications', icon: Bell, component: NotificationsSettings },
+  { id: 'game-activity', label: 'Game Activity', icon: Gamepad, component: GameActivitySettings },
 ];
 
 const debugSettings = [
-     { id: 'security', label: 'Security & Password', icon: Shield, component: SecuritySettings },
      { id: 'developer', label: 'Developer', icon: Code, component: DeveloperSettings },
      { id: 'bugs', label: 'Bugs & Feedback', icon: Bug, component: BugReportSettings },
 ]
 
-const allSettings = [...appSettings, ...activitySettings, ...debugSettings];
+const allSettings = [...userSettingsSections, ...appSettingsSections, ...debugSettings];
 
 
 export function MobileSettingsPage() {
@@ -97,9 +99,9 @@ export function MobileSettingsPage() {
                         <ScrollArea className="flex-1 px-4">
                             <nav className="flex flex-col gap-4">
                                 <div className="space-y-1">
-                                    <h2 className="text-sm font-semibold text-muted-foreground px-3">App Settings</h2>
+                                    <h2 className="text-sm font-semibold text-muted-foreground px-3">User Settings</h2>
                                      <div className="bg-card rounded-xl p-2 space-y-1">
-                                        {appSettings.map(section => (
+                                        {userSettingsSections.map(section => (
                                             <button 
                                                 key={section.id} 
                                                 onClick={() => handleSelectSection(section.id as SectionId)}
@@ -115,9 +117,9 @@ export function MobileSettingsPage() {
                                     </div>
                                 </div>
                                  <div className="space-y-1">
-                                    <h2 className="text-sm font-semibold text-muted-foreground px-3">Activity Settings</h2>
+                                    <h2 className="text-sm font-semibold text-muted-foreground px-3">App Settings</h2>
                                      <div className="bg-card rounded-xl p-2 space-y-1">
-                                        {activitySettings.map(section => (
+                                        {appSettingsSections.map(section => (
                                             <button 
                                                 key={section.id} 
                                                 onClick={() => handleSelectSection(section.id as SectionId)}
