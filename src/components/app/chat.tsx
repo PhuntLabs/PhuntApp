@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { PopulatedChat, Message, UserProfile, Emoji, CustomEmoji, UserStatus } from '@/lib/types';
-import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck, Phone, Video, ChevronLeft } from 'lucide-react';
+import { Send, Trash2, Pencil, Bot, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck, Phone, Video, ChevronLeft, CircleDot, Moon, XCircle } from 'lucide-react';
 import { UserNav } from './user-nav';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
