@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -123,26 +122,26 @@ export default function JoinServerPage() {
     return (
         <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
             <Starfield />
-             <Card className="w-full max-w-md bg-card/30 backdrop-blur-sm z-10">
-                <CardHeader className="items-center text-center">
-                    <Avatar className="h-24 w-24 rounded-2xl mb-4">
+             <Card className="w-full max-w-md bg-card z-10 text-center">
+                <CardHeader className="items-center text-center pt-8">
+                     <Avatar className="h-20 w-20 rounded-2xl mb-4">
                         <AvatarImage src={server.photoURL || undefined} alt={server.name}/>
-                        <AvatarFallback className="text-4xl">{server.name[0]}</AvatarFallback>
+                        <AvatarFallback className="text-3xl rounded-2xl">{server.name[0]}</AvatarFallback>
                     </Avatar>
-                    <CardDescription>You have been invited to join</CardDescription>
-                    <CardTitle className="text-3xl">{server.name}</CardTitle>
+                    <CardDescription className="text-base text-muted-foreground">You have been invited to join</CardDescription>
+                    <CardTitle className="text-3xl font-bold">{server.name}</CardTitle>
                 </CardHeader>
-                <CardContent className="flex items-center justify-center gap-6 text-muted-foreground">
+                <CardContent className="flex items-center justify-center gap-6 text-muted-foreground pb-8">
                      <div className="flex items-center gap-2">
-                        <CheckCircle className="size-4 text-green-500"/>
+                        <div className="size-2.5 rounded-full bg-green-500" />
+                        <span>{server.members.length} Online</span>
+                    </div>
+                     <div className="flex items-center gap-2">
+                        <div className="size-2.5 rounded-full bg-gray-500" />
                         <span>{server.members.length} Members</span>
                     </div>
-                     <div className="flex items-center gap-2">
-                        <XCircle className="size-4 text-red-500"/>
-                        <span>? Online</span>
-                    </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="p-4 bg-secondary/50">
                     <Button onClick={handleJoin} className="w-full" size="lg" disabled={isJoining || isMember}>
                        {isMember ? "Already Joined" : isJoining ? "Joining..." : "Accept Invite"}
                     </Button>
