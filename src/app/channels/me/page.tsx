@@ -4,8 +4,8 @@
 
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { AgoraRTCProvider } from 'agora-rtc-react';
 
@@ -47,6 +47,43 @@ import { Progress } from '@/components/ui/progress';
 const ActiveCallView = dynamic(() => import('@/components/app/active-call-view').then(mod => mod.ActiveCallView), {
   ssr: false,
 });
+
+function NavigationEvents() {
+  const pathname = usePathname();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const handleStart = () => setLoading(true);
+    const handleComplete = () => setLoading(false);
+    
+    // This is a simplified example. For a full implementation, you might need Next's navigation events.
+    // We'll use a timeout to simulate the end of loading for now.
+    const originalPush = history.pushState;
+    history.pushState = function(...args) {
+        handleStart();
+        originalPush.apply(this, args);
+        setTimeout(handleComplete, 1000); // Simulate loading time
+    }
+    
+    window.addEventListener('popstate', handleStart);
+    // You'd also need to handle when navigation is complete.
+    
+    // For this example, we'll just link it to pathname changes.
+     setLoading(true);
+     const timer = setTimeout(() => setLoading(false), 500); // simulate loading
+     return () => clearTimeout(timer);
+
+  }, [pathname]);
+
+  if (!loading) return null;
+
+  return (
+    <div className="fixed inset-0 bg-background/80 z-[200] flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
+        <Image src="https://phuntapp.netlify.app/icons/icon-512x512.png" alt="Phunt Logo" width={128} height={128} />
+        <Loader2 className="size-8 animate-spin text-primary" />
+    </div>
+  );
+}
 
 
 export default function AppRootPage() {
@@ -372,6 +409,9 @@ export default function AppRootPage() {
 
   return (
     <ErrorBoundary>
+        <Suspense fallback={null}>
+            <NavigationEvents />
+        </Suspense>
         <UpdateLog />
         {incomingCall && <IncomingCallNotification />}
         {isMobileView ? (

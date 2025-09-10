@@ -33,7 +33,7 @@ export default function LoginPage() {
   };
 
   return (
-    <Card className="w-full bg-card/60 backdrop-blur-sm">
+    <Card className="w-full bg-card/30 backdrop-blur-sm">
       <CardHeader>
         <CardTitle>Login</CardTitle>
         <CardDescription>Enter your credentials to access your account.</CardDescription>

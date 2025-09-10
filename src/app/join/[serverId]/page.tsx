@@ -105,7 +105,7 @@ export default function JoinServerPage() {
          return (
             <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
                 <Starfield />
-                <Card className="w-full max-w-md text-center bg-card/60 backdrop-blur-sm z-10">
+                <Card className="w-full max-w-md text-center bg-card/30 backdrop-blur-sm z-10">
                      <CardHeader>
                         <CardTitle className="text-destructive">Server Not Found</CardTitle>
                     </CardHeader>
@@ -123,7 +123,7 @@ export default function JoinServerPage() {
     return (
         <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
             <Starfield />
-             <Card className="w-full max-w-md bg-card/60 backdrop-blur-sm z-10">
+             <Card className="w-full max-w-md bg-card/30 backdrop-blur-sm z-10">
                 <CardHeader className="items-center text-center">
                     <Avatar className="h-24 w-24 rounded-2xl mb-4">
                         <AvatarImage src={server.photoURL || undefined} alt={server.name}/>
