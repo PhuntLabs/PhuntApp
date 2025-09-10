@@ -27,7 +27,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
 import { BOT_ID, BOT_USERNAME } from '@/ai/bots/config';
-import { AtSign, Mic, Settings, Loader2, Users, UserPlus } from 'lucide-react';
+import { AtSign, Mic, Settings, Loader2, Users, UserPlus, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServerSidebar } from '@/components/app/server-sidebar';
 import { MemberList } from '@/components/app/member-list';
@@ -43,6 +43,7 @@ import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import { ActiveNowList } from '@/components/app/active-now-list';
 import { cn } from '@/lib/utils';
+import { AddUserDialog } from '@/components/app/add-user-dialog';
 
 
 const ActiveCallView = dynamic(() => import('@/components/app/active-call-view').then(mod => mod.ActiveCallView), {
@@ -443,7 +444,7 @@ export default function AppRootPage() {
         ) : (
             <SidebarProvider>
             
-            <div className="flex h-screen bg-card">
+            <div className="flex h-screen bg-background">
                 <Servers 
                 servers={servers}
                 loading={serversLoading} 
@@ -454,7 +455,7 @@ export default function AppRootPage() {
                 />
                 
                 <div className="flex flex-1 min-w-0">
-                <div className="w-64 flex-shrink-0 bg-background flex flex-col hidden md:flex">
+                <div className="w-64 flex-shrink-0 bg-secondary flex flex-col">
                     <div className="flex-1 overflow-y-auto">
                         {server ? (
                         <ServerSidebar 
@@ -470,8 +471,11 @@ export default function AppRootPage() {
                             onDeleteServer={handleDeleteServer}
                         />
                         ) : (
-                        <div className="p-4">
-                            <DirectMessages
+                        <div className="p-2">
+                           <div className="p-2">
+                                <Button variant="ghost" className="w-full justify-start h-11"><MessageCircle className="mr-2"/> Friends</Button>
+                           </div>
+                           <DirectMessages
                                 directMessages={chats}
                                 selectedChat={selectedChat}
                                 onSelectChat={handleSelectChat}
@@ -486,21 +490,13 @@ export default function AppRootPage() {
                     {activeCall && agoraClient ? (
                         <ActiveCallView client={agoraClient} />
                     ) : (
-                    <div className="bg-secondary p-2 border-t border-border">
-                        <div className="flex items-center justify-between">
+                    <div className="bg-background/30 p-2">
                         <UserNav user={user} logout={logout}/>
-                        <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Mic className="size-4"/></Button>
-                            <SettingsDialog>
-                                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground"><Settings className="size-4"/></Button>
-                            </SettingsDialog>
-                        </div>
-                        </div>
                     </div>
                     )}
                 </div>
                 
-                 <div className="flex-1 flex flex-col bg-card min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
+                 <div className="flex-1 flex flex-col bg-background min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
                     {server && selectedChannel && authUser ? (
                      <div className="flex flex-1 min-h-0">
                         <main className="flex-1 flex flex-col min-w-0">
@@ -544,16 +540,18 @@ export default function AppRootPage() {
                                     <h2 className="font-semibold">Friends</h2>
                                 </div>
                                 <Separator orientation="vertical" className="h-6"/>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 text-sm">
                                      <Button variant="ghost" size="sm" className={cn(dmView === 'online' && "bg-accent")}>Online</Button>
                                      <Button variant="ghost" size="sm" className={cn(dmView === 'all' && "bg-accent")}>All</Button>
                                      <Button variant="ghost" size="sm" className={cn(dmView === 'pending' && "bg-accent")}>Pending</Button>
                                      <Button variant="ghost" size="sm" className={cn(dmView === 'blocked' && "bg-accent")}>Blocked</Button>
+                                      <AddUserDialog onAddUser={handleSendFriendRequest} onAddBot={handleCreateChatWithBot}>
+                                         <Button className="bg-green-600 hover:bg-green-700 h-8">Add Friend</Button>
+                                      </AddUserDialog>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Button variant="ghost" size="icon"><MentionsDialog onJumpToMessage={handleJumpToMessage}><AtSign className="size-4"/></MentionsDialog></Button>
-                                <Button className="bg-green-600 hover:bg-green-700"><UserPlus className="mr-2"/> Add Friend</Button>
                             </div>
                          </div>
                          <div className="flex-1 flex">

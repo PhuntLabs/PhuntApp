@@ -2,7 +2,7 @@
 'use client';
 
 import { User } from 'firebase/auth';
-import { LogOut, Save, Settings, Pencil, UserPlus, Moon, XCircle, CircleDot, MessageCircleMore, Check, Gamepad2, Link as LinkIcon, Github, Youtube, Sword, Zap, Car, Bike, BadgeCheck, MessageSquare, Phone, Video } from 'lucide-react';
+import { LogOut, Save, Settings, Pencil, UserPlus, Moon, XCircle, CircleDot, MessageCircleMore, Check, Gamepad2, Link as LinkIcon, Github, Youtube, Sword, Zap, Car, Bike, BadgeCheck, MessageSquare, Phone, Video, MoreHorizontal, AtSign, Compass } from 'lucide-react';
 import Image from 'next/image';
 import {
   Popover,
@@ -15,6 +15,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '../ui/button';
@@ -37,6 +41,7 @@ import Link from 'next/link';
 import { useBadges } from '@/hooks/use-badges';
 import { format } from 'date-fns';
 import { useCallingStore } from '@/hooks/use-calling-store';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface UserNavProps {
     user: UserProfile; 
@@ -47,10 +52,10 @@ interface UserNavProps {
 }
 
 const statusConfig: Record<UserStatus, { label: string; icon: React.ElementType, color: string }> = {
-    online: { label: 'Online', icon: CircleDot, color: 'text-green-500' },
-    idle: { label: 'Idle', icon: Moon, color: 'text-yellow-500' },
-    dnd: { label: 'Do Not Disturb', icon: XCircle, color: 'text-red-500' },
-    offline: { label: 'Offline', icon: CircleDot, color: 'text-gray-500' },
+    online: { label: 'Online', icon: CircleDot, color: 'bg-green-500' },
+    idle: { label: 'Idle', icon: Moon, color: 'bg-yellow-500' },
+    dnd: { label: 'Do Not Disturb', icon: XCircle, color: 'bg-red-500' },
+    offline: { label: 'Offline', icon: CircleDot, color: 'bg-gray-500' },
 };
 
 const tagIcons = {
@@ -290,7 +295,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                 <AvatarImage src={user.photoURL || undefined} />
                 <AvatarFallback>{user.displayName?.[0].toUpperCase() || user.email?.[0].toUpperCase()}</AvatarFallback>
             </Avatar>
-            <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background/50 flex items-center justify-center", statusConfig[userStatus].color === 'text-gray-500' ? 'bg-gray-500' : statusColor.replace('text-', 'bg-'))}>
+            <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background/50 flex items-center justify-center", statusConfig[userStatus].color)}>
                  {user.customStatus && <MessageCircleMore className="size-2 text-white/70" />}
             </div>
         </div>
@@ -327,72 +332,67 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
       <PopoverTrigger asChild>
         {TriggerComponent}
       </PopoverTrigger>
-      <PopoverContent className="w-80 mb-2 p-0 border-none rounded-lg overflow-hidden" side="top" align="start">
+      <PopoverContent className="w-96 mb-2 p-0 border-none rounded-lg overflow-hidden shadow-2xl" side="top" align="start">
         <TooltipProvider>
-            <div className="flex flex-col relative rounded-lg" style={{ backgroundColor: user.profileColor || undefined }}>
+            <div className="flex flex-col relative rounded-lg" style={{ backgroundColor: user.profileColor || 'hsl(var(--background))' }}>
                  <div className="relative">
-                    <div className="h-24 bg-accent relative">
+                    <div className="h-24 bg-accent relative rounded-t-lg">
                         {user.bannerURL && (
-                            <Image src={user.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} />
+                            <Image src={user.bannerURL} alt="User banner" fill style={{ objectFit: 'cover' }} className="rounded-t-lg" />
                         )}
                         {ProfileEffectComponent && <ProfileEffectComponent />}
                     </div>
+                </div>
 
-                    <div className="px-4 pb-4 rounded-b-lg" style={{ backgroundColor: user.profileColor ? `${user.profileColor}B3` : undefined, backdropFilter: user.profileColor ? 'blur(4px)' : undefined }}>
-                        <div className="flex items-end -mt-12">
-                            <div className="relative">
-                                {AvatarEffectComponent && 'prototype' in AvatarEffectComponent ? (
-                                    <AvatarEffectComponent>
-                                        <Avatar className="size-24 border-4 rounded-full" style={{ borderColor: user.profileColor || 'hsl(var(--popover))'}}>
-                                            <AvatarImage src={displayUser.photoURL || undefined} />
-                                            <AvatarFallback className="text-3xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
-                                        </Avatar>
-                                    </AvatarEffectComponent>
-                                ) : (
-                                    <>
-                                        <Avatar className="size-24 border-4 rounded-full" style={{ borderColor: user.profileColor || 'hsl(var(--popover))'}}>
-                                            <AvatarImage src={displayUser.photoURL || undefined} />
-                                            <AvatarFallback className="text-3xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
-                                        </Avatar>
-                                        {AvatarEffectComponent && <AvatarEffectComponent />}
-                                    </>
-                                )}
-                                
-                                <div className={cn("absolute bottom-1 right-1 w-6 h-6 rounded-full border-4 flex items-center justify-center", statusColor.replace('text-', 'bg-'))} style={{ borderColor: user.profileColor || 'hsl(var(--popover))'}}>
-                                    <Tooltip>
-                                    <TooltipTrigger>
-                                        {user.customStatus ? <MessageCircleMore className="size-3 text-white"/> : <StatusIcon className="size-3 text-white"/>}
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom">
-                                            {statusLabel}
-                                    </TooltipContent>
-                                    </Tooltip>
-                                </div>
-                            </div>
-                             {!isCurrentUser && (
-                                <div className="flex items-center gap-2 ml-auto">
-                                    <Button size="icon" className="rounded-full size-9 bg-secondary/80 hover:bg-secondary" onClick={handleInitiateCall}><Phone/></Button>
-                                    <Button size="icon" className="rounded-full size-9 bg-secondary/80 hover:bg-secondary" onClick={handleInitiateCall}><Video/></Button>
-                                </div>
+                <div className="p-4 pt-0">
+                    <div className="flex items-end -mt-12 justify-between">
+                        <div className="relative">
+                            {AvatarEffectComponent && 'prototype' in AvatarEffectComponent ? (
+                                <AvatarEffectComponent>
+                                    <Avatar className="size-24 border-4 rounded-full" style={{ borderColor: user.profileColor || 'hsl(var(--background))'}}>
+                                        <AvatarImage src={displayUser.photoURL || undefined} />
+                                        <AvatarFallback className="text-3xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                </AvatarEffectComponent>
+                            ) : (
+                                <>
+                                    <Avatar className="size-24 border-4 rounded-full" style={{ borderColor: user.profileColor || 'hsl(var(--background))'}}>
+                                        <AvatarImage src={displayUser.photoURL || undefined} />
+                                        <AvatarFallback className="text-3xl">{displayUser.displayName?.[0].toUpperCase() || displayUser.email?.[0].toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    {AvatarEffectComponent && <AvatarEffectComponent />}
+                                </>
                             )}
+                            
+                            <div className={cn("absolute bottom-1 right-1 w-6 h-6 rounded-full border-4 flex items-center justify-center", statusColor)} style={{ borderColor: user.profileColor || 'hsl(var(--background))'}}>
+                                <Tooltip>
+                                <TooltipTrigger>
+                                    {user.customStatus ? <MessageCircleMore className="size-3 text-white"/> : <StatusIcon className="size-3 text-white"/>}
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                        {statusLabel}
+                                </TooltipContent>
+                                </Tooltip>
+                            </div>
                         </div>
-                    
-                        <div className="pt-2">
-                        {!isEditing ? (
-                        <>
+                         {!isCurrentUser && (
+                            <div className="flex items-center gap-2 ml-auto">
+                                <Button size="sm" onClick={handleAddFriend}><UserPlus /> Add Friend</Button>
+                                <Button size="sm"><MessageSquare /> Message</Button>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild><Button size="icon" variant="ghost"><MoreHorizontal/></Button></DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuItem onClick={handleInitiateCall}>Call</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        )}
+                    </div>
+                
+                    <div className="pt-3 bg-card mt-[-1rem] mx-[-1rem] px-4 pb-3 rounded-b-lg">
+                        <div className="p-3 bg-secondary rounded-lg">
                             <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className="text-xl font-bold">{displayUser.displayName}</h3>
-                                {isHeina ? (
-                                    <Badge variant="outline" className="border-green-500/50 text-green-400 gap-1.5 h-5">
-                                        <BadgeCheck className="size-3" />
-                                        OWNER
-                                    </Badge>
-                                 ) : shouldShowServerTag && (
-                                    <Badge variant="secondary" className="gap-1">
-                                        {TagIcon && <TagIcon className="size-3" />}
-                                        {serverContext!.tag!.name}
-                                    </Badge>
-                                )}
                                 {allBadges.map((badgeId) => {
                                     const badgeInfo = getBadgeDetails(badgeId);
                                     if (!badgeInfo) return null;
@@ -411,78 +411,56 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                 })}
                             </div>
 
-                            <p className={cn("text-sm text-muted-foreground -mt-1", !user.displayName_lowercase && 'italic')}>{user.displayName_lowercase || 'no username'}</p>
-                             {user.customStatus && (
-                                <div className="p-2 bg-secondary/50 rounded-md text-sm mt-2">{user.customStatus}</div>
-                            )}
-                             {user.currentGame && (
-                                <div className="p-2 bg-secondary/50 rounded-md text-sm mt-2 flex items-center gap-2">
-                                    <Gamepad2 className="size-4" />
-                                    <div>
-                                        <p className="font-semibold">Playing a game</p>
-                                        <p className="text-xs text-muted-foreground">{user.currentGame.name}</p>
+                            <p className={cn("text-sm text-muted-foreground", !user.displayName_lowercase && 'italic')}>{user.displayName_lowercase || 'no username'}</p>
+                            
+                            <Separator className="my-3" />
+
+                             <Tabs defaultValue="info" className="w-full">
+                              <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="info">User Info</TabsTrigger>
+                                <TabsTrigger value="mutual" disabled>Mutual</TabsTrigger>
+                                <TabsTrigger value="activity">Activity</TabsTrigger>
+                              </TabsList>
+                              <TabsContent value="info">
+                                 <div className="space-y-4 py-4">
+                                     <div>
+                                        <h4 className="text-xs font-bold uppercase text-muted-foreground mb-1">About Me</h4>
+                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
+                                    </div>
+                                     <div>
+                                        <h4 className="text-xs font-bold uppercase text-muted-foreground mb-1">Member Since</h4>
+                                        <p className="text-sm text-muted-foreground">{memberSince}</p>
                                     </div>
                                 </div>
-                            )}
-                              {user.currentSong && (
-                                <div className="p-2 bg-secondary/50 rounded-md text-sm mt-2 flex items-center gap-2">
-                                     <Image src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png" alt="Spotify" width={16} height={16}/>
-                                    <div>
-                                        <p className="font-semibold">Listening to Spotify</p>
-                                        <p className="text-xs text-muted-foreground">{user.currentSong.title} by {user.currentSong.artist}</p>
-                                    </div>
-                                </div>
-                            )}
-                            
-                             {!isCurrentUser && (
-                                <div className="flex items-center gap-2 mt-3">
-                                     <Button className="flex-1" size="sm"><MessageSquare /> Message</Button>
-                                     <Button className="flex-1" size="sm" variant="secondary" onClick={handleAddFriend}><UserPlus /> Add Friend</Button>
-                                </div>
-                             )}
-
-                            <Separator className="my-4" />
-                            
-                            <div className="space-y-4">
-                                <div>
-                                    <h4 className="text-xs font-bold uppercase text-muted-foreground mb-1">About Me</h4>
-                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap h-auto max-h-28 overflow-y-auto">{user.bio || 'No bio yet.'}</p>
-                                </div>
-                                 <div>
-                                    <h4 className="text-xs font-bold uppercase text-muted-foreground mb-1">Member Since</h4>
-                                    <p className="text-sm text-muted-foreground">{memberSince}</p>
-                                </div>
-
-                                {serverContext && (
-                                    <div>
-                                        <h4 className="text-xs font-bold uppercase text-muted-foreground mb-1">Roles</h4>
-                                        <div className="flex flex-wrap gap-1 mt-1">
-                                            {serverRoles && serverRoles.length > 0 ? (
-                                                serverRoles.map(role => (
-                                                <Badge key={role.id} variant="outline" className="font-medium" style={{ borderColor: role.color, color: role.color, backgroundColor: `${role.color}1A`}}>
-                                                    {role.name}
-                                                </Badge>
-                                            ))
-                                            ) : (
-                                                <p className="text-xs text-muted-foreground italic">No roles</p>
-                                            )}
+                              </TabsContent>
+                              <TabsContent value="activity">
+                                 {user.currentGame ? (
+                                    <div className="p-2 bg-secondary/50 rounded-md text-sm mt-2 flex items-center gap-2">
+                                        <Gamepad2 className="size-4" />
+                                        <div>
+                                            <p className="font-semibold">Playing a game</p>
+                                            <p className="text-xs text-muted-foreground">{user.currentGame.name}</p>
                                         </div>
                                     </div>
+                                ) : (
+                                    <div className="text-center text-muted-foreground py-4">
+                                        <p className="text-sm">Not currently in an activity.</p>
+                                    </div>
                                 )}
-                            </div>
+                              </TabsContent>
+                            </Tabs>
 
                             {user.connections && user.connections.length > 0 && (
                                 <>
-                                    <Separator className="my-4" />
+                                    <Separator className="my-2" />
                                      <div>
                                         <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Connections</h4>
-                                        <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
                                             {user.connections.map(conn => {
                                                 const Icon = connectionIcons[conn.type];
                                                 return (
-                                                    <a href={`https://www.${conn.type}.com/${conn.username}`} target="_blank" rel="noopener noreferrer" key={conn.type} className="flex items-center p-2 bg-secondary/50 rounded-md hover:bg-secondary">
-                                                        <Icon className="size-6 mr-3 text-muted-foreground" />
-                                                        <span className="font-semibold">{conn.username}</span>
+                                                    <a href={`https://www.${conn.type}.com/${conn.username}`} target="_blank" rel="noopener noreferrer" key={conn.type} className="flex items-center p-2 bg-muted rounded-md hover:bg-muted/80">
+                                                        <Icon className="size-6 text-foreground" />
                                                     </a>
                                                 )
                                             })}
@@ -490,111 +468,6 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                                     </div>
                                 </>
                             )}
-                            
-
-                             {canManageRoles && allServerRoles.length > 0 && (
-                                <>
-                                <Separator className="my-2" />
-                                <div className="mb-2">
-                                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Manage Roles</h4>
-                                    <div className="space-y-1 mt-1">
-                                    {allServerRoles.map(role => (
-                                        <div key={role.id} className="flex items-center gap-2">
-                                            <Checkbox
-                                                id={`role-${role.id}`}
-                                                checked={managedRoles.includes(role.id)}
-                                                onCheckedChange={(checked) => handleRoleChange(role.id, !!checked)}
-                                            />
-                                            <Label htmlFor={`role-${role.id}`} className="flex items-center gap-2 cursor-pointer">
-                                                <div className="size-3 rounded-full" style={{ backgroundColor: role.color}} />
-                                                {role.name}
-                                            </Label>
-                                        </div>
-                                    ))}
-                                    </div>
-                                </div>
-                                </>
-                            )}
-
-                            {isCurrentUser && (
-                                <>
-                                <Separator className="my-4" />
-                                <div className="flex flex-col gap-1">
-                                    <SettingsDialog defaultSection="account" onOpenChange={(open) => !open && setIsPopoverOpen(false)}>
-                                    <Button variant="outline" className="justify-start">
-                                        <Pencil className="mr-2 h-4 w-4" />
-                                        <span>Edit User Profile</span>
-                                    </Button>
-                                    </SettingsDialog>
-                                    {serverContext && (
-                                        <Button variant="outline" className="justify-start" onClick={() => setIsEditing(true)}>
-                                            <Pencil className="mr-2 h-4 w-4" />
-                                            <span>Edit Server Profile</span>
-                                        </Button>
-                                    )}
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" className="justify-start">
-                                                <StatusIcon className={cn("mr-2 h-4 w-4", statusColor)} />
-                                                <span>{statusLabel}</span>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent>
-                                            {Object.entries(statusConfig).map(([key, {label, icon: Icon, color}]) => (
-                                                <DropdownMenuItem key={key} onSelect={() => handleStatusChange(key as UserStatus)}>
-                                                    <Icon className={cn("mr-2 h-4 w-4", color)} />
-                                                    <span>{label}</span>
-                                                </DropdownMenuItem>
-                                            ))}
-                                            <DropdownMenuSeparator />
-                                            <div className="p-2">
-                                                <Label htmlFor="custom-status-dropdown">Custom Status</Label>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <Input
-                                                        id="custom-status-dropdown"
-                                                        placeholder="Set a custom status"
-                                                        value={customStatus}
-                                                        onChange={(e) => setCustomStatus(e.target.value)}
-                                                        onKeyDown={(e) => { if(e.key === 'Enter') handleCustomStatusSave(); }}
-                                                    />
-                                                    <Button size="icon" className="size-8" onClick={handleCustomStatusSave}><Save/></Button>
-                                                </div>
-                                            </div>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                    <SettingsDialog onOpenChange={(open) => !open && setIsPopoverOpen(false)}>
-                                        <Button variant="ghost" className="justify-start">
-                                            <Settings className="mr-2 h-4 w-4" />
-                                            <span>Settings</span>
-                                        </Button>
-                                    </SettingsDialog>
-                                    {logout && (
-                                    <Button variant="ghost" onClick={logout} className="justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10">
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        <span>Log out</span>
-                                    </Button>
-                                    )}
-                                </div>
-                                </>
-                            )}
-                        </>
-                        ) : (
-                        <div className="space-y-4 h-auto max-h-[calc(100vh-20rem)] overflow-y-auto pr-2">
-                            <h4 className="font-semibold">Editing Profile for <span className="text-primary">{serverContext?.name}</span></h4>
-                            <div className="space-y-1">
-                                <Label htmlFor="nickname">Server Nickname</Label>
-                                <Input id="nickname" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder={user.displayName} />
-                            </div>
-                            <div className="space-y-1">
-                                <Label htmlFor="server-avatar">Server Avatar URL</Label>
-                                <Input id="server-avatar" value={serverAvatar} onChange={(e) => setServerAvatar(e.target.value)} placeholder="https://..." />
-                            </div>
-                            <div className="flex justify-end gap-2">
-                                <Button variant="ghost" size="sm" onClick={handleCancel}>Cancel</Button>
-                                <Button size="sm" onClick={handleServerProfileUpdate}>Save</Button>
-                            </div>
-                        </div>
-                        )}
                         </div>
                     </div>
                 </div>
