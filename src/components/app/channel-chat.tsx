@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, Embed, ServerTag, ForumPost } from '@/lib/types';
@@ -252,7 +253,7 @@ export function ChannelChat({
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                                                     <Avatar className="size-4">
                                                         <AvatarImage src={getSenderProfile(message.replyTo.senderId)?.photoURL || undefined} />
-                                                        <AvatarFallback>{message.replyTo.senderDisplayName[0]}</AvatarFallback>
+                                                        <AvatarFallback>{message.replyTo.senderDisplayName?.[0] || '?'}</AvatarFallback>
                                                     </Avatar>
                                                     <span className="font-semibold text-foreground/80">{message.replyTo.senderDisplayName}</span>
                                                     <p className="truncate flex-1">{message.replyTo.text}</p>
