@@ -37,7 +37,7 @@ import {
   addDoc,
   runTransaction,
 } from 'firebase/firestore';
-import type { UserProfile, Badge, ServerProfile, Server } from '@/lib/types';
+import type { UserProfile, Badge, ServerProfile, Server, Song } from '@/lib/types';
 import { createWelcomeChat } from '@/ai/flows/welcome-chat-flow';
 import { findUserByUsername } from '@/lib/firebase-utils';
 
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleBeforeUnload = () => {
       if (auth.currentUser) {
         const userRef = doc(db, 'users', auth.currentUser.uid);
-        updateDoc(userRef, { status: 'offline', currentGame: null });
+        updateDoc(userRef, { status: 'offline', currentGame: null, currentSong: null });
       }
     };
 
@@ -275,7 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     if(authUser) {
       const userRef = doc(db, 'users', authUser.uid);
-      await updateDoc(userRef, { status: 'offline', currentGame: null });
+      await updateDoc(userRef, { status: 'offline', currentGame: null, currentSong: null });
     }
     return signOut(auth);
   };

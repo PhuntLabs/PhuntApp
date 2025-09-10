@@ -27,7 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import type { UserProfile, UserStatus, Server, Role, AvatarEffect, ProfileEffect, Game, CustomGame, Connection } from '@/lib/types';
+import type { UserProfile, UserStatus, Server, Role, AvatarEffect, ProfileEffect, Game, CustomGame, Connection, Song } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useFriendRequests } from '@/hooks/use-friend-requests';
 import { SettingsDialog } from './settings-dialog';
@@ -190,7 +190,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const handleStatusChange = async (status: UserStatus) => {
     if (!isCurrentUser || !authUser) return;
      try {
-        await updateUserProfile({ status, currentGame: null });
+        await updateUserProfile({ status, currentGame: null, currentSong: null });
     } catch(error: any) {
         toast({
             variant: 'destructive',
@@ -203,7 +203,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   const handleCustomStatusSave = async () => {
      if (!isCurrentUser || !authUser) return;
      try {
-        await updateUserProfile({ customStatus: customStatus.trim(), currentGame: null });
+        await updateUserProfile({ customStatus: customStatus.trim(), currentGame: null, currentSong: null });
          toast({ title: 'Status Updated'});
     } catch(error: any) {
         toast({
@@ -296,7 +296,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
         </div>
         <div className="flex flex-col -space-y-1 group-data-[collapsible=icon]:hidden overflow-hidden">
             <span className="text-sm font-semibold truncate">{user.displayName || user.email}</span>
-            <span className="text-xs text-muted-foreground truncate">{user.customStatus || statusLabel}</span>
+            <span className="text-xs text-muted-foreground truncate">{user.customStatus || user.currentSong?.title || user.currentGame?.name || statusLabel}</span>
         </div>
     </button>
   ) : (
@@ -412,6 +412,27 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
                             </div>
 
                             <p className={cn("text-sm text-muted-foreground -mt-1", !user.displayName_lowercase && 'italic')}>{user.displayName_lowercase || 'no username'}</p>
+                             {user.customStatus && (
+                                <div className="p-2 bg-secondary/50 rounded-md text-sm mt-2">{user.customStatus}</div>
+                            )}
+                             {user.currentGame && (
+                                <div className="p-2 bg-secondary/50 rounded-md text-sm mt-2 flex items-center gap-2">
+                                    <Gamepad2 className="size-4" />
+                                    <div>
+                                        <p className="font-semibold">Playing a game</p>
+                                        <p className="text-xs text-muted-foreground">{user.currentGame.name}</p>
+                                    </div>
+                                </div>
+                            )}
+                              {user.currentSong && (
+                                <div className="p-2 bg-secondary/50 rounded-md text-sm mt-2 flex items-center gap-2">
+                                     <Image src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png" alt="Spotify" width={16} height={16}/>
+                                    <div>
+                                        <p className="font-semibold">Listening to Spotify</p>
+                                        <p className="text-xs text-muted-foreground">{user.currentSong.title} by {user.currentSong.artist}</p>
+                                    </div>
+                                </div>
+                            )}
                             
                              {!isCurrentUser && (
                                 <div className="flex items-center gap-2 mt-3">

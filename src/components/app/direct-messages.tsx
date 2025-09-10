@@ -95,6 +95,9 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
             if (otherMember?.currentGame) {
               subtext = `Playing ${otherMember.currentGame.name}`;
               SubIcon = Gamepad2;
+            } else if (otherMember?.currentSong) {
+              subtext = `Listening to ${otherMember.currentSong.title}`;
+              SubIcon = Bot; // Placeholder, should be a music icon
             }
 
 

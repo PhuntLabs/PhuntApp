@@ -218,6 +218,10 @@ export const useCallingStore = create<CallingState>((set, get) => ({
     }
     if (activeCall) {
         const callDoc = await getDoc(doc(db, 'calls', activeCall.id));
+        if (!callDoc.exists()) {
+             set({ activeCall: null, agoraClient: null, localTracks: null, micOn: true, cameraOn: false, isScreensharing: false, inactivityTimer: null, mainViewUserId: null });
+             return;
+        }
         const startTime = (callDoc.data()?.createdAt as any)?.toDate();
         const duration = startTime ? (new Date().getTime() - startTime.getTime()) / 1000 : 0;
         
