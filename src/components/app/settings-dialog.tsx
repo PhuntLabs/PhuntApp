@@ -32,6 +32,7 @@ import { DeveloperSettings } from './settings/developer-settings';
 import { NotificationsSettings } from './settings/notifications-settings';
 import { ConnectionsSettings } from './settings/connections-settings';
 import { useAuth } from '@/hooks/use-auth';
+import { MobileProfileEditor } from './settings/mobile/mobile-profile-editor';
 
 type Section = 'account' | 'profiles' | 'connections' | 'security' | 'theme' | 'bugs' | 'game-activity' | 'developer' | 'notifications';
 
@@ -147,13 +148,13 @@ export function SettingsDialog({ children, defaultSection = 'account', onOpenCha
 
         <main className="flex-1 p-6 relative overflow-y-auto">
           {renderSection()}
-          <DialogClose asChild>
+        </main>
+         <DialogClose asChild>
             <Button variant="ghost" size="icon" className="absolute right-4 top-4 rounded-full">
                 <X className="size-5" />
                 <span className="sr-only">Close</span>
             </Button>
           </DialogClose>
-        </main>
       </DialogContent>
     </Dialog>
   );

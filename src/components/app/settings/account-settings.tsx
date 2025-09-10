@@ -37,20 +37,6 @@ export function AccountSettings() {
       setDisplayName(user.displayName || '');
     }
   }, [user]);
-  
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-        await updateUserProfile({ 
-          displayName, 
-        });
-        toast({ title: 'Profile Updated', description: 'Your account details have been saved.' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-    } finally {
-        setIsSaving(false);
-    }
-  }
 
   const handlePasswordReset = async () => {
     try {
@@ -99,7 +85,7 @@ export function AccountSettings() {
         
         <Card>
             <CardHeader>
-                <CardTitle>General Info</CardTitle>
+                <CardTitle>Account Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
@@ -127,26 +113,6 @@ export function AccountSettings() {
                 </div>
             </CardContent>
         </Card>
-        
-        <Card>
-            <CardHeader>
-                <CardTitle>Password and Authentication</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <Button onClick={handlePasswordReset}>Change Password</Button>
-            </CardContent>
-             <CardFooter className="flex-col items-start gap-4 p-6 border-t bg-muted/50">
-                 <h4 className="font-semibold">SMS Backup Authentication</h4>
-                 <p className="text-sm text-muted-foreground">
-                    Add your phone as a backup 2FA method in case you lose your authentication app or backup codes.
-                 </p>
-                 <Button variant="destructive" disabled>
-                    <Trash2 className="mr-2"/>
-                    Remove SMS Authentication
-                 </Button>
-            </CardFooter>
-        </Card>
-
     </div>
   );
 }
