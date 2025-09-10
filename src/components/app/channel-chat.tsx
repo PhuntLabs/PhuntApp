@@ -1,7 +1,6 @@
-
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, Embed, ServerTag } from '@/lib/types';
+import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, Embed, ServerTag, ForumPost } from '@/lib/types';
 import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck, ChevronLeft, Search } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,6 +22,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { useBadges } from '@/hooks/use-badges';
 import { useMobileView } from '@/hooks/use-mobile-view';
 import { MobileChannelSearch } from './mobile/mobile-channel-search';
+import { ForumChannelView } from './forum-channel-view';
 
 
 const tagIcons = {
@@ -35,7 +35,7 @@ interface ChannelChatProps {
     currentUser: User;
     members: Partial<UserProfile>[];
     messages: Message[];
-    onSendMessage: (text: string, file?: File, embed?: Embed | { embed: Embed, reactions?: string[] }, replyTo?: Message['replyTo']) => void;
+    onSendMessage: (text: string, file?: File, embed?: Embed | { embed: Embed, reactions?: string[] }, replyTo?: Message['replyTo'], forumPost?: ForumPost) => void;
     onEditMessage: (messageId: string, newText: string) => void;
     onDeleteMessage: (messageId: string) => void;
     sidebarTrigger?: React.ReactNode;
@@ -100,7 +100,7 @@ export function ChannelChat({
         handleCancelEdit();
     };
 
-    const handleSendMessageWrapper = (text: string, file?: File, embed?: Embed | { embed: Embed, reactions?: string[] }) => {
+    const handleSendMessageWrapper = (text: string, file?: File, embed?: Embed | { embed: Embed, reactions?: string[] }, forumPost?: ForumPost) => {
         let replyInfo: Message['replyTo'] | undefined = undefined;
         if (replyingTo) {
             const senderProfile = getSenderProfile(replyingTo.sender);
@@ -111,7 +111,7 @@ export function ChannelChat({
                 text: replyingTo.text,
             };
         }
-        onSendMessage(text, file, embed, replyInfo);
+        onSendMessage(text, file, embed, replyInfo, forumPost);
         setReplyingTo(null);
     }
     
@@ -160,6 +160,18 @@ export function ChannelChat({
 
     if (isMobileView && isSearchOpen) {
         return <MobileChannelSearch server={server} members={members as UserProfile[]} onClose={() => setIsSearchOpen(false)} />
+    }
+
+    if (channel.type === 'forum') {
+        return (
+            <ForumChannelView 
+                channel={channel}
+                server={server}
+                members={members}
+                posts={messages}
+                onSendMessage={handleSendMessageWrapper}
+            />
+        )
     }
 
     return (
@@ -330,7 +342,7 @@ export function ChannelChat({
                     </div>
                 )}
                 <ChatInput 
-                    onSendMessage={handleSendMessageWrapper}
+                    onSendMessage={(text, file, embed) => onSendMessage(text, file, embed, replyingTo || undefined)}
                     onTyping={handleTyping}
                     placeholder={canSendMessages ? `Message #${displayName}` : `You do not have permission to send messages here.`}
                     members={members}

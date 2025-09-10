@@ -1,4 +1,3 @@
-
 import { FieldValue, Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 
@@ -117,6 +116,12 @@ export interface Embed {
     footer?: { text: string; icon_url?: string };
 }
 
+export interface ForumPost {
+    title: string;
+    tags: string[];
+    // The initial message content is stored in the `text` property of the Message
+}
+
 export interface Message {
   id: string;
   sender: string;
@@ -139,6 +144,8 @@ export interface Message {
     senderDisplayName: string;
     text: string;
   };
+  // Forum-specific data
+  forumPost?: ForumPost;
 }
 
 export type CallStatus = 'ringing' | 'active' | 'declined' | 'missed' | 'ended';
@@ -244,6 +251,13 @@ export interface Server {
 
 export type ChannelType = 'text' | 'announcement' | 'rules' | 'forum';
 
+export interface ForumTag {
+    id: string;
+    name: string;
+    emoji?: string; // e.g. '🏆'
+    icon?: string; // Lucide icon name
+}
+
 export interface Channel {
     id: string;
     name: string;
@@ -255,6 +269,9 @@ export interface Channel {
     permissionOverwrites?: {
         [roleId: string]: Partial<Record<Permission, boolean>>;
     };
+    // Forum-specific properties
+    guidelines?: string;
+    tags?: ForumTag[];
 }
 
 export interface Category {

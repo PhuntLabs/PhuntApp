@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -18,7 +17,7 @@ import {
   writeBatch,
   arrayUnion,
 } from 'firebase/firestore';
-import type { Message, Server, Embed, Mention, Reaction } from '@/lib/types';
+import type { Message, Server, Embed, Mention, Reaction, ForumPost } from '@/lib/types';
 import { useAuth } from './use-auth';
 import { usePermissions } from './use-permissions';
 import { useToast } from './use-toast';
@@ -91,7 +90,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
   }, [server?.id, channelId]);
 
   const sendMessage = useCallback(
-    async (text: string, file?: File, embedPayload?: Embed | { embed: Embed, reactions?: string[] }, replyTo?: Message['replyTo']) => {
+    async (text: string, file?: File, embedPayload?: Embed | { embed: Embed, reactions?: string[] }, replyTo?: Message['replyTo'], forumPost?: ForumPost) => {
       if (!authUser || !server?.id || !channelId || !user) return;
 
       if (!hasPermission('sendMessages')) {
@@ -148,6 +147,7 @@ export function useChannelMessages(server: Server | null, channelId: string | un
       };
 
       if (fileInfo) messagePayload.fileInfo = fileInfo;
+      if (forumPost) messagePayload.forumPost = forumPost;
       
       let initialReactions: Reaction[] | undefined;
       if (embedPayload) {
