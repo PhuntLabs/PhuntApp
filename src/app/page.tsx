@@ -1,51 +1,88 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Github, MessageSquareText, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const Starfield = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(100)].map((_, i) => (
-            <div
-                key={i}
-                className="absolute bg-white rounded-full star"
-                style={{
-                    top: `${Math.random() * 100}%`,
-                    left: `${Math.random() * 100}%`,
-                    width: `${Math.random() * 2 + 1}px`,
-                    height: `${Math.random() * 2 + 1}px`,
-                    animationDelay: `${Math.random() * 5}s`,
-                    animationDuration: `${2 + Math.random() * 3}s`,
-                }}
-            />
-        ))}
-    </div>
-);
+const Starfield = () => {
+    const [stars, setStars] = useState<React.ReactNode[]>([]);
 
-const Rain = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(50)].map((_, i) => (
-            <div
-                key={i}
-                className="absolute w-px h-20 bg-gradient-to-b from-transparent to-white/30 raindrop"
-                style={{
-                    left: `${Math.random() * 100}%`,
-                    animationDuration: `${0.5 + Math.random() * 0.5}s`,
-                    animationDelay: `${Math.random() * 5}s`,
-                }}
-            />
-        ))}
-    </div>
-);
+    useEffect(() => {
+        const generateStars = () => {
+            const newStars = [...Array(100)].map((_, i) => (
+                <div
+                    key={i}
+                    className="absolute bg-white rounded-full star"
+                    style={{
+                        top: `${Math.random() * 100}%`,
+                        left: `${Math.random() * 100}%`,
+                        width: `${Math.random() * 2 + 1}px`,
+                        height: `${Math.random() * 2 + 1}px`,
+                        animationDelay: `${Math.random() * 5}s`,
+                        animationDuration: `${2 + Math.random() * 3}s`,
+                    }}
+                />
+            ));
+            setStars(newStars);
+        };
+        generateStars();
+    }, []);
+
+    return (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {stars}
+        </div>
+    );
+};
+
+
+const Rain = () => {
+    const [raindrops, setRaindrops] = useState<React.ReactNode[]>([]);
+
+    useEffect(() => {
+        const generateRain = () => {
+            const newRaindrops = [...Array(50)].map((_, i) => (
+                <div
+                    key={i}
+                    className="absolute w-px h-20 bg-gradient-to-b from-transparent to-white/30 raindrop"
+                    style={{
+                        left: `${Math.random() * 100}%`,
+                        animationDuration: `${0.5 + Math.random() * 0.5}s`,
+                        animationDelay: `${Math.random() * 5}s`,
+                    }}
+                />
+            ));
+            setRaindrops(newRaindrops);
+        };
+        generateRain();
+    }, []);
+
+    return (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {raindrops}
+        </div>
+    );
+};
+
 
 export default function LandingPage() {
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
     return (
         <div className="min-h-screen w-full bg-background text-foreground relative overflow-hidden">
-            <Starfield />
-            <Rain />
+            {isClient && (
+                <>
+                    <Starfield />
+                    <Rain />
+                </>
+            )}
 
             <div className="relative z-10 flex flex-col min-h-screen">
                 <header className="p-4 sm:p-6 flex justify-between items-center backdrop-blur-sm bg-background/50 border-b border-white/10">
