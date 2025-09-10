@@ -53,27 +53,21 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
 
   if (loading) {
     return (
-        <SidebarGroup>
-            <SidebarGroupLabel className="flex items-center justify-between">
+        <>
+            <SidebarGroupLabel className="flex items-center justify-between !px-3 !text-base !font-semibold !text-foreground">
                 Direct Messages
             </SidebarGroupLabel>
-            <SidebarMenu>
+            <div className="p-3 space-y-2">
                 <SidebarMenuSkeleton showIcon={true} />
                 <SidebarMenuSkeleton showIcon={true} />
-            </SidebarMenu>
-        </SidebarGroup>
+                <SidebarMenuSkeleton showIcon={true} />
+            </div>
+        </>
     );
   }
   
   return (
     <>
-      <SidebarGroup>
-        <SidebarGroupLabel className="flex items-center justify-between !px-3 !text-base !font-semibold !text-foreground">
-          Message
-          <Badge className="bg-muted text-muted-foreground">12</Badge>
-        </SidebarGroupLabel>
-      </SidebarGroup>
-
       <SidebarGroup>
         <SidebarGroupLabel>
           Recent Chats
@@ -83,29 +77,18 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
             const otherMember = chat.members.find(m => m.id !== user?.uid);
             const chatName = otherMember?.displayName || chat.name || 'Chat';
             const chatAvatar = otherMember?.photoURL || chat.photoURL;
-            const isBotChat = otherMember?.isBot;
             const status = otherMember?.status || 'offline';
             
-            let subtext = otherMember?.customStatus || statusConfig[status].label;
-            let SubIcon = null;
-
-            if (otherMember?.currentGame) {
-              subtext = `Playing ${otherMember.currentGame.name}`;
-              SubIcon = Gamepad2;
-            } else if (otherMember?.currentSong) {
-              subtext = `Listening to ${otherMember.currentSong.title}`;
-              SubIcon = Bot; // Placeholder, should be a music icon
-            }
-
             const hasUnread = chat.unreadCount && chat.unreadCount[user?.uid || ''] > 0;
             
             return (
               <SidebarMenuItem key={chat.id} className="group/item">
-                <SidebarMenuButton
-                  tooltip={chatName}
-                  isActive={selectedChat?.id === chat.id}
+                <button
                   onClick={() => onSelectChat(chat)}
-                  className={cn("h-auto py-2.5", hasUnread && "font-semibold")}
+                  className={cn(
+                      "h-auto py-2.5 px-2.5 rounded-lg flex items-center gap-3 w-full text-left transition-colors",
+                      selectedChat?.id === chat.id ? "bg-accent" : "hover:bg-accent/50"
+                  )}
                 >
                   <div className="relative z-10 flex items-center gap-3 w-full">
                       <div className="relative">
@@ -120,18 +103,18 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
                       </div>
                       <div className="flex-1 overflow-hidden">
                         <div className="flex items-center justify-between">
-                          <span className={cn("truncate", otherMember?.nameplateUrl ? 'text-white' : '')}>{chatName}</span>
+                          <span className={cn("truncate font-semibold", selectedChat?.id === chat.id ? 'text-white' : 'text-foreground')}>{chatName}</span>
                           <span className="text-xs text-muted-foreground">{chat.lastMessageTimestamp ? formatDistanceToNow((chat.lastMessageTimestamp as any).toDate(), { addSuffix: true }) : ''}</span>
                         </div>
-                        <p className={cn("text-xs truncate flex items-center gap-1 text-muted-foreground")}>
+                        <p className={cn("text-xs truncate flex items-center gap-1", selectedChat?.id === chat.id ? 'text-white/70' : 'text-muted-foreground')}>
                           {chat.lastMessage?.text || 'No messages yet.'}
                         </p>
                       </div>
                   </div>
-                </SidebarMenuButton>
+                </button>
 
                   {hasUnread && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1.5 flex items-center justify-center z-20">
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-pink-500 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1.5 flex items-center justify-center z-20">
                           {chat.unreadCount?.[user?.uid || '']}
                       </div>
                   )}

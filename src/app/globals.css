@@ -9,30 +9,40 @@ body {
 
 @layer base {
   :root, .dark, .custom {
-    --background: 231 21% 11%; /* Very dark blue-gray */
+    --background: 232 24% 10%;
     --foreground: 220 13% 91%;
-    --card: 231 21% 15%; /* Slightly lighter for cards */
+    
+    --card: 232 21% 15%;
     --card-foreground: 220 13% 91%;
+    
     --popover: 231 21% 11%;
     --popover-foreground: 220 13% 91%;
+    
     --primary: 187 83% 53%; /* Bright Cyan */
     --primary-foreground: 231 21% 11%;
-    --secondary: 231 21% 9%; /* Darkest for server list, etc. */
+    
+    --secondary: 232 21% 12%; 
     --secondary-foreground: 220 13% 91%;
+    
     --muted: 231 21% 20%;
     --muted-foreground: 220 9% 55%;
+    
     --accent: 231 21% 25%;
     --accent-foreground: 220 13% 91%;
+    
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
+    
     --border: 231 21% 20%;
     --input: 231 21% 18%;
     --ring: 187 83% 53%;
+    
     --chart-1: 180 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    
     --radius: 0.8rem;
   }
 

@@ -338,95 +338,6 @@ export function ChatInput({
         </div>
     )
 
-    if (isMobileView) {
-        return (
-            <form onSubmit={handleSubmit} className="relative flex flex-col gap-2">
-                 {isAutocompleteOpen && AutocompletePopover()}
-                {attachment && (
-                    <div className="relative w-20 h-20 bg-secondary/50 rounded-md p-1.5 ml-2">
-                        <Image
-                            src={URL.createObjectURL(attachment)}
-                            alt="Pasted image preview"
-                            fill
-                            className="object-contain rounded-md"
-                        />
-                        <Button 
-                            variant="destructive" 
-                            size="icon" 
-                            className="absolute -top-2 -right-2 h-5 w-5 rounded-full"
-                            onClick={() => setAttachment(null)}
-                        >
-                            <X className="h-3.5 w-3.5" />
-                        </Button>
-                    </div>
-                )}
-                <div className="flex items-center gap-1 p-1 md:p-2">
-                     <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        className="hidden"
-                        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
-                    />
-                    <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0 text-muted-foreground" onClick={() => fileInputRef.current?.click()}><Plus className="size-5"/></Button>
-                    <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0 text-muted-foreground"><Gamepad2 className="size-5"/></Button>
-                    <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0 text-muted-foreground"><Gift className="size-5"/></Button>
-
-                    <div className="relative flex-1">
-                        <Input
-                            ref={inputRef as any}
-                            value={text}
-                            onChange={handleTextChange}
-                            onPaste={handlePaste}
-                            onKeyDown={handleKeyDown}
-                            placeholder={placeholder || "Message..."}
-                            className="bg-muted border-none pr-10 rounded-full h-9"
-                            disabled={disabled || isSubmitting}
-                        />
-                         <Popover>
-                            <PopoverTrigger asChild>
-                                <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 size-8 text-muted-foreground">
-                                    <SmilePlus className="size-5" />
-                                </Button>
-                            </PopoverTrigger>
-                             <PopoverContent className="w-80 p-0 border-none mb-2" side="top" align="end">
-                                <Tabs defaultValue="emoji">
-                                    <TabsList className="w-full justify-start px-2 rounded-b-none">
-                                        <TabsTrigger value="emoji">Emoji</TabsTrigger>
-                                        <TabsTrigger value="gif" disabled>GIF</TabsTrigger>
-                                        <TabsTrigger value="sticker" disabled>Sticker</TabsTrigger>
-                                    </TabsList>
-                                    <TabsContent value="emoji" className="m-0">
-                                         <ScrollArea className="h-64 p-2">
-                                            <div className="grid grid-cols-8 gap-1">
-                                            {standardEmojis.map(emoji => (
-                                                <button key={emoji.name} type="button" onClick={() => insertEmoji(emoji)} className="p-1 text-2xl rounded-md hover:bg-accent aspect-square">
-                                                    {emoji.char}
-                                                </button>
-                                            ))}
-                                            </div>
-                                            {customEmojis.length > 0 && <h3 className="text-xs font-semibold text-muted-foreground uppercase py-2">Custom</h3>}
-                                            <div className="grid grid-cols-8 gap-1">
-                                                 {customEmojis.map(emoji => (
-                                                    <button key={emoji.name} type="button" onClick={() => insertEmoji(emoji)} className="p-1 rounded-md hover:bg-accent aspect-square">
-                                                        <Image src={emoji.url} alt={emoji.name} width={28} height={28}/>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </ScrollArea>
-                                    </TabsContent>
-                                </Tabs>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                     <Button type="submit" variant="ghost" size="icon" className="size-9 shrink-0 text-muted-foreground">
-                        {text.trim() === '' && !attachment ? <Mic className="size-5" /> : <Send className="size-5 text-primary" />}
-                    </Button>
-                </div>
-            </form>
-        )
-    }
-
     return (
         <form onSubmit={handleSubmit} className="relative flex flex-col gap-2">
             {isAutocompleteOpen && AutocompletePopover()}
@@ -448,7 +359,7 @@ export function ChatInput({
                     </Button>
                 </div>
             )}
-            <div className="flex items-start gap-2">
+            <div className="flex items-center gap-2 bg-input p-1 rounded-xl">
                  <input
                     type="file"
                     ref={fileInputRef}
@@ -460,7 +371,7 @@ export function ChatInput({
                     type="button"
                     variant="ghost" 
                     size="icon" 
-                    className="size-10 mt-auto shrink-0" 
+                    className="size-9 shrink-0" 
                     onClick={() => fileInputRef.current?.click()}
                     disabled={disabled || isSubmitting}
                 >
@@ -473,14 +384,17 @@ export function ChatInput({
                     onPaste={handlePaste}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder || "Send a message..."}
-                    className="flex-1 resize-none pr-20"
+                    className="flex-1 resize-none bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-2 text-base"
                     rows={1}
                     disabled={disabled || isSubmitting}
                 />
-                <div className="absolute right-3 bottom-2 flex items-center">
+                <div className="flex items-center">
+                    <Button type="button" variant="ghost" size="icon" className="size-9 text-muted-foreground hover:text-foreground" disabled={disabled || isSubmitting}>
+                        <Gift className="size-5"/>
+                    </Button>
                     <Popover>
                         <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-foreground" disabled={disabled || isSubmitting}>
+                            <Button type="button" variant="ghost" size="icon" className="size-9 text-muted-foreground hover:text-foreground" disabled={disabled || isSubmitting}>
                                 <SmilePlus className="size-5"/>
                             </Button>
                         </PopoverTrigger>
@@ -514,7 +428,7 @@ export function ChatInput({
                         </PopoverContent>
                     </Popover>
 
-                    <Button type="submit" size="icon" className="size-8" disabled={disabled || isSubmitting || (text.trim() === '' && !attachment)}>
+                    <Button type="submit" size="icon" className="size-9" disabled={disabled || isSubmitting || (text.trim() === '' && !attachment)}>
                         <Send className="size-4" />
                     </Button>
                 </div>
