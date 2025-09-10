@@ -1,3 +1,4 @@
+
 'use client';
 
 import { User } from 'firebase/auth';
@@ -41,6 +42,7 @@ import { useBadges } from '@/hooks/use-badges';
 import { format } from 'date-fns';
 import { useCallingStore } from '@/hooks/use-calling-store';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from '../ui/scroll-area';
 
 interface UserNavProps {
     user: UserProfile; 
