@@ -69,22 +69,22 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
     
     return (
         <TooltipProvider>
-            <div className="w-20 flex-shrink-0 h-full flex flex-col items-center py-3 gap-3 bg-secondary overflow-y-auto">
+            <div className="w-20 flex-shrink-0 h-full flex flex-col items-center py-3 gap-4 bg-secondary overflow-y-auto">
                 {/* Direct Messages Button */}
                 <Tooltip>
                     <TooltipTrigger asChild>
                          <button onClick={handleSelectDMRoot} className="relative group">
                             <div 
                                 className={cn(
-                                    "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
+                                    "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-primary rounded-r-full transition-all duration-200",
                                     !selectedServer && !isDiscoveryActive && !isGamesActive && !isMusicActive ? "h-9" : "group-hover:h-5"
                                 )} 
                             />
                             <div className={cn(
-                                "size-12 rounded-full transition-all duration-200 bg-background flex items-center justify-center",
-                                !selectedServer && !isDiscoveryActive && !isGamesActive && !isMusicActive ? 'rounded-2xl bg-primary' : 'group-hover:rounded-2xl group-hover:bg-primary'
+                                "size-12 rounded-full transition-all duration-200 bg-card flex items-center justify-center",
+                                !selectedServer && !isDiscoveryActive && !isGamesActive && !isMusicActive ? 'rounded-2xl bg-primary text-primary-foreground' : 'group-hover:rounded-2xl group-hover:bg-primary group-hover:text-primary-foreground'
                             )}>
-                                <MessageSquare className="size-7 text-white/80" />
+                                <MessageSquare className="size-6" />
                             </div>
                         </button>
                     </TooltipTrigger>
@@ -92,43 +92,6 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                         <p>Direct Messages</p>
                     </TooltipContent>
                 </Tooltip>
-
-                {unreadChats.length > 0 && <Separator className="w-8 bg-border/50" />}
-
-                 {/* Unread DM Notifications */}
-                {unreadChats.map((chat) => {
-                    const otherMember = chat.members.find(m => m.id !== user?.uid);
-                    if (!otherMember) return null;
-
-                    return (
-                        <Tooltip key={chat.id}>
-                            <TooltipTrigger asChild>
-                                <button onClick={() => handleSelectUnreadChat(chat)} className="relative group">
-                                     <div 
-                                        className={cn(
-                                            "absolute -left-3 top-1/2 -translate-y-1/2 h-2 w-1 bg-white rounded-r-full transition-all duration-200 group-hover:h-5"
-                                        )} 
-                                    />
-                                    <Avatar className={cn(
-                                        "size-12 rounded-full transition-all duration-200 bg-background group-hover:rounded-2xl"
-                                    )}>
-                                        <AvatarImage src={otherMember.photoURL || undefined} alt={otherMember.displayName || ''} />
-                                        <AvatarFallback className="font-bold text-lg bg-transparent">
-                                            {otherMember.displayName?.charAt(0).toUpperCase()}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                     <Badge className="absolute -bottom-1 -right-2 bg-red-500 text-white h-5 px-1.5 border-2 border-background/80">
-                                        {chat.unreadCount?.[user?.uid || ''] > 9 ? '9+' : chat.unreadCount?.[user?.uid || '']}
-                                    </Badge>
-                                </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                                <p>Message from {otherMember.displayName}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    );
-                })}
-
 
                 <Separator className="w-8 bg-border/50" />
                 
@@ -138,12 +101,12 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                             <button onClick={() => handleSelectServer(server)} className="relative group">
                                 <div 
                                     className={cn(
-                                        "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
+                                        "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-foreground rounded-r-full transition-all duration-200",
                                         selectedServer?.id === server.id ? "h-9" : "group-hover:h-5"
                                     )} 
                                 />
                                 <Avatar className={cn(
-                                    "size-12 rounded-full transition-all duration-200 bg-background",
+                                    "size-12 rounded-full transition-all duration-200 bg-card",
                                     selectedServer?.id === server.id ? 'rounded-2xl' : 'group-hover:rounded-2xl'
                                 )}>
                                     <AvatarImage src={server.photoURL || undefined} alt={server.name} />
@@ -164,7 +127,7 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                     <TooltipTrigger asChild>
                         <AddServerDialog onCreateServer={onCreateServer}>
                             <button className="group">
-                                <Avatar className="size-12 rounded-full bg-background transition-all duration-200 group-hover:rounded-2xl group-hover:bg-green-600">
+                                <Avatar className="size-12 rounded-full bg-card transition-all duration-200 group-hover:rounded-2xl group-hover:bg-green-600">
                                     <AvatarFallback className="text-green-400 group-hover:text-white transition-colors duration-200 bg-transparent">
                                         <Plus size={24} />
                                     </AvatarFallback>
@@ -176,88 +139,6 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                         <p>Add a Server</p>
                     </TooltipContent>
                 </Tooltip>
-
-                 {/* Discovery Button */}
-                <Link href="/discovery" legacyBehavior={false}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                             <div className="relative group">
-                                 <div 
-                                    className={cn(
-                                        "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
-                                        isDiscoveryActive ? "h-9" : "group-hover:h-5"
-                                    )} 
-                                />
-                                <Avatar className={cn(
-                                    "size-12 rounded-full bg-background transition-all duration-200 group-hover:rounded-2xl",
-                                    isDiscoveryActive ? 'rounded-2xl bg-green-600' : 'group-hover:bg-green-600'
-                                )}>
-                                    <AvatarFallback className={cn("bg-transparent text-green-400 transition-colors duration-200", isDiscoveryActive ? "text-white" : "group-hover:text-white")}>
-                                        <Compass size={24} />
-                                    </AvatarFallback>
-                                </Avatar>
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                            <p>Discover Servers</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </Link>
-
-                 {/* Games Button */}
-                <Link href="/games" legacyBehavior={false}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                             <div className="relative group">
-                                 <div 
-                                    className={cn(
-                                        "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
-                                        isGamesActive ? "h-9" : "group-hover:h-5"
-                                    )} 
-                                />
-                                <Avatar className={cn(
-                                    "size-12 rounded-full bg-background transition-all duration-200 group-hover:rounded-2xl",
-                                    isGamesActive ? 'rounded-2xl bg-green-600' : 'group-hover:bg-green-600'
-                                )}>
-                                    <AvatarFallback className={cn("bg-transparent text-green-400 transition-colors duration-200", isGamesActive ? "text-white" : "group-hover:text-white")}>
-                                        <Gamepad2 size={24} />
-                                    </AvatarFallback>
-                                </Avatar>
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                            <p>Game Hub</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </Link>
-
-                {/* Music Button */}
-                <Link href="/music" legacyBehavior={false}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                             <div className="relative group">
-                                 <div 
-                                    className={cn(
-                                        "absolute -left-3 top-1/2 -translate-y-1/2 h-0 w-1 bg-white rounded-r-full transition-all duration-200",
-                                        isMusicActive ? "h-9" : "group-hover:h-5"
-                                    )} 
-                                />
-                                <Avatar className={cn(
-                                    "size-12 rounded-full bg-background transition-all duration-200 group-hover:rounded-2xl",
-                                    isMusicActive ? 'rounded-2xl bg-green-600' : 'group-hover:bg-green-600'
-                                )}>
-                                    <AvatarFallback className={cn("bg-transparent text-green-400 transition-colors duration-200", isMusicActive ? "text-white" : "group-hover:text-white")}>
-                                        <Music size={24} />
-                                    </AvatarFallback>
-                                </Avatar>
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                            <p>Music Library</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </Link>
-
             </div>
         </TooltipProvider>
     );

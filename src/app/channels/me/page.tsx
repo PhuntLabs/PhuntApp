@@ -27,7 +27,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
 import { BOT_ID, BOT_USERNAME } from '@/ai/bots/config';
-import { AtSign, Mic, Settings, Loader2, Users, UserPlus, MessageCircle } from 'lucide-react';
+import { AtSign, Mic, Settings, Loader2, Users, UserPlus, MessageCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServerSidebar } from '@/components/app/server-sidebar';
 import { MemberList } from '@/components/app/member-list';
@@ -44,6 +44,7 @@ import { Separator } from '@/components/ui/separator';
 import { ActiveNowList } from '@/components/app/active-now-list';
 import { cn } from '@/lib/utils';
 import { AddUserDialog } from '@/components/app/add-user-dialog';
+import { Input } from '@/components/ui/input';
 
 
 const ActiveCallView = dynamic(() => import('@/components/app/active-call-view').then(mod => mod.ActiveCallView), {
@@ -442,8 +443,6 @@ export default function AppRootPage() {
                 onDeleteChannelMessage={deleteChannelMessage}
             />
         ) : (
-            <SidebarProvider>
-            
             <div className="flex h-screen bg-background">
                 <Servers 
                 servers={servers}
@@ -455,57 +454,60 @@ export default function AppRootPage() {
                 />
                 
                 <div className="flex flex-1 min-w-0">
-                <div className="w-64 flex-shrink-0 bg-secondary flex flex-col">
-                    <div className="flex-1 overflow-y-auto">
-                        {server ? (
-                        <ServerSidebar 
-                            server={server}
-                            channels={channels}
-                            members={members as UserProfile[]}
-                            selectedChannel={selectedChannel}
-                            onSelectChannel={handleSelectChannel}
-                            onCreateChannel={handleCreateChannel}
-                            onUpdateChannel={handleUpdateChannel}
-                            onDeleteChannel={handleDeleteChannel}
-                            onUpdateServer={handleUpdateServer}
-                            onDeleteServer={handleDeleteServer}
-                        />
-                        ) : (
-                        <div className="p-2">
-                           <div className="p-2">
-                                <Button variant="ghost" className="w-full justify-start h-11"><MessageCircle className="mr-2"/> Friends</Button>
-                           </div>
-                           <DirectMessages
-                                directMessages={chats}
-                                selectedChat={selectedChat}
-                                onSelectChat={handleSelectChat}
-                                onAddUser={handleSendFriendRequest}
-                                onAddBot={handleCreateChatWithBot}
-                                onDeleteChat={handleDeleteChat}
-                                loading={chatsLoading}
+                    <div className="w-64 flex-shrink-0 bg-card flex flex-col">
+                        <div className="flex-1 overflow-y-auto">
+                            {server ? (
+                            <ServerSidebar 
+                                server={server}
+                                channels={channels}
+                                members={members as UserProfile[]}
+                                selectedChannel={selectedChannel}
+                                onSelectChannel={handleSelectChannel}
+                                onCreateChannel={handleCreateChannel}
+                                onUpdateChannel={handleUpdateChannel}
+                                onDeleteChannel={handleDeleteChannel}
+                                onUpdateServer={handleUpdateServer}
+                                onDeleteServer={handleDeleteServer}
                             />
+                            ) : (
+                            <div className="p-3">
+                                <div className="px-3 pb-3">
+                                     <div className="relative">
+                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                                        <Input placeholder="Search" className="bg-input pl-9 h-9" />
+                                    </div>
+                               </div>
+                               <DirectMessages
+                                    directMessages={chats}
+                                    selectedChat={selectedChat}
+                                    onSelectChat={handleSelectChat}
+                                    onAddUser={handleSendFriendRequest}
+                                    onAddBot={handleCreateChatWithBot}
+                                    onDeleteChat={handleDeleteChat}
+                                    loading={chatsLoading}
+                                />
+                            </div>
+                            )}
+                        </div>
+                        {activeCall && agoraClient ? (
+                            <ActiveCallView client={agoraClient} />
+                        ) : (
+                        <div className="bg-secondary p-2">
+                            <div className="p-1 bg-card rounded-lg flex items-center justify-between border border-border">
+                                <UserNav user={user} as="button" />
+                                <div className="flex items-center">
+                                    <SettingsDialog>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <Settings className="size-5" />
+                                        </Button>
+                                    </SettingsDialog>
+                                </div>
+                            </div>
                         </div>
                         )}
                     </div>
-                    {activeCall && agoraClient ? (
-                        <ActiveCallView client={agoraClient} />
-                    ) : (
-                    <div className="bg-secondary p-2 border-t border-border">
-                         <div className="p-1 bg-card rounded-lg flex items-center justify-between border border-border">
-                            <UserNav user={user} as="button" />
-                            <div className="flex items-center">
-                                <SettingsDialog>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                        <Settings className="size-5" />
-                                    </Button>
-                                </SettingsDialog>
-                            </div>
-                        </div>
-                    </div>
-                    )}
-                </div>
                 
-                 <div className="flex-1 flex flex-col bg-background min-w-0" style={{ width: 'calc(100vw - 36rem)' }}>
+                 <div className="flex-1 flex flex-col bg-background min-w-0">
                     {server && selectedChannel && authUser ? (
                      <div className="flex flex-1 min-h-0">
                         <main className="flex-1 flex flex-col min-w-0">
@@ -548,39 +550,19 @@ export default function AppRootPage() {
                                     <Users />
                                     <h2 className="font-semibold">Friends</h2>
                                 </div>
-                                <Separator orientation="vertical" className="h-6"/>
-                                <div className="flex items-center gap-2 text-sm">
-                                     <Button variant="ghost" size="sm" className={cn(dmView === 'online' && "bg-accent")}>Online</Button>
-                                     <Button variant="ghost" size="sm" className={cn(dmView === 'all' && "bg-accent")}>All</Button>
-                                     <Button variant="ghost" size="sm" className={cn(dmView === 'pending' && "bg-accent")}>Pending</Button>
-                                     <Button variant="ghost" size="sm" className={cn(dmView === 'blocked' && "bg-accent")}>Blocked</Button>
-                                      <AddUserDialog onAddUser={handleSendFriendRequest} onAddBot={handleCreateChatWithBot}>
-                                         <Button className="bg-green-600 hover:bg-green-700 h-8">Add Friend</Button>
-                                      </AddUserDialog>
-                                </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Button variant="ghost" size="icon"><MentionsDialog onJumpToMessage={handleJumpToMessage}><AtSign className="size-4"/></MentionsDialog></Button>
                             </div>
                          </div>
-                         <div className="flex-1 flex">
-                            <div className="flex-1 p-4">
-                               <ActiveNowList users={allFriends} />
-                            </div>
-                             <div className="w-80 border-l p-4">
-                                 <h3 className="text-lg font-bold">Active Now</h3>
-                                 <div className="text-center text-muted-foreground pt-10">
-                                     <p className="font-semibold">It's quiet for now...</p>
-                                     <p className="text-sm">When a friend starts an activity—like playing a game or hanging out on voice—we’ll show it here!</p>
-                                 </div>
-                             </div>
+                         <div className="flex-1 p-4">
+                            <ActiveNowList users={allFriends} />
                          </div>
                     </div>
                     )}
                  </div>
                 </div>
             </div>
-            </SidebarProvider>
         )}
     </ErrorBoundary>
   );

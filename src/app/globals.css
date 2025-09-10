@@ -9,25 +9,25 @@ body {
 
 @layer base {
   :root, .dark, .custom {
-    --background: 224 22% 18%; /* Darker blue-gray */
-    --foreground: 210 40% 98%;
-    --card: 224 22% 18%; /* Match background */
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 173 96% 39%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 225 21% 13%; /* Even darker for sidebars */
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 25%; /* Controls separator and some borders */
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 28%; /* Hover states */
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 231 21% 11%; /* Very dark blue-gray */
+    --foreground: 220 13% 91%;
+    --card: 231 21% 15%; /* Slightly lighter for cards */
+    --card-foreground: 220 13% 91%;
+    --popover: 231 21% 11%;
+    --popover-foreground: 220 13% 91%;
+    --primary: 187 83% 53%; /* Bright Cyan */
+    --primary-foreground: 231 21% 11%;
+    --secondary: 231 21% 9%; /* Darkest for server list, etc. */
+    --secondary-foreground: 220 13% 91%;
+    --muted: 231 21% 20%;
+    --muted-foreground: 220 9% 55%;
+    --accent: 231 21% 25%;
+    --accent-foreground: 220 13% 91%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 217 33% 22%;
-    --input: 217 33% 20%;
-    --ring: 173 96% 39%;
+    --border: 231 21% 20%;
+    --input: 231 21% 18%;
+    --ring: 187 83% 53%;
     --chart-1: 180 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -225,7 +225,7 @@ body {
 
   /* Animated Gradient for Beta/Important sections */
   .animated-gradient {
-    background-image: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-image: linear-gradient(-45deg, #f87171, #c084fc, #60a5fa, #34d399);
     background-size: 400% 400%;
     animation: gradient 15s ease infinite;
   }

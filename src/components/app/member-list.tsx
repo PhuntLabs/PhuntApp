@@ -47,38 +47,34 @@ export function MemberList({ members, server, loading }: MemberListProps) {
     // Group members by their top role
     const roles = [...(server.roles || [])].sort((a,b) => a.priority - b.priority);
     const membersByRole: { [roleName: string]: Partial<UserProfile>[] } = {};
-    const membersWithoutRoles: Partial<UserProfile>[] = [];
-    const onlineMembers: Partial<UserProfile>[] = [];
-    const offlineMembers: Partial<UserProfile>[] = [];
 
-    members.forEach(member => {
-      if (member.status !== 'offline') {
-        onlineMembers.push(member);
-      } else {
-        offlineMembers.push(member);
-      }
-    });
-
+    const onlineMembers = members.filter(m => m.status !== 'offline');
+    const offlineMembers = members.filter(m => m.status === 'offline');
+    
     const roleGroups = roles
-      .map(role => ({
-        ...role,
-        members: onlineMembers.filter(member => server.memberDetails?.[member.uid!]?.roles.includes(role.id))
-      }))
-      .filter(roleGroup => roleGroup.members.length > 0);
-
-    const onlineMembersWithoutRole = onlineMembers.filter(member => {
+      .map(role => {
+        const roleMembers = onlineMembers.filter(member => {
+            const memberRoles = server.memberDetails?.[member.uid!]?.roles || [];
+            return memberRoles.includes(role.id);
+        });
+        return { ...role, members: roleMembers };
+      })
+      .filter(roleGroup => roleGroup.members.length > 0 && roleGroup.name !== '@everyone');
+      
+     const onlineWithNoRole = onlineMembers.filter(member => {
         const memberRoles = server.memberDetails?.[member.uid!]?.roles || [];
-        return !roles.some(r => memberRoles.includes(r.id));
-    });
+        return !roleGroups.some(rg => memberRoles.includes(rg.id));
+     });
+
 
     return (
-        <aside className="w-60 flex-shrink-0 bg-secondary p-2 overflow-y-auto">
+        <aside className="w-60 flex-shrink-0 bg-card p-3 overflow-y-auto">
              {roleGroups.map(roleGroup => (
                 <div key={roleGroup.id} className="mb-4">
-                    <h3 className="text-xs font-bold uppercase text-muted-foreground px-2" style={{ color: roleGroup.color }}>
+                    <h3 className="text-xs font-bold uppercase text-muted-foreground px-1 mb-2">
                         {roleGroup.name} — {roleGroup.members.length}
                     </h3>
-                    <div className="space-y-1 mt-1">
+                    <div className="space-y-1">
                         {roleGroup.members.map(member => (
                             <MemberItem key={member.uid} member={member} server={server} topRoleColor={roleGroup.color} />
                         ))}
@@ -86,13 +82,13 @@ export function MemberList({ members, server, loading }: MemberListProps) {
                 </div>
              ))}
 
-            {onlineMembersWithoutRole.length > 0 && (
+            {onlineWithNoRole.length > 0 && (
                 <div className="mb-4">
-                    <h3 className="text-xs font-bold uppercase text-muted-foreground px-2">
-                        Online — {onlineMembersWithoutRole.length}
+                    <h3 className="text-xs font-bold uppercase text-muted-foreground px-1 mb-2">
+                        Online — {onlineWithNoRole.length}
                     </h3>
-                     <div className="space-y-1 mt-1">
-                        {onlineMembersWithoutRole.map(member => (
+                     <div className="space-y-1">
+                        {onlineWithNoRole.map(member => (
                              <MemberItem key={member.uid} member={member} server={server} />
                         ))}
                     </div>
@@ -101,10 +97,10 @@ export function MemberList({ members, server, loading }: MemberListProps) {
 
             {offlineMembers.length > 0 && (
                 <div className="mb-4">
-                    <h3 className="text-xs font-bold uppercase text-muted-foreground px-2">
+                    <h3 className="text-xs font-bold uppercase text-muted-foreground px-1 mb-2">
                         Offline — {offlineMembers.length}
                     </h3>
-                     <div className="space-y-1 mt-1 opacity-60">
+                     <div className="space-y-1 opacity-50">
                         {offlineMembers.map(member => (
                              <MemberItem key={member.uid} member={member} server={server} />
                         ))}
@@ -141,23 +137,15 @@ const MemberItem = ({ member, server, topRoleColor }: { member: Partial<UserProf
 
     return (
         <UserNav user={member as UserProfile} serverContext={server} as="trigger">
-            <div className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer relative overflow-hidden group/member">
-                {member.nameplateUrl && (
-                    <Image
-                        src={member.nameplateUrl}
-                        alt=""
-                        fill
-                        className="object-cover opacity-50 group-hover/member:opacity-75 transition-opacity"
-                    />
-                )}
-                <div className="relative z-10 flex items-center gap-2 w-full">
+            <div className="flex items-center gap-3 p-1.5 rounded-md hover:bg-accent cursor-pointer relative overflow-hidden group/member">
+                <div className="relative z-10 flex items-center gap-3 w-full">
                     <div className="relative">
                         <Avatar className="size-8">
                             <AvatarImage src={displayUser.photoURL || undefined} />
                             <AvatarFallback>{displayUser.displayName?.[0]}</AvatarFallback>
                         </Avatar>
                         <div className={cn(
-                            "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-secondary", 
+                            "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-card", 
                             statusConfig[status].color
                         )} />
                     </div>
@@ -166,7 +154,7 @@ const MemberItem = ({ member, server, topRoleColor }: { member: Partial<UserProf
                             <span className="font-medium text-sm truncate" style={{ color: topRoleColor }}>
                                 {displayUser.displayName}
                             </span>
-                             {isOwner && <Crown className="size-4 text-yellow-500 ml-1.5" />}
+                             {isOwner && <Crown className="size-3.5 text-yellow-400 ml-1.5" />}
                         </div>
                         {activityText && (
                             <p className="text-xs truncate text-muted-foreground flex items-center gap-1.5">
