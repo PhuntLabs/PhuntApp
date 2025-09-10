@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Plus, Compass, MessageSquare, Gamepad2, Music } from 'lucide-react';
@@ -130,6 +129,36 @@ export function Servers({ servers, loading, onCreateServer, selectedServer, onSe
                     </TooltipTrigger>
                     <TooltipContent side="right">
                         <p>Explore Public Servers</p>
+                    </TooltipContent>
+                </Tooltip>
+                 {/* Games Button */}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button className="group" onClick={() => router.push('/games')}>
+                            <Avatar className="size-12 rounded-full bg-card transition-all duration-200 group-hover:rounded-2xl group-hover:bg-blue-600">
+                                <AvatarFallback className="text-blue-400 group-hover:text-white transition-colors duration-200 bg-transparent">
+                                    <Gamepad2 size={24} />
+                                </AvatarFallback>
+                            </Avatar>
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                        <p>Game Hub</p>
+                    </TooltipContent>
+                </Tooltip>
+                {/* Music Button */}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button className="group" onClick={() => router.push('/music')}>
+                             <Avatar className="size-12 rounded-full bg-card transition-all duration-200 group-hover:rounded-2xl group-hover:bg-pink-600">
+                                <AvatarFallback className="text-pink-400 group-hover:text-white transition-colors duration-200 bg-transparent">
+                                    <Music size={24} />
+                                </AvatarFallback>
+                            </Avatar>
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                        <p>Music</p>
                     </TooltipContent>
                 </Tooltip>
             </div>

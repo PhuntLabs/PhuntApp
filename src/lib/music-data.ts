@@ -1,4 +1,3 @@
-
 import type { Song } from './types';
 
 // You can add your song URLs and details here.
@@ -27,5 +26,3 @@ export const musicLibrary: Song[] = [
     audioUrl: 'https://cdn.pixabay.com/download/audio/2022/08/03/audio_517992a343.mp3',
   },
 ];
-
-    
