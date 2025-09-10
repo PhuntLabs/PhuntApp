@@ -12,37 +12,32 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Rocket, Sparkles, Gamepad2, Bot, MessageCirclePlus, Paperclip, Phone } from 'lucide-react';
+import { Rocket, Sparkles, Gem, Palette, User, MonitorSmartphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const APP_VERSION = '1.0.7'; // Incremented version
+const APP_VERSION = '1.0.8'; // Incremented version
 const LOCAL_STORAGE_KEY = `changelog_seen_${APP_VERSION}`;
 
 const updates = [
     {
-        title: 'Calling (Beta)',
-        icon: Phone,
-        description: 'Voice and video calling is now available for testing! You can enable it in Developer Settings. Please report any bugs you find!',
+        title: 'Massive UI Revamp',
+        icon: Palette,
+        description: 'We\'ve completely redesigned the entire application to be more modern, responsive, and easier on the eyes. Enjoy a cleaner, more polished experience on all devices.',
     },
     {
-        title: 'Secure File Uploads',
-        icon: Paperclip,
-        description: 'You can now upload and share files of any type directly in your chats. All files are securely handled via Gofile.io, appearing as a clean, rich embed.',
+        title: 'Introducing: Turbo',
+        icon: Gem,
+        description: 'Phunt is free, forever. If you enjoy the app, you can now support its development through the new Turbo page, accessible from the main menu.',
     },
     {
-        title: 'Introducing: The Game Hub!',
-        icon: Gamepad2,
-        description: 'Launch and play popular browser games directly within the app. Your status will automatically update to show what you\'re playing, and friends can even join from your profile!',
+        title: 'Your Profile, Your Way',
+        icon: User,
+        description: 'You can now set a custom Display Name that can be different from your unique @username. Head to Account Settings to change it!',
     },
     {
-        title: 'Slash Commands Are Here',
-        icon: Sparkles,
-        description: 'Moderate your server with ease using new slash commands. Use /clean, /lock, /kick, and /ban to manage your channels and members.',
-    },
-    {
-        title: 'Say Hello to Bots',
-        icon: Bot,
-        description: 'Add our first phunt bot, @qolforu, from the Discovery page! Use its commands like /poll and /embed to add fun and utility to your server.',
+        title: 'A Better Mobile Experience',
+        icon: MonitorSmartphone,
+        description: 'On mobile devices, you\'ll now be prompted to add Phunt to your home screen. This Progressive Web App (PWA) mode provides a faster, full-screen experience.',
     },
 ]
 
