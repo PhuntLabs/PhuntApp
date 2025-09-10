@@ -157,7 +157,7 @@ export default function AppRootPage() {
     try {
         const result = await sendFriendRequest(username, {
             id: user.uid,
-            displayName: user.displayName || 'Anonymous'
+            displayName: user.username || 'Anonymous'
         });
         toast({ title: 'Success', description: result });
     } catch(e: any) {
@@ -307,7 +307,7 @@ export default function AppRootPage() {
                     onSelectChat={handleSelectChat}
                 />
                 
-                <div className="w-64 flex-shrink-0 bg-card flex flex-col">
+                 <div className="w-64 flex-shrink-0 bg-card flex flex-col">
                     <div className="flex-1 overflow-y-auto min-h-0">
                         {server ? (
                         <ServerSidebar 
@@ -336,12 +336,6 @@ export default function AppRootPage() {
                         <div className="flex items-center justify-between">
                             <UserNav user={user} />
                             <div className="flex items-center">
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <Mic className="size-5" />
-                                </Button>
-                                 <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <Headphones className="size-5" />
-                                </Button>
                                 <SettingsDialog>
                                     <Button variant="ghost" size="icon" className="h-8 w-8">
                                         <Settings className="size-5" />
@@ -401,3 +395,4 @@ export default function AppRootPage() {
     </ErrorBoundary>
   );
 }
+

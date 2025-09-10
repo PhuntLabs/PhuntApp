@@ -1,3 +1,4 @@
+
 import { FieldValue, Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 
@@ -56,8 +57,8 @@ export interface UserProfile {
   id: string;
   uid: string;
   email?: string | null;
-  displayName: string;
-  displayName_lowercase?: string;
+  username: string; // Unique, permanent username (e.g., @user-123)
+  displayName: string; // Changeable display name
   photoURL: string | null;
   bannerURL?: string | null;
   bio?: string;

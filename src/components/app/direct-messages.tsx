@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Plus, Users, Compass, Store, MessageSquare } from 'lucide-react';
+import { Plus, Users, Compass, Store, MessageSquare, Gem } from 'lucide-react';
 import type { PopulatedChat, UserProfile, UserStatus } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ import { AddUserDialog } from './add-user-dialog';
 import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
 import { usePathname, useRouter } from 'next/navigation';
+import { formatDistanceToNow } from 'date-fns';
 
 interface DirectMessagesProps {
   directMessages: PopulatedChat[];
@@ -48,14 +49,16 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
   return (
     <>
       <div className="p-3">
-          <Input placeholder="Find or start a conversation" className="h-8 bg-input border-none" />
+          <Button variant="secondary" className="w-full h-8 justify-start px-2">
+            Find or start a conversation
+          </Button>
       </div>
       <div className="p-2 space-y-1">
           <Button variant="ghost" className="w-full justify-start gap-3">
             <Users className="size-5" /> Friends
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-3">
-            <Compass className="size-5" /> Turbo
+          <Button variant="ghost" className="w-full justify-start gap-3" onClick={() => router.push('/turbo')}>
+            <Gem className="size-5" /> Turbo
           </Button>
       </div>
 
@@ -106,3 +109,4 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
     </>
   );
 }
+

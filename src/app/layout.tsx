@@ -31,13 +31,19 @@ export default function RootLayout({
                 const theme = localStorage.getItem('app-theme') || 'dark';
                 const font = localStorage.getItem('app-theme-font') || 'inter';
                 const customColor = localStorage.getItem('app-theme-custom-color');
-                let isMobileTestMode = false;
                 
+                let isMobileTestMode = false;
                 try {
                   const urlParams = new URLSearchParams(window.location.search);
                   isMobileTestMode = localStorage.getItem('mobile-view-enabled') === 'true' || urlParams.get('m') === 'true';
                 } catch(e) {}
-
+                
+                const isMobileDevice = /Mobi/i.test(window.navigator.userAgent);
+                if (isMobileDevice && !isMobileTestMode) {
+                  if (confirm('A better mobile experience is available. Open the mobile version?')) {
+                    window.location.search = '?m=true';
+                  }
+                }
 
                 let classes = theme + ' font-' + font;
                 if (isMobileTestMode) {
@@ -103,3 +109,4 @@ export default function RootLayout({
     </html>
   );
 }
+

@@ -152,7 +152,7 @@ export function SettingsDialog({ children, defaultSection = 'account', onOpenCha
           </nav>
            <div className="mt-auto">
               <Separator className="my-2"/>
-              <Button variant="ghost" onClick={logout} className="justify-start w-full">
+              <Button variant="ghost" onClick={logout} className="justify-start w-full text-red-500 hover:text-red-500 hover:bg-red-500/10">
                 <LogOut className="mr-2 size-4" />
                 Log Out
               </Button>

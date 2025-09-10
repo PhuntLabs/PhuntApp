@@ -129,6 +129,7 @@ const MemberItem = ({ member, server, topRoleColor }: { member: Partial<UserProf
     const displayUser = {
       ...member,
       displayName: serverProfile?.nickname || member.displayName,
+      username: member.username,
       photoURL: serverProfile?.avatar || member.photoURL,
     };
 

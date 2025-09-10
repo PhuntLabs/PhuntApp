@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -71,7 +72,7 @@ function applySpecialBadges(profile: Omit<UserProfile, 'id'>): Omit<UserProfile,
 
     if (
         (profile.email && developerEmails.includes(profile.email)) ||
-        (profile.displayName_lowercase && developerUsernames.includes(profile.displayName_lowercase))
+        (profile.username && developerUsernames.includes(profile.username))
     ) {
         badges.add('developer');
     }
@@ -117,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
              setUser({
                id: firebaseUser.uid,
                uid: firebaseUser.uid,
+               username: firebaseUser.displayName || '',
                displayName: firebaseUser.displayName || '',
                photoURL: firebaseUser.photoURL || null,
              });
@@ -140,10 +142,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (data: Partial<UserProfile>) => {
       if (!authUser) throw new Error('Not authenticated');
 
-      const { displayName, photoURL, ...firestoreData } = data;
+      const { username, photoURL, ...firestoreData } = data;
 
-      const profileUpdates: { displayName?: string; photoURL?: string | null } = {};
-      if (displayName !== undefined && displayName !== authUser.displayName) profileUpdates.displayName = displayName;
+      const profileUpdates: { photoURL?: string | null } = {};
+      
+      // Note: We don't update displayName in the auth object here as it's the unique username.
+      // We only update photoURL. DisplayName is managed in Firestore.
       if (photoURL !== undefined && photoURL !== authUser.photoURL) profileUpdates.photoURL = photoURL;
       
       if (Object.keys(profileUpdates).length > 0) {
@@ -176,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [authUser]);
   
   const addBadgeToUser = useCallback(async (username: string, badgeId: string) => {
-    if (user?.displayName !== 'heina') {
+    if (user?.username !== 'heina') {
         throw new Error('You are not authorized to perform this action.');
     }
     const targetUser = await findUserByUsername(username);
@@ -190,7 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const createBadge = useCallback(async (badgeData: Omit<Badge, 'id'>) => {
-      if(user?.displayName !== 'heina') {
+      if(user?.username !== 'heina') {
           throw new Error('You are not authorized to perform this action.');
       }
       const badgeId = badgeData.name.toLowerCase().replace(/\s+/g, '_');
@@ -210,7 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = async (email: string, pass: string, username: string) => {
     try {
-        const usernameQuery = query(collection(db, 'users'), where('displayName_lowercase', '==', username.toLowerCase()));
+        const usernameQuery = query(collection(db, 'users'), where('username', '==', username.toLowerCase()));
         const usernameSnapshot = await getDocs(usernameQuery);
         if (!usernameSnapshot.empty) {
             throw new Error("Username is already taken.");
@@ -231,6 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
         await updateProfile(firebaseUser, {
+          // We set the unique username in the auth object's displayName field
           displayName: username,
           photoURL,
         });
@@ -239,8 +244,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const userPayload: Omit<UserProfile, 'id'> = {
-      displayName: username,
-      displayName_lowercase: username.toLowerCase(),
+      username: username.toLowerCase(),
+      displayName: username, // Initially, display name is the same as username
       email: firebaseUser.email,
       createdAt: serverTimestamp(),
       photoURL: photoURL,
@@ -252,7 +257,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await setDoc(doc(db, 'users', firebaseUser.uid), userPayload);
     } catch (error: any) {
         console.error("Firestore user creation failed:", error);
-        throw new Error(`Failed to create user profile in database. This is likely a security rule issue. Original error: ${e.message}`);
+        throw new Error(`Failed to create user profile in database. This is likely a security rule issue. Original error: ${error.message}`);
     }
     
     await firebaseUser.reload();

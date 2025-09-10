@@ -5,7 +5,7 @@ import type { UserProfile } from './types';
 
 export async function findUserByUsername(username: string): Promise<UserProfile | null> {
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('displayName_lowercase', '==', username.toLowerCase()));
+    const q = query(usersRef, where('username', '==', username.toLowerCase()));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -58,7 +59,7 @@ export function useFriendRequests(enabled: boolean = true) {
     // Step 1: Find user with the given username
     try {
         const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('displayName_lowercase', '==', toUsername.toLowerCase()));
+        const q = query(usersRef, where('username', '==', toUsername.toLowerCase()));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {

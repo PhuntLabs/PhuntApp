@@ -38,6 +38,19 @@ export function AccountSettings() {
     }
   }, [user]);
 
+  const handleSave = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+        await updateUserProfile({ displayName });
+        toast({ title: 'Success', description: 'Your display name has been updated.' });
+    } catch(e: any) {
+        toast({ variant: 'destructive', title: 'Error', description: e.message });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
   const handlePasswordReset = async () => {
     try {
       await sendPasswordReset();
@@ -58,6 +71,8 @@ export function AccountSettings() {
     return null;
   }
 
+  const hasChanges = user.displayName !== displayName;
+
   return (
     <div className="space-y-6">
         <div>
@@ -77,7 +92,7 @@ export function AccountSettings() {
                      </div>
                      <div>
                         <h3 className="text-xl font-bold">{displayName}</h3>
-                        <p className="text-sm text-muted-foreground">@{user.displayName_lowercase}</p>
+                        <p className="text-sm text-muted-foreground">@{user.username}</p>
                      </div>
                 </div>
             </div>
@@ -88,12 +103,14 @@ export function AccountSettings() {
                 <CardTitle>Account Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <p className="text-xs font-semibold uppercase text-muted-foreground">Username</p>
-                        <p>{user.displayName}</p>
-                    </div>
-                     <Button variant="secondary" disabled>Edit</Button>
+                 <div className="space-y-2">
+                    <Label htmlFor="display-name">Display Name</Label>
+                    <Input id="display-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label>Username</Label>
+                    <Input value={user.username} disabled />
+                    <CardDescription>Usernames can only be changed once a month. (This UI is a placeholder)</CardDescription>
                 </div>
                  <Separator />
                  <div className="flex justify-between items-center">
@@ -112,6 +129,17 @@ export function AccountSettings() {
                      <Button variant="secondary">Add</Button>
                 </div>
             </CardContent>
+            {hasChanges && (
+                <CardFooter>
+                    <div className="p-2 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-md flex items-center justify-between w-full">
+                         <p className="text-sm">You have unsaved changes.</p>
+                         <div>
+                            <Button size="sm" variant="ghost" onClick={() => setDisplayName(user.displayName)}>Reset</Button>
+                            <Button size="sm" onClick={handleSave} disabled={isSaving}>Save</Button>
+                         </div>
+                    </div>
+                </CardFooter>
+            )}
         </Card>
 
         <Card>

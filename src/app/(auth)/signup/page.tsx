@@ -48,9 +48,11 @@ export default function SignupPage() {
               type="text"
               required
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
               className="bg-secondary/50 border-border"
+              autoComplete="off"
             />
+            <p className="text-xs text-muted-foreground">Usernames must be unique and can only contain letters, numbers, and underscores.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email" className="text-xs font-bold uppercase text-muted-foreground">Email</Label>
