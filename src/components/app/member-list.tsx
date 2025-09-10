@@ -8,6 +8,7 @@ import { Crown, Bot, Music, Gamepad2 } from "lucide-react";
 import { UserNav } from "./user-nav";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { ScrollArea } from "../ui/scroll-area";
 
 interface MemberListProps {
     members: Partial<UserProfile>[];
@@ -26,7 +27,7 @@ const statusConfig: Record<UserStatus, { color: string }> = {
 export function MemberList({ members, server, loading }: MemberListProps) {
     if (loading) {
         return (
-             <div className="w-60 flex-shrink-0 bg-secondary p-2 space-y-2">
+             <div className="w-60 flex-shrink-0 bg-card p-2 space-y-2">
                 <h2 className="text-sm font-semibold uppercase text-muted-foreground px-2">Members — ?</h2>
                 <div className="flex items-center gap-2 p-2">
                     <Skeleton className="size-8 rounded-full" />
@@ -44,69 +45,79 @@ export function MemberList({ members, server, loading }: MemberListProps) {
         )
     }
     
-    // Group members by their top role
     const roles = [...(server.roles || [])].sort((a,b) => a.priority - b.priority);
     const membersByRole: { [roleName: string]: Partial<UserProfile>[] } = {};
 
     const onlineMembers = members.filter(m => m.status !== 'offline');
     const offlineMembers = members.filter(m => m.status === 'offline');
     
-    const roleGroups = roles
-      .map(role => {
-        const roleMembers = onlineMembers.filter(member => {
-            const memberRoles = server.memberDetails?.[member.uid!]?.roles || [];
-            return memberRoles.includes(role.id);
-        });
-        return { ...role, members: roleMembers };
-      })
-      .filter(roleGroup => roleGroup.members.length > 0 && roleGroup.name !== '@everyone');
-      
-     const onlineWithNoRole = onlineMembers.filter(member => {
-        const memberRoles = server.memberDetails?.[member.uid!]?.roles || [];
-        return !roleGroups.some(rg => memberRoles.includes(rg.id));
-     });
+    const getTopRole = (member: Partial<UserProfile>): (typeof roles[0] & { isOwner: boolean }) | null => {
+        if (member.uid === server.ownerId) {
+            return { id: 'owner', name: 'OWNER', color: '#f59e0b', priority: -1, permissions: {}, isOwner: true };
+        }
+        const memberRoleIds = server.memberDetails?.[member.uid!]?.roles || [];
+        const memberRoles = roles
+            .filter(r => memberRoleIds.includes(r.id) && r.name !== '@everyone')
+            .sort((a,b) => a.priority - b.priority);
+        return memberRoles.length > 0 ? { ...memberRoles[0], isOwner: false } : null;
+    }
 
+    const groupedMembers: { [roleName: string]: { role: (typeof roles[0] & { isOwner?: boolean }), members: Partial<UserProfile>[] }} = {};
+
+    onlineMembers.forEach(member => {
+        const topRole = getTopRole(member);
+        const roleName = topRole ? topRole.name : 'ONLINE';
+        if (!groupedMembers[roleName]) {
+            groupedMembers[roleName] = { role: topRole || { id: 'online', name: 'ONLINE', color: '#808080', priority: 999, permissions: {} }, members: []};
+        }
+        groupedMembers[roleName].members.push(member);
+    });
+
+    const sortedGroups = Object.values(groupedMembers).sort((a,b) => a.role.priority - b.role.priority);
+    
+    const activityMembers = onlineMembers.filter(m => m.currentGame || m.currentSong);
 
     return (
-        <aside className="w-60 flex-shrink-0 bg-card p-3 overflow-y-auto">
-             {roleGroups.map(roleGroup => (
-                <div key={roleGroup.id} className="mb-4">
-                    <h3 className="text-xs font-bold uppercase text-muted-foreground px-1 mb-2">
-                        {roleGroup.name} — {roleGroup.members.length}
-                    </h3>
-                    <div className="space-y-1">
-                        {roleGroup.members.map(member => (
-                            <MemberItem key={member.uid} member={member} server={server} topRoleColor={roleGroup.color} />
-                        ))}
+        <aside className="w-60 flex-shrink-0 bg-card p-3 flex flex-col">
+            <ScrollArea className="flex-1">
+                {activityMembers.length > 0 && (
+                    <div className="mb-4">
+                        <h3 className="text-xs font-bold uppercase text-muted-foreground px-1 mb-2">
+                           Activity — {activityMembers.length}
+                        </h3>
+                        <div className="space-y-1">
+                             {activityMembers.map(member => (
+                                <MemberItem key={member.uid} member={member} server={server} topRoleColor={getTopRole(member)?.color} />
+                            ))}
+                        </div>
                     </div>
-                </div>
-             ))}
+                )}
+                 {sortedGroups.map(({ role, members }) => (
+                    <div key={role.id} className="mb-4">
+                        <h3 className="text-xs font-bold uppercase px-1 mb-2" style={{ color: role.color }}>
+                            {role.name} — {members.length}
+                        </h3>
+                        <div className="space-y-1">
+                            {members.map(member => (
+                                <MemberItem key={member.uid} member={member} server={server} topRoleColor={role.color} />
+                            ))}
+                        </div>
+                    </div>
+                 ))}
 
-            {onlineWithNoRole.length > 0 && (
-                <div className="mb-4">
-                    <h3 className="text-xs font-bold uppercase text-muted-foreground px-1 mb-2">
-                        Online — {onlineWithNoRole.length}
-                    </h3>
-                     <div className="space-y-1">
-                        {onlineWithNoRole.map(member => (
-                             <MemberItem key={member.uid} member={member} server={server} />
-                        ))}
+                {offlineMembers.length > 0 && (
+                    <div className="mb-4">
+                        <h3 className="text-xs font-bold uppercase text-muted-foreground px-1 mb-2">
+                            Offline — {offlineMembers.length}
+                        </h3>
+                         <div className="space-y-1 opacity-60">
+                            {offlineMembers.map(member => (
+                                 <MemberItem key={member.uid} member={member} server={server} />
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
-
-            {offlineMembers.length > 0 && (
-                <div className="mb-4">
-                    <h3 className="text-xs font-bold uppercase text-muted-foreground px-1 mb-2">
-                        Offline — {offlineMembers.length}
-                    </h3>
-                     <div className="space-y-1 opacity-50">
-                        {offlineMembers.map(member => (
-                             <MemberItem key={member.uid} member={member} server={server} />
-                        ))}
-                    </div>
-                </div>
-            )}
+                )}
+            </ScrollArea>
         </aside>
     )
 }
@@ -137,31 +148,42 @@ const MemberItem = ({ member, server, topRoleColor }: { member: Partial<UserProf
 
     return (
         <UserNav user={member as UserProfile} serverContext={server} as="trigger">
-            <div className="flex items-center gap-3 p-1.5 rounded-md hover:bg-accent cursor-pointer relative overflow-hidden group/member">
-                <div className="relative z-10 flex items-center gap-3 w-full">
-                    <div className="relative">
-                        <Avatar className="size-8">
-                            <AvatarImage src={displayUser.photoURL || undefined} />
-                            <AvatarFallback>{displayUser.displayName?.[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className={cn(
-                            "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-card", 
-                            statusConfig[status].color
-                        )} />
-                    </div>
-                    <div className="flex-1 overflow-hidden">
-                        <div className="flex items-center">
-                            <span className="font-medium text-sm truncate" style={{ color: topRoleColor }}>
-                                {displayUser.displayName}
-                            </span>
-                             {isOwner && <Crown className="size-3.5 text-yellow-400 ml-1.5" />}
+             <div className="relative group/member rounded-md">
+                {member.nameplateUrl && (
+                    <Image
+                        src={member.nameplateUrl}
+                        alt="Nameplate"
+                        layout="fill"
+                        objectFit="cover"
+                        className="absolute inset-0 rounded-md opacity-30 group-hover/member:opacity-50 transition-opacity"
+                    />
+                )}
+                <div className="flex items-center gap-3 p-1.5 relative overflow-hidden">
+                     <div className="relative z-10 flex items-center gap-3 w-full">
+                        <div className="relative">
+                            <Avatar className="size-8">
+                                <AvatarImage src={displayUser.photoURL || undefined} />
+                                <AvatarFallback>{displayUser.displayName?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className={cn(
+                                "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-card", 
+                                statusConfig[status].color
+                            )} />
                         </div>
-                        {activityText && (
-                            <p className="text-xs truncate text-muted-foreground flex items-center gap-1.5">
-                                {ActivityIcon && <ActivityIcon className="size-3"/>}
-                                {activityText}
-                            </p>
-                        )}
+                        <div className="flex-1 overflow-hidden">
+                            <div className="flex items-center">
+                                <span className="font-medium text-sm truncate" style={{ color: topRoleColor }}>
+                                    {displayUser.displayName}
+                                </span>
+                                 {isOwner && <Crown className="size-3.5 text-yellow-400 ml-1.5" />}
+                            </div>
+                            {activityText && (
+                                <p className="text-xs truncate text-muted-foreground flex items-center gap-1.5">
+                                    {ActivityIcon && <ActivityIcon className="size-3"/>}
+                                    {activityText}
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

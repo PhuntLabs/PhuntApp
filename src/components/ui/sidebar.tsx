@@ -150,11 +150,7 @@ const SidebarProvider = React.forwardRef<
             ref={ref}
             {...props}
           >
-            {isMobile ? (
-                 <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-                    {children}
-                 </Sheet>
-            ) : children }
+            {children}
           </div>
         </TooltipProvider>
       </SidebarContext.Provider>

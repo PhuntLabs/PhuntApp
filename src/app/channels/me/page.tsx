@@ -25,7 +25,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { processEcho } from '@/ai/flows/echo-bot-flow';
 import { BOT_ID, BOT_USERNAME } from '@/ai/bots/config';
-import { Loader2, Mic, Settings } from 'lucide-react';
+import { Loader2, Mic, Settings, Headphones } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServerSidebar } from '@/components/app/server-sidebar';
 import { MemberList } from '@/components/app/member-list';
@@ -332,12 +332,15 @@ export default function AppRootPage() {
                         />
                         )}
                     </div>
-                     <div className="bg-secondary p-2">
-                        <div className="p-1 bg-card rounded-lg flex items-center justify-between">
-                            <UserNav user={user} as="button" />
+                     <div className="p-2 bg-secondary">
+                        <div className="flex items-center justify-between">
+                            <UserNav user={user} />
                             <div className="flex items-center">
                                 <Button variant="ghost" size="icon" className="h-8 w-8">
                                     <Mic className="size-5" />
+                                </Button>
+                                 <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Headphones className="size-5" />
                                 </Button>
                                 <SettingsDialog>
                                     <Button variant="ghost" size="icon" className="h-8 w-8">

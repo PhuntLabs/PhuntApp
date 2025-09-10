@@ -10,6 +10,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { AddUserDialog } from './add-user-dialog';
 import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface DirectMessagesProps {
   directMessages: PopulatedChat[];
@@ -29,6 +30,10 @@ const statusConfig: Record<UserStatus, string> = {
 
 export function DirectMessages({ directMessages, selectedChat, onSelectChat, onAddUser, loading }: DirectMessagesProps) {
   const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  
+  const isActive = (path: string) => pathname === path;
   
   if (loading) {
     return (
@@ -45,19 +50,12 @@ export function DirectMessages({ directMessages, selectedChat, onSelectChat, onA
       <div className="p-3">
           <Input placeholder="Find or start a conversation" className="h-8 bg-input border-none" />
       </div>
-      <div className="p-2">
+      <div className="p-2 space-y-1">
           <Button variant="ghost" className="w-full justify-start gap-3">
             <Users className="size-5" /> Friends
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-3">
-            <Compass className="size-5" /> Nitro
-          </Button>
-          <Button variant="ghost" className="w-full justify-start gap-3">
-            <MessageSquare className="size-5" /> Message Requests
-             <span className="ml-auto text-xs bg-red-500 text-white rounded-full size-5 flex items-center justify-center">33</span>
-          </Button>
-           <Button variant="ghost" className="w-full justify-start gap-3">
-            <Store className="size-5" /> Shop
+            <Compass className="size-5" /> Turbo
           </Button>
       </div>
 

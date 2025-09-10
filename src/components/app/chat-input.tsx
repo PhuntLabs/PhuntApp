@@ -390,43 +390,11 @@ export function ChatInput({
                     <Button type="button" variant="ghost" size="icon" className="size-9 text-muted-foreground hover:text-foreground" disabled={disabled || isSubmitting}>
                         <Gift className="size-5"/>
                     </Button>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button type="button" variant="ghost" size="icon" className="size-9 text-muted-foreground hover:text-foreground" disabled={disabled || isSubmitting}>
-                                <SmilePlus className="size-5"/>
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-96 p-0 border-none mb-2" side="top" align="end">
-                            <Tabs defaultValue="emoji">
-                                <TabsList className="w-full justify-start px-2 rounded-b-none">
-                                    <TabsTrigger value="emoji">Emoji</TabsTrigger>
-                                    <TabsTrigger value="gif" disabled>GIF</TabsTrigger>
-                                    <TabsTrigger value="sticker" disabled>Sticker</TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="emoji" className="m-0">
-                                     <ScrollArea className="h-64 p-2">
-                                        <div className="grid grid-cols-8 gap-1">
-                                        {standardEmojis.map(emoji => (
-                                            <button key={emoji.name} type="button" onClick={() => insertEmoji(emoji)} className="p-1 text-2xl rounded-md hover:bg-accent aspect-square">
-                                                {emoji.char}
-                                            </button>
-                                        ))}
-                                        </div>
-                                        {customEmojis.length > 0 && <h3 className="text-xs font-semibold text-muted-foreground uppercase py-2">Custom</h3>}
-                                        <div className="grid grid-cols-8 gap-1">
-                                             {customEmojis.map(emoji => (
-                                                <button key={emoji.name} type="button" onClick={() => insertEmoji(emoji)} className="p-1 rounded-md hover:bg-accent aspect-square">
-                                                    <Image src={emoji.url} alt={emoji.name} width={28} height={28}/>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </ScrollArea>
-                                </TabsContent>
-                            </Tabs>
-                        </PopoverContent>
-                    </Popover>
-                     <Button type="submit" size="icon" className="size-9" disabled={disabled || isSubmitting || (text.trim() === '' && !attachment)}>
-                        <Send className="size-4" />
+                     <Button type="button" variant="ghost" size="icon" className="size-9 text-muted-foreground hover:text-foreground" disabled={disabled || isSubmitting}>
+                        <Gamepad2 className="size-5"/>
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="size-9 text-muted-foreground hover:text-foreground" disabled={disabled || isSubmitting}>
+                        <SmilePlus className="size-5"/>
                     </Button>
                 </div>
             </div>

@@ -2,7 +2,7 @@
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import type { Channel, Server, Message, UserProfile, Emoji, CustomEmoji, Embed, ServerTag, ForumPost } from '@/lib/types';
-import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck, ChevronLeft, Search } from 'lucide-react';
+import { Hash, Pencil, Send, Trash2, Reply, SmilePlus, X, Menu, Sword, Zap, Car, Bike, BadgeCheck, ChevronLeft, Search, Gift, Gamepad2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -176,7 +176,7 @@ export function ChannelChat({
     }
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-card">
             <header className="p-2.5 md:p-4 border-b flex items-center gap-2 flex-shrink-0">
                 {onBack && (
                   <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={onBack}>
@@ -194,12 +194,15 @@ export function ChannelChat({
                 </div>
             </header>
 
-            <div className="flex-1 flex flex-col h-full bg-muted/20 overflow-hidden">
+            <div className="flex-1 flex flex-col h-full bg-card overflow-hidden">
                 <ScrollArea className="flex-1" ref={scrollAreaRef as any}>
                     <TooltipProvider>
                     {messages.length === 0 ? (
                          <div className="flex flex-col justify-end items-start p-4 h-full">
-                             <div className="p-4 rounded-lg bg-background/50">
+                            <div className="p-4 rounded-lg bg-card">
+                                <div className="p-4 bg-muted rounded-full w-fit mb-4">
+                                    <Hash className="size-8" />
+                                </div>
                                 <h2 className="text-2xl font-bold">Welcome to #{displayName}!</h2>
                                 <p className="text-muted-foreground">This is the beginning of the #{displayName} channel.</p>
                             </div>
@@ -352,12 +355,9 @@ export function ChannelChat({
                     serverContext={server}
                     channelId={channel.id}
                 />
-                 {!canSendMessages && firstWritableChannel && (
+                 {!canSendMessages && (
                     <p className="text-xs text-center text-muted-foreground mt-2">
-                        Done reading? Check out{' '}
-                        <button className="text-primary hover:underline font-semibold">
-                            #{firstWritableChannel.name}
-                        </button>
+                       You do not have permission to send messages in this channel.
                     </p>
                 )}
             </div>
