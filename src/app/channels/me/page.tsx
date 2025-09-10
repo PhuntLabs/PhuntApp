@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -380,22 +381,11 @@ export default function AppRootPage() {
   };
 
 
-  const loadingProgress = useMemo(() => {
-    if (!authReady) return 33;
-    if (chatsLoading) return 66;
-    if (serversLoading) return 90;
-    return 100;
-  }, [authReady, chatsLoading, serversLoading]);
-
-
-  if (loading || !authUser || !user) {
+  if (loading || chatsLoading || serversLoading || !authUser || !user) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
         <Image src="https://phuntapp.netlify.app/icons/icon-512x512.png" alt="Phunt Logo" width={128} height={128} />
-        <div className="w-48 space-y-2">
-            <Progress value={loadingProgress} className="h-2" />
-            <p className="text-sm text-muted-foreground text-center">Loading... {loadingProgress}%</p>
-        </div>
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
   }
