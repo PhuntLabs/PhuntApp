@@ -308,7 +308,7 @@ export default function AppRootPage() {
                 />
                 
                 <div className="w-64 flex-shrink-0 bg-card flex flex-col">
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="flex-1 overflow-y-auto min-h-0">
                         {server ? (
                         <ServerSidebar 
                             server={server}
@@ -332,7 +332,7 @@ export default function AppRootPage() {
                         />
                         )}
                     </div>
-                     <div className="p-2 bg-secondary/50">
+                     <div className="p-2 bg-secondary/50 flex-shrink-0">
                         <div className="flex items-center justify-between">
                             <UserNav user={user} />
                             <div className="flex items-center">
@@ -401,4 +401,3 @@ export default function AppRootPage() {
     </ErrorBoundary>
   );
 }
-

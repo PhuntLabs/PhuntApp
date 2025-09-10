@@ -103,7 +103,7 @@ export function UserNav({ user, logout, as = 'button', children, serverContext }
   }
 
   const TriggerComponent = as === 'button' ? (
-     <div className="flex items-center gap-2 p-1 hover:bg-accent rounded-md cursor-pointer transition-colors w-full text-left">
+     <div className="flex items-center gap-2 p-1 rounded-md cursor-pointer transition-colors w-full text-left">
         <div className="relative">
             <Avatar className="size-8">
                 <AvatarImage src={user.photoURL || undefined} />
