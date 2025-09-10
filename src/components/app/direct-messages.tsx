@@ -25,6 +25,7 @@ import Image from 'next/image';
 import { ScrollArea } from '../ui/scroll-area';
 import { ActiveNowList } from './active-now-list';
 import { Separator } from '../ui/separator';
+import { formatDistanceToNow } from 'date-fns';
 
 interface DirectMessagesProps {
   directMessages: PopulatedChat[];
