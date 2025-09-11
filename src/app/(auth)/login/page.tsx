@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
@@ -14,6 +14,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
 import { MessageSquare } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { TosNoticeDialog } from '@/components/app/tos-notice-dialog';
+
+const TOS_VERSION_KEY = 'tos_accepted_v1';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -22,6 +25,22 @@ export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [tosAccepted, setTosAccepted] = useState(false);
+  const [isTosDialogOpen, setIsTosDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const hasAccepted = localStorage.getItem(TOS_VERSION_KEY) === 'true';
+    setTosAccepted(hasAccepted);
+    if (!hasAccepted) {
+        setIsTosDialogOpen(true);
+    }
+  }, []);
+
+  const handleAcceptTos = () => {
+    localStorage.setItem(TOS_VERSION_KEY, 'true');
+    setTosAccepted(true);
+    setIsTosDialogOpen(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,72 +57,75 @@ export default function LoginPage() {
   };
 
   return (
-    <Card className="w-full max-w-4xl bg-card/80 backdrop-blur-md border-white/10 mx-auto">
-      <CardContent className="p-0 grid grid-cols-1 md:grid-cols-2">
-        <div className="p-8 md:p-12">
-           <div className="text-center mb-8">
-             <MessageSquare className="mx-auto size-12 text-primary mb-4"/>
-            <CardTitle className="text-3xl">Welcome Back!</CardTitle>
-            <CardDescription className="text-muted-foreground mt-2">We're so excited to see you again!</CardDescription>
-           </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs font-bold uppercase text-muted-foreground">Email or Phone Number</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-secondary/50 border-border"
-              />
+    <>
+      <TosNoticeDialog isOpen={isTosDialogOpen} onAccept={handleAcceptTos} />
+      <Card className="w-full max-w-4xl bg-card/80 backdrop-blur-md border-white/10 mx-auto">
+        <CardContent className="p-0 grid grid-cols-1 md:grid-cols-2">
+          <div className="p-8 md:p-12">
+            <div className="text-center mb-8">
+              <MessageSquare className="mx-auto size-12 text-primary mb-4" />
+              <CardTitle className="text-3xl">Welcome Back!</CardTitle>
+              <CardDescription className="text-muted-foreground mt-2">We're so excited to see you again!</CardDescription>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password"  className="text-xs font-bold uppercase text-muted-foreground">Password</Label>
-              <div className="relative">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-xs font-bold uppercase text-muted-foreground">Email or Phone Number</Label>
                 <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-secondary/50 border-border"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-xs font-bold uppercase text-muted-foreground">Password</Label>
+                <div className="relative">
+                  <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="bg-secondary/50 border-border"
-                />
-                <Button type="button" variant="link" size="sm" className="absolute right-2 top-1/2 -translate-y-1/2 h-auto" onClick={() => setShowPassword(!showPassword)}>
+                  />
+                  <Button type="button" variant="link" size="sm" className="absolute right-2 top-1/2 -translate-y-1/2 h-auto" onClick={() => setShowPassword(!showPassword)}>
                     {showPassword ? 'Hide' : 'Show'}
-                </Button>
+                  </Button>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                    <Checkbox id="remember-me" />
-                    <Label htmlFor="remember-me">Remember me</Label>
+                  <Checkbox id="remember-me" />
+                  <Label htmlFor="remember-me">Remember me</Label>
                 </div>
                 <Link href="#" className="text-primary hover:underline">
-                 Reset Password
+                  Reset Password
                 </Link>
-            </div>
-            <Button type="submit" className="w-full h-11 text-base">
-              Login
-            </Button>
-            <div className="text-sm text-muted-foreground">
+              </div>
+              <Button type="submit" className="w-full h-11 text-base" disabled={!tosAccepted}>
+                Login
+              </Button>
+              <div className="text-sm text-muted-foreground">
                 Don&apos;t have an account?{' '}
                 <Link href="/signup" className="text-primary hover:underline">
-                    Register
+                  Register
                 </Link>
-            </div>
-          </form>
-        </div>
-        <div className="hidden md:flex flex-col items-center justify-center p-12 bg-secondary/30 rounded-r-lg">
+              </div>
+            </form>
+          </div>
+          <div className="hidden md:flex flex-col items-center justify-center p-12 bg-secondary/30 rounded-r-lg">
             <div className="text-center">
-                 <h3 className="text-xl font-semibold">Login with QR Code</h3>
-                 <p className="text-muted-foreground mt-1">Scan this with the Phunt mobile app to log in instantly.</p>
-                 <div className="p-2 bg-white rounded-lg mt-4 inline-block">
-                    <Image src="/qr-code.png" alt="QR Code" width={176} height={176} data-ai-hint="qr code"/>
-                </div>
+              <h3 className="text-xl font-semibold">Login with QR Code</h3>
+              <p className="text-muted-foreground mt-1">Scan this with the Phunt mobile app to log in instantly.</p>
+              <div className="p-2 bg-white rounded-lg mt-4 inline-block">
+                <Image src="/qr-code.png" alt="QR Code" width={176} height={176} data-ai-hint="qr code" />
+              </div>
             </div>
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        </CardContent>
+      </Card>
+    </>
   );
 }

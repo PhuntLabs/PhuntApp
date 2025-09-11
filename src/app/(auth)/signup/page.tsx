@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
@@ -11,6 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { MessageSquare } from 'lucide-react';
+import { TosNoticeDialog } from '@/components/app/tos-notice-dialog';
+
+const TOS_VERSION_KEY = 'tos_accepted_v1';
 
 export default function SignupPage() {
   const [username, setUsername] = useState('');
@@ -19,6 +22,22 @@ export default function SignupPage() {
   const { signup } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [tosAccepted, setTosAccepted] = useState(false);
+  const [isTosDialogOpen, setIsTosDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const hasAccepted = localStorage.getItem(TOS_VERSION_KEY) === 'true';
+    setTosAccepted(hasAccepted);
+    if (!hasAccepted) {
+        setIsTosDialogOpen(true);
+    }
+  }, []);
+
+  const handleAcceptTos = () => {
+    localStorage.setItem(TOS_VERSION_KEY, 'true');
+    setTosAccepted(true);
+    setIsTosDialogOpen(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,58 +54,61 @@ export default function SignupPage() {
   };
 
   return (
-    <Card className="w-full max-w-lg bg-card/80 backdrop-blur-md border-white/10 mx-auto">
-       <CardContent className="p-8 md:p-12">
-         <div className="text-center mb-8">
+    <>
+      <TosNoticeDialog isOpen={isTosDialogOpen} onAccept={handleAcceptTos} />
+      <Card className="w-full max-w-lg bg-card/80 backdrop-blur-md border-white/10 mx-auto">
+        <CardContent className="p-8 md:p-12">
+          <div className="text-center mb-8">
             <CardTitle className="text-3xl">Create an account</CardTitle>
-         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-           <div className="space-y-2">
-            <Label htmlFor="username" className="text-xs font-bold uppercase text-muted-foreground">Username</Label>
-            <Input
-              id="username"
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
-              className="bg-secondary/50 border-border"
-              autoComplete="off"
-            />
-            <p className="text-xs text-muted-foreground">Usernames must be unique and can only contain letters, numbers, and underscores.</p>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-xs font-bold uppercase text-muted-foreground">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="bg-secondary/50 border-border"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-xs font-bold uppercase text-muted-foreground">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              className="bg-secondary/50 border-border"
-            />
-          </div>
-          <Button type="submit" className="w-full h-11 text-base">
-            Continue
-          </Button>
-           <div className="text-sm text-muted-foreground pt-2">
-            <Link href="/login" className="text-primary hover:underline">
-              Already have an account?
-            </Link>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-xs font-bold uppercase text-muted-foreground">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                className="bg-secondary/50 border-border"
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted-foreground">Usernames must be unique and can only contain letters, numbers, and underscores.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-xs font-bold uppercase text-muted-foreground">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-secondary/50 border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-xs font-bold uppercase text-muted-foreground">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                className="bg-secondary/50 border-border"
+              />
+            </div>
+            <Button type="submit" className="w-full h-11 text-base" disabled={!tosAccepted}>
+              Continue
+            </Button>
+            <div className="text-sm text-muted-foreground pt-2">
+              <Link href="/login" className="text-primary hover:underline">
+                Already have an account?
+              </Link>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </>
   );
 }
