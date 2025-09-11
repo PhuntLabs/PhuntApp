@@ -262,8 +262,14 @@ export default function LandingPage() {
                     </div>
                 </section>
 
-                <footer className="p-4 sm:p-6 text-center text-muted-foreground text-sm border-t">
-                    &copy; {new Date().getFullYear()} PhuntLabs. All rights reserved.
+                <footer className="p-8 text-muted-foreground text-sm border-t">
+                    <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <p>&copy; {new Date().getFullYear()} PhuntLabs. All rights reserved.</p>
+                        <div className="flex items-center gap-4">
+                             <Link href="/terms" className="hover:text-foreground">Terms of Use</Link>
+                             <Link href="/privacy" className="hover:text-foreground">Privacy Policy</Link>
+                        </div>
+                    </div>
                 </footer>
             </div>
         </div>
