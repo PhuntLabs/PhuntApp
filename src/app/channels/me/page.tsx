@@ -382,7 +382,7 @@ export default function AppRootPage() {
                     />
                     ) : (
                         <ActiveNowList 
-                            friends={allFriends}
+                            users={allFriends}
                             pendingRequests={incomingRequests}
                             onAcceptFriendRequest={acceptFriendRequest}
                             onDeclineFriendRequest={declineFriendRequest}
@@ -396,3 +396,6 @@ export default function AppRootPage() {
   );
 }
 
+
+
+    
